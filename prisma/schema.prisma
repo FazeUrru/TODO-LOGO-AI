@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Voto de una batalla del arena: actualiza el ELO en vivo
+model Vote {
+  id        String   @id @default(cuid())
+  battleId  String
+  modelAId  String
+  modelBId  String
+  winner    String // 'A' | 'B' | 'tie' | 'bad'
+  category  String   @default("global")
+  createdAt DateTime @default(now())
+
+  @@index([modelAId])
+  @@index([modelBId])
+  @@index([createdAt])
+}
+
+// Ejecución guardada del Modo Agente
+model AgentRun {
+  id          String   @id @default(cuid())
+  description String
+  projectType String
+  autonomy    String
+  budget      String
+  status      String   @default("planificado")
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// Cuenta de usuario (correo o proveedor social)
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String? // null cuando la cuenta entra por proveedor social
+  provider     String   @default("email") // email | google | github | microsoft | x
+  createdAt    DateTime @default(now())
+}

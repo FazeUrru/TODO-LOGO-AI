@@ -1,0 +1,254 @@
+"use client";
+
+import { Settings, Sun, Moon, Monitor, Rows3, Type, Swords, MessageSquare, Zap, Save, Palette } from "lucide-react";
+import { useSettings, type AppSettings } from "@/lib/settings";
+import { markUsed } from "@/lib/badges";
+import { BATTLE_CATEGORIES, NEW_CATEGORIES } from "@/lib/elo";
+import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
+import { cn } from "@/lib/utils";
+
+/* ── Controles reutilizables ── */
+
+function Segmented<T extends string | number>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: string; icon?: typeof Sun }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex rounded-lg border border-border bg-card p-0.5">
+      {options.map((o) => {
+        const Icon = o.icon;
+        return (
+          <button
+            key={String(o.value)}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12.5px] transition-colors",
+              value === o.value ? "bg-secondary font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {Icon && <Icon className="h-3.5 w-3.5" />}
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Switch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+        checked ? "bg-primary" : "bg-muted"
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all",
+          checked ? "left-[22px]" : "left-0.5"
+        )}
+      />
+    </button>
+  );
+}
+
+function Row({
+  title,
+  desc,
+  children,
+}: {
+  title: string;
+  desc: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-border/60 py-3.5 last:border-0">
+      <div className="min-w-0">
+        <p className="text-[13.5px] font-medium">{title}</p>
+        <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">{desc}</p>
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
+
+function Section({ icon: Icon, title, children }: { icon: typeof Palette; title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+      <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+        <Icon className="h-4 w-4" />
+        {title}
+      </h2>
+      <div className="mt-1">{children}</div>
+    </section>
+  );
+}
+
+export default function AjustesPage() {
+  const { settings, set, reset } = useSettings();
+
+  function change<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
+    set(key, value);
+    markUsed("ajustes");
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-8 sm:px-8">
+      <div className="mx-auto max-w-[760px] pb-12">
+        <div className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+          <Settings className="h-4 w-4" />
+          Personalización
+        </div>
+        <h1 className="mt-3 font-display text-[34px] font-light tracking-tight">
+          Ajustes de{" "}
+          <span className="bg-highlight inline-block px-1.5 font-medium italic">todólogo.ai</span>
+        </h1>
+        <p className="mt-2 max-w-[600px] text-[14px] leading-relaxed text-foreground/85">
+          15 ajustes en 5 categorías. Se guardan automáticamente en este dispositivo en
+          cuanto los tocas y así permanecen entre sesiones.
+        </p>
+
+        <div className="mt-6 space-y-4">
+          {/* ── 1. Apariencia (3) ── */}
+          <Section icon={Palette} title="Apariencia">
+            <Row title="Tema" desc="Claro estilo arena, oscuro para sesiones nocturnas o el de tu sistema.">
+              <Segmented
+                value={settings.theme}
+                onChange={(v) => change("theme", v)}
+                options={[
+                  { value: "claro", label: "Claro", icon: Sun },
+                  { value: "oscuro", label: "Oscuro", icon: Moon },
+                  { value: "sistema", label: "Sistema", icon: Monitor },
+                ]}
+              />
+            </Row>
+            <Row title="Densidad de interfaz" desc="Compacta reduce márgenes y tamaño de texto para ver más en pantalla.">
+              <Segmented
+                value={settings.density}
+                onChange={(v) => change("density", v)}
+                options={[
+                  { value: "comoda", label: "Cómoda", icon: Rows3 },
+                  { value: "compacta", label: "Compacta" },
+                ]}
+              />
+            </Row>
+            <Row title="Fuente de las respuestas" desc="Tipografía con la que se leen los mensajes de los modelos.">
+              <Segmented
+                value={settings.responseFont}
+                onChange={(v) => change("responseFont", v)}
+                options={[
+                  { value: "sans", label: "Sans", icon: Type },
+                  { value: "serif", label: "Serif" },
+                  { value: "mono", label: "Mono" },
+                ]}
+              />
+            </Row>
+          </Section>
+
+          {/* ── 2. Arena (4) ── */}
+          <Section icon={Swords} title="Arena">
+            <Row title="Categoría predeterminada" desc="Se preselecciona en cada batalla nueva del composer.">
+              <select
+                value={settings.defaultCategory}
+                onChange={(e) => change("defaultCategory", e.target.value)}
+                className="rounded-lg border border-border bg-card px-3 py-2 text-[13px] outline-none"
+              >
+                {BATTLE_CATEGORIES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                    {NEW_CATEGORIES.includes(c.id) ? " · nuevo" : ""}
+                  </option>
+                ))}
+              </select>
+            </Row>
+            <Row title="Confirmar antes de votar" desc="Exige un segundo clic para evitar votos accidentales.">
+              <Switch checked={settings.confirmVote} onChange={(v) => change("confirmVote", v)} />
+            </Row>
+            <Row title="Mostrar ELO tras la revelación" desc="Muestra la puntuación total del modelo junto a su nombre.">
+              <Switch checked={settings.showElo} onChange={(v) => change("showElo", v)} />
+            </Row>
+            <Row title="Idioma de respuesta preferido" desc="Pista que se envía a los modelos al competir.">
+              <Segmented
+                value={settings.responseLang}
+                onChange={(v) => change("responseLang", v)}
+                options={[
+                  { value: "es", label: "Español" },
+                  { value: "en", label: "English" },
+                ]}
+              />
+            </Row>
+          </Section>
+
+          {/* ── 3. Conversación (3) ── */}
+          <Section icon={MessageSquare} title="Conversación">
+            <Row title="Desplazamiento automático" desc="Sigue la respuesta a medida que se completa.">
+              <Switch checked={settings.autoScroll} onChange={(v) => change("autoScroll", v)} />
+            </Row>
+            <Row title="Contador de tokens aproximado" desc="Estimación (~caracteres/4) bajo cada respuesta.">
+              <Switch checked={settings.showTokens} onChange={(v) => change("showTokens", v)} />
+            </Row>
+            <Row title="Botón de copiado rápido" desc="Copia cualquier respuesta con un clic.">
+              <Switch checked={settings.quickCopy} onChange={(v) => change("quickCopy", v)} />
+            </Row>
+          </Section>
+
+          {/* ── 4. Historial (2) ── */}
+          <Section icon={Save} title="Historial">
+            <Row title="Autoguardado de conversaciones" desc="Guarda cada chat en «Recientes» de la barra lateral.">
+              <Switch checked={settings.autoSaveHistory} onChange={(v) => change("autoSaveHistory", v)} />
+            </Row>
+            <Row title="Retención del historial" desc="Las conversaciones más antiguas se eliminan solas.">
+              <Segmented
+                value={settings.historyRetention}
+                onChange={(v) => change("historyRetention", v)}
+                options={[
+                  { value: 7, label: "7 días" },
+                  { value: 30, label: "30 días" },
+                  { value: 90, label: "90 días" },
+                  { value: 0, label: "Siempre" },
+                ]}
+              />
+            </Row>
+          </Section>
+
+          {/* ── 5. Sistema (3) ── */}
+          <Section icon={Zap} title="Sistema">
+            <Row title="Sonido al completar" desc="Un bip sutil cuando el modelo termina de responder.">
+              <Switch checked={settings.soundOnDone} onChange={(v) => change("soundOnDone", v)} />
+            </Row>
+            <Row title="Sincronizar novedades automáticamente" desc="Consulta arena.ai cada 90 segundos en segundo plano.">
+              <Switch checked={settings.autoSyncNews} onChange={(v) => change("autoSyncNews", v)} />
+            </Row>
+            <Row title="Reducir animaciones" desc="Desactiva transiciones y efectos para máxima fluidez.">
+              <Switch checked={settings.reduceMotion} onChange={(v) => change("reduceMotion", v)} />
+            </Row>
+          </Section>
+        </div>
+
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-[12.5px] text-muted-foreground">
+            Los ajustes se guardan al instante en este dispositivo. Versión v{APP_VERSION} ({APP_BUILD_DATE}).
+          </p>
+          <button
+            onClick={() => {
+              reset();
+              markUsed("ajustes");
+            }}
+            className="rounded-lg border border-border px-3 py-1.5 text-[12.5px] font-medium hover:bg-accent"
+          >
+            Restaurar valores por defecto
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
