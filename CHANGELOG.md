@@ -5,9 +5,7 @@
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.9.0
-- Copa de 8 y 16 modelos con cuartos de final y vista de cuadro completa.
-- Postgres gestionado (persistencia de ELO global en serverless sin caveats).
+### Planeado para v1.10.0
 - Perfiles con historial en la nube y Hall of Fame de copas.
 - Estadísticas de torneos: % victorias por modelo, mayor upset, rachas.
 - Voces de proveedores reales conectando APIs externas junto al motor propio.
@@ -16,6 +14,21 @@
 - Arena de imágenes con voto y ranking separado.
 - Internacionalización es/en/pt.
 - Compartir duelos y copas por URL con replay del veredicto.
+
+## [1.9.0] — 2026-09-09 · *Arcade autoevolutivo + Copas XL + ELO global*
+
+### Añadido
+- **Arcade todólogo** (`/games` + 3 juegos completos en `public/games/`): nace el Prompt Maestro del Modo Juego AAA, destilado de tres juegos reales publicados y jugables en el navegador, todos con música y SFX 100% procedurales (WebAudio, cero archivos), botón «Compartir» (X, Facebook, WhatsApp, Telegram + mensaje personalizable + copiar enlace) y bucle autoevolutivo visible con registro persistente:
+  - **GTA VI · Costa Vice** — mundo abierto 3D en tercera persona (Three.js local): ciudad costera con tráfico y peatones con rutinas diarias por reloj del juego, robo y conducción de coches, misiones con minimapa, niveles de búsqueda con policía, ciclo día/noche con neones y una ciudad que evoluciona cada 3 misiones (más tráfico, más NPCs, más neones, policía más agresiva).
+  - **Isla Maldita: Evolución** — supervivencia 3D: recolección (talar/minar/bayas), crafteo (hacha, pico, antorcha, lanza, fogata, refugio), hambre/sed/energía, caza y cocina; cada amanecer **la isla evoluciona** (+12% HP y +8% velocidad por noche, Sombras desde la noche 3, Gólems desde la 5, tormentas) y los lobos **aprenden a flanquear** tus fogatas.
+  - **Imperios: Némesis Adaptativa** — RTS 1v1 contra una IA que estudia la composición de tu ejército y construye su contra (arqueros → caballería; turtle → arietes), con economía real, 4 unidades, torres, eras, minimapa y oleadas evolutivas con registro Némesis en vivo.
+- **Copas de 4, 8 y 16 modelos** 🏆: el Modo Torneo generaliza el cuadro a eliminación directa completa (octavos → cuartos → semis → final según tamaño); selector de tamaño en la portada, rondas que se generan en paralelo al votar la anterior, etiquetas por ronda (O/C/S/F) y revelación final con todas las identidades.
+- **ELO global persistente** (`src/lib/elo-global.ts` + modelo `EloState` en Prisma): cada voto de batalla y cada duelo de copa mueve ahora un ELO real almacenado en la base de datos que sobrevive reinicios; el leaderboard muestra «G {elo} · N batallas» por modelo. **Postgres-ready**: para desplegar con PostgreSQL basta cambiar el provider del datasource y `DATABASE_URL` (schema y módulo idénticos).
+- **Prompt Maestro actualizado** en el Modo Juego del composer: ahora codifica las lecciones de los 3 juegos publicados (pantalla de inicio que desbloquea audio, HUD español, bucle de evolución con registro, rendimiento con pooling y pixelRatio limitado, compartir en redes).
+
+### Técnico
+- `public/games/vendor/three.min.js` (r152 UMD) sirve Three.js local: los juegos funcionan sin CDN ni internet.
+- Schema Prisma ampliado con `EloState` (índice por elo); `db:push` aplicado.
 
 ## [1.8.1] — 2026-09-09 · *Modo Juego AAA autoevolutivo*
 

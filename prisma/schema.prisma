@@ -22,6 +22,20 @@ model Vote {
   @@index([createdAt])
 }
 
+// ELO global persistente (v1.9.0) — sobrevive reinicios.
+// Postgres-ready: para migrar, cambia provider a "postgresql" y DATABASE_URL.
+model EloState {
+  modelId   String   @id
+  elo       Float    @default(1000)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  ties      Int      @default(0)
+  battles   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([elo])
+}
+
 // Ejecución guardada del Modo Agente
 model AgentRun {
   id          String   @id @default(cuid())

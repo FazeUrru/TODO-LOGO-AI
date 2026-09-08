@@ -86,4 +86,7 @@ export interface LeaderRow {
   speed: number;
   isNew: boolean;
   categories: string[];
+  /** ELO global persistente en BD (v1.9.0); null si aún no tiene batallas. */
+  eloGlobal?: number | null;
+  eloGlobalBattles?: number;
 }

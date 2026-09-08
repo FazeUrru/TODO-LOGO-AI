@@ -3,6 +3,7 @@ import ZAI from "z-ai-web-dev-sdk";
 import { MODELS, getModel } from "@/lib/models-data";
 import { db } from "@/lib/db";
 import { expectedScore } from "@/lib/elo";
+import { applyEloDuel } from "@/lib/elo-global";
 import { personaFor } from "@/lib/personas";
 
 export const maxDuration = 60;
@@ -11,12 +12,12 @@ export const maxDuration = 60;
 
 export interface CopaContender {
   modelId: string;
-  label: string; // "A1" | "A2" | "B1" | "B2" | "F1" | "F2"
+  label: string; // "O1"…"O8" | "C1"…"C4" | "S1" | "S2" | "F1" | "F2"
   text: string;
 }
 
 export interface CopaDuel {
-  key: "semi1" | "semi2" | "final";
+  key: string; // "r0d0", "r1d2", …
   a: CopaContender;
   b: CopaContender;
   winner?: "a" | "b";
@@ -27,9 +28,10 @@ export interface Copa {
   id: string;
   prompt: string;
   createdAt: number;
-  semi1: CopaDuel;
-  semi2: CopaDuel;
-  final?: CopaDuel;
+  size: 4 | 8 | 16;
+  roundNames: string[];
+  labelNames: string[]; // prefijo por ronda: ["O","C","S","F"]
+  rounds: CopaDuel[][];
   championModelId?: string;
   revealed: boolean;
 }
@@ -37,8 +39,9 @@ export interface Copa {
 interface TournamentRequest {
   action?: "start" | "vote";
   prompt?: string;
+  size?: number;
   id?: string;
-  duel?: "semi1" | "semi2" | "final";
+  duel?: string;
   winner?: "a" | "b";
 }
 
@@ -50,25 +53,34 @@ const store: Map<string, Copa> = ((globalThis as unknown as {
 
 function persist(copa: Copa) {
   store.set(copa.id, copa);
-  // Limpieza: conserva las 120 copas más recientes
-  if (store.size > 120) {
+  // Limpieza: conserva las 160 copas más recientes
+  if (store.size > 160) {
     const oldest = [...store.values()].sort((x, y) => x.createdAt - y.createdAt);
-    for (const old of oldest.slice(0, store.size - 120)) store.delete(old.id);
+    for (const old of oldest.slice(0, store.size - 160)) store.delete(old.id);
   }
 }
 
 /* ───────────────────────── Sorteo ───────────────────────── */
 
-/** Cuatro modelos distintos del tramo alto del ranking (sorteo aleatorio). */
-function pickFour(): string[] {
+/** N modelos distintos del tramo alto del ranking (sorteo aleatorio). */
+function pickN(n: number): string[] {
   const sorted = [...MODELS].sort((a, b) => b.elo - a.elo);
   const pool = sorted.slice(0, Math.ceil(sorted.length * 0.7));
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  return pool.slice(0, 4).map((m) => m.id);
+  return pool.slice(0, n).map((m) => m.id);
 }
+
+const SIZE_CFG: Record<number, { names: string[]; prefixes: string[] }> = {
+  4: { names: ["Semifinales", "Gran final"], prefixes: ["S", "F"] },
+  8: { names: ["Cuartos de final", "Semifinales", "Gran final"], prefixes: ["C", "S", "F"] },
+  16: {
+    names: ["Octavos de final", "Cuartos de final", "Semifinales", "Gran final"],
+    prefixes: ["O", "C", "S", "F"],
+  },
+};
 
 /* ─────────────────── Generación de respuestas ─────────────────── */
 
@@ -81,8 +93,7 @@ async function genContender(
   modelId: string,
   label: string,
   prompt: string,
-  temperature: number,
-  delayMs = 0
+  temperature: number
 ): Promise<string> {
   const model = getModel(modelId);
   const name = model?.name ?? "Contendiente";
@@ -115,54 +126,55 @@ async function genContender(
     }
   };
 
-  if (delayMs > 0) {
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
-  }
   const t0 = Date.now();
   const first = await attempt(44_000);
   if (first) return first;
-  // Reintento dentro del presupuesto temporal si el primer intento falló rápido
   const remaining = 52_000 - (Date.now() - t0);
   if (remaining < 8_000) return fallbackResponse(label, prompt);
   const second = await attempt(remaining);
   return second ?? fallbackResponse(label, prompt);
 }
 
-/** Genera los cuatro contendientes de las semifinales en paralelo. */
-async function generateSemis(copa: Copa) {
+/** Genera en paralelo todas las respuestas de una ronda. */
+async function generateRound(copa: Copa, roundIdx: number) {
   const zai = await ZAI.create();
-  const [tA1, tA2, tB1, tB2] = await Promise.all([
-    genContender(zai, copa.semi1.a.modelId, "A1", copa.prompt, 0.65, 0),
-    genContender(zai, copa.semi1.b.modelId, "A2", copa.prompt, 0.9, 1_400),
-    genContender(zai, copa.semi2.a.modelId, "B1", copa.prompt, 0.65, 2_800),
-    genContender(zai, copa.semi2.b.modelId, "B2", copa.prompt, 0.9, 4_200),
-  ]);
-  copa.semi1.a.text = tA1;
-  copa.semi1.b.text = tA2;
-  copa.semi2.a.text = tB1;
-  copa.semi2.b.text = tB2;
+  const round = copa.rounds[roundIdx];
+  const prefix = copa.labelNames[roundIdx];
+  await Promise.all(
+    round.map((duel, d) => {
+      const la = prefix + (d * 2 + 1);
+      const lb = prefix + (d * 2 + 2);
+      duel.a.label = la;
+      duel.b.label = lb;
+      return Promise.all([
+        genContender(zai, duel.a.modelId, la, copa.prompt, 0.65).then((t) => (duel.a.text = t)),
+        new Promise((r) => setTimeout(r, 700)).then(() =>
+          genContender(zai, duel.b.modelId, lb, copa.prompt, 0.9).then((t) => (duel.b.text = t))
+        ),
+      ]);
+    })
+  );
   persist(copa);
 }
 
-/** Genera la gran final con los dos semifinalistas ganadores (en paralelo). */
-async function generateFinal(copa: Copa) {
-  const w1 = copa.semi1.winner === "a" ? copa.semi1.a : copa.semi1.b;
-  const w2 = copa.semi2.winner === "a" ? copa.semi2.a : copa.semi2.b;
-  const finalDuel: CopaDuel = {
-    key: "final",
-    a: { modelId: w1.modelId, label: "F1", text: "" },
-    b: { modelId: w2.modelId, label: "F2", text: "" },
-  };
-  copa.final = finalDuel; // marcador sincrónico contra carreras de voto
+/** Cuando una ronda queda decidida, empareja ganadores y genera la siguiente. */
+async function advance(copa: Copa, finishedRound: number) {
+  const round = copa.rounds[finishedRound];
+  if (round.some((d) => !d.winner)) return; // aún hay duelos pendientes
+  const totalRounds = Math.log2(copa.size); // 4→2, 8→3, 16→4
+  if (finishedRound >= totalRounds - 1) return; // era la gran final
+  const winners = round.map((d) => (d.winner === "a" ? d.a.modelId : d.b.modelId));
+  const next: CopaDuel[] = [];
+  for (let i = 0; i < winners.length; i += 2) {
+    next.push({
+      key: `r${finishedRound + 1}d${i / 2}`,
+      a: { modelId: winners[i], label: "", text: "" },
+      b: { modelId: winners[i + 1], label: "", text: "" },
+    });
+  }
+  copa.rounds[finishedRound + 1] = next; // marcador sincrónico contra votos rápidos
   persist(copa);
-  const zai = await ZAI.create();
-  const [tF1, tF2] = await Promise.all([
-    genContender(zai, finalDuel.a.modelId, "F1", copa.prompt, 0.7, 0),
-    genContender(zai, finalDuel.b.modelId, "F2", copa.prompt, 0.85, 1_400),
-  ]);
-  finalDuel.a.text = tF1;
-  finalDuel.b.text = tF2;
-  persist(copa);
+  await generateRound(copa, finishedRound + 1);
 }
 
 /* ─────────────────── ELO: registro + swing ─────────────────── */
@@ -186,6 +198,13 @@ async function recordDuel(copa: Copa, duel: CopaDuel, winner: "a" | "b"): Promis
     /* la copa continúa aunque el registro falle */
   }
 
+  // ELO global persistente (v1.9.0): la copa también mueve el ELO de la BD
+  try {
+    await applyEloDuel(duel.a.modelId, duel.b.modelId, winner === "a" ? "A" : "B");
+  } catch {
+    /* silencioso */
+  }
+
   const exp = expectedScore(A.elo, B.elo);
   return Math.round(24 * (winner === "a" ? 1 - exp : 0 - exp));
 }
@@ -204,8 +223,7 @@ function publicContender(copa: Copa, c: CopaContender) {
   };
 }
 
-function publicDuel(copa: Copa, d?: CopaDuel) {
-  if (!d) return undefined;
+function publicDuel(copa: Copa, d: CopaDuel) {
   return {
     key: d.key,
     a: publicContender(copa, d.a),
@@ -216,30 +234,22 @@ function publicDuel(copa: Copa, d?: CopaDuel) {
 }
 
 function publicState(copa: Copa) {
-  const bothSemisDone = Boolean(copa.semi1.winner && copa.semi2.winner);
-  const finalReady = Boolean(copa.final && copa.final.a.text);
+  const champion = copa.revealed && copa.championModelId
+    ? publicContender(copa, {
+        modelId: copa.championModelId,
+        label: "CAMPEÓN",
+        text: "",
+      }).model
+    : null;
   return {
     id: copa.id,
     prompt: copa.prompt,
     revealed: copa.revealed,
-    phase: copa.revealed
-      ? ("campeon" as const)
-      : finalReady
-        ? ("final" as const)
-        : bothSemisDone
-          ? ("final-cargando" as const)
-          : ("semis" as const),
-    champion:
-      copa.revealed && copa.championModelId
-        ? publicContender(copa, {
-            modelId: copa.championModelId,
-            label: "CAMPEÓN",
-            text: "",
-          }).model
-        : null,
-    semi1: publicDuel(copa, copa.semi1),
-    semi2: publicDuel(copa, copa.semi2),
-    final: publicDuel(copa, copa.final),
+    size: copa.size,
+    roundNames: copa.roundNames,
+    phase: (copa.revealed ? "campeon" : "competencia") as "campeon" | "competencia",
+    rounds: copa.rounds.map((r) => r.map((d) => publicDuel(copa, d))),
+    champion,
   };
 }
 
@@ -268,26 +278,31 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    const allowedSizes = [4, 8, 16];
+    const size = (allowedSizes.includes(Number(body.size)) ? Number(body.size) : 4) as 4 | 8 | 16;
+    const cfg = SIZE_CFG[size];
 
-    const [p1, p2, p3, p4] = pickFour();
+    const ids = pickN(size);
+    const first: CopaDuel[] = [];
+    for (let i = 0; i < ids.length; i += 2) {
+      first.push({
+        key: `r0d${i / 2}`,
+        a: { modelId: ids[i], label: "", text: "" },
+        b: { modelId: ids[i + 1], label: "", text: "" },
+      });
+    }
     const copa: Copa = {
       id: `copa_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
       prompt,
       createdAt: Date.now(),
-      semi1: {
-        key: "semi1",
-        a: { modelId: p1, label: "A1", text: "" },
-        b: { modelId: p2, label: "A2", text: "" },
-      },
-      semi2: {
-        key: "semi2",
-        a: { modelId: p3, label: "B1", text: "" },
-        b: { modelId: p4, label: "B2", text: "" },
-      },
+      size,
+      roundNames: cfg.names,
+      labelNames: cfg.prefixes,
+      rounds: [first],
       revealed: false,
     };
     persist(copa);
-    await generateSemis(copa);
+    await generateRound(copa, 0);
     return NextResponse.json({ ok: true, copa: publicState(copa) });
   }
 
@@ -307,8 +322,9 @@ export async function POST(req: NextRequest) {
         { status: 404 }
       );
     }
-    const duel =
-      duelKey === "semi1" ? copa.semi1 : duelKey === "semi2" ? copa.semi2 : copa.final;
+    const rIdx = Number(duelKey.slice(1, duelKey.indexOf("d")));
+    const dIdx = Number(duelKey.slice(duelKey.indexOf("d") + 1));
+    const duel = copa.rounds[rIdx]?.[dIdx];
     if (!duel || !duel.a.text) {
       return NextResponse.json(
         { error: "Ese duelo todavía no está disponible." },
@@ -321,22 +337,12 @@ export async function POST(req: NextRequest) {
       duel.winner = winner;
       duel.swing = await recordDuel(copa, duel, winner);
       persist(copa);
-
-      // Semifinales completas → se genera la gran final
-      if (
-        duelKey !== "final" &&
-        copa.semi1.winner &&
-        copa.semi2.winner &&
-        !copa.final
-      ) {
-        await generateFinal(copa);
-      }
-
+      // Ronda completa → se genera la siguiente con los ganadores
+      await advance(copa, rIdx);
       // Final votada → revelación y campeón
-      if (duelKey === "final" && copa.final) {
+      if (rIdx === copa.rounds.length - 1) {
         copa.revealed = true;
-        copa.championModelId =
-          winner === "a" ? copa.final.a.modelId : copa.final.b.modelId;
+        copa.championModelId = winner === "a" ? duel.a.modelId : duel.b.modelId;
         persist(copa);
       }
     }

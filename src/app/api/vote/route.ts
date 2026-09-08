@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getModel } from "@/lib/models-data";
 import { eloDeltaFromVotes, expectedScore, type Winner } from "@/lib/elo";
+import { applyEloDuel } from "@/lib/elo-global";
 
 interface VoteRequest {
   battleId?: string;
@@ -77,6 +78,15 @@ export async function POST(req: NextRequest) {
         category,
       },
     });
+
+    // ELO global persistente (v1.9.0): el voto mueve un ELO real en la BD
+    if (winner !== "bad") {
+      try {
+        await applyEloDuel(modelAId, modelBId, winner);
+      } catch {
+        /* la batalla continúa aunque el ELO global falle */
+      }
+    }
   } catch {
     return NextResponse.json(
       { error: "No se pudo registrar el voto." },

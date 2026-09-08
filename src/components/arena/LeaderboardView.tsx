@@ -50,6 +50,8 @@ interface LeaderRow {
   speed: number;
   isNew: boolean;
   categories: string[];
+  eloGlobal?: number | null;
+  eloGlobalBattles?: number;
 }
 
 const TABS: { id: string; label: string; icon: LucideIcon }[] = [
@@ -513,6 +515,14 @@ export default function LeaderboardView() {
                               >
                                 {r.delta > 0 ? "+" : ""}
                                 {r.delta}
+                              </p>
+                            )}
+                            {typeof r.eloGlobal === "number" && (
+                              <p
+                                className="font-mono text-[10px] text-muted-foreground"
+                                title="ELO global persistente en la base de datos (v1.9.0)"
+                              >
+                                G {r.eloGlobal} · {r.eloGlobalBattles} batallas
                               </p>
                             )}
                           </td>

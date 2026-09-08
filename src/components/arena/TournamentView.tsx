@@ -9,6 +9,7 @@ import {
   Swords,
   CircleCheck,
   ArrowDown,
+  Users,
 } from "lucide-react";
 import { useArena } from "@/components/shell/arena-context";
 import Markdown from "./Markdown";
@@ -26,7 +27,7 @@ interface Contender {
 }
 
 interface Duel {
-  key: "semi1" | "semi2" | "final";
+  key: string;
   a: Contender;
   b: Contender;
   winner?: "a" | "b";
@@ -37,12 +38,14 @@ interface Copa {
   id: string;
   prompt: string;
   revealed: boolean;
-  phase: "semis" | "final-cargando" | "final" | "campeon";
+  size: number;
+  roundNames: string[];
+  phase: "campeon" | "competencia";
+  rounds: Duel[][];
   champion?: Contender["model"] | null;
-  semi1?: Duel;
-  semi2?: Duel;
-  final?: Duel;
 }
+
+const SIZES = [4, 8, 16] as const;
 
 const EXAMPLES = [
   "Explícale a un niño de 10 años por qué el cielo es azul, con una analogía memorable",
@@ -96,12 +99,6 @@ function ContenderCard({
   const c = side === "a" ? duel.a : duel.b;
   const isWinner = showResult && duel.winner === side;
   const isLoser = showResult && duel.winner && duel.winner !== side;
-  const tag =
-    duel.key === "final"
-      ? c.label === "F1"
-        ? "Ganador SF1"
-        : "Ganador SF2"
-      : `Contendiente ${c.label}`;
 
   return (
     <div
@@ -113,7 +110,9 @@ function ContenderCard({
     >
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
         <Swords className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <span className="font-mono text-[12.5px] font-medium">{tag}</span>
+        <span className="font-mono text-[12.5px] font-medium">
+          {c.label ? `Contendiente ${c.label}` : "Contendiente"}
+        </span>
         {isWinner && (
           <span className="ml-auto flex items-center gap-1 rounded-full bg-highlight px-2 py-0.5 text-[10.5px] font-semibold uppercase">
             <Crown className="h-3 w-3" /> Pasa la ronda
@@ -153,26 +152,22 @@ function ContenderCard({
 function DuelCard({
   duel,
   title,
+  isFinal,
   voting,
   onVote,
 }: {
   duel: Duel;
   title: string;
+  isFinal: boolean;
   voting: boolean;
   onVote: (winner: "a" | "b") => void;
 }) {
   const decided = Boolean(duel.winner);
-  const labelA =
-    duel.key === "final"
-      ? "Gana el ganador SF1"
-      : `Gana ${duel.a.label}`;
-  const labelB =
-    duel.key === "final"
-      ? "Gana el ganador SF2"
-      : `Gana ${duel.b.label}`;
+  const labelA = isFinal ? "Corona al campeón (A)" : `Gana ${duel.a.label || "A"}`;
+  const labelB = isFinal ? "Corona al campeón (B)" : `Gana ${duel.b.label || "B"}`;
 
   return (
-    <section className={cn("fade-up", duel.key === "final" && "mx-auto w-full max-w-[820px]")}>
+    <section className={cn("fade-up", isFinal && "mx-auto w-full max-w-[820px]")}>
       <header className="mb-2 flex items-center justify-between">
         <h3 className="font-display text-[17px] font-semibold">{title}</h3>
         {decided ? (
@@ -185,7 +180,7 @@ function DuelCard({
           </span>
         )}
       </header>
-      <div className={cn("grid gap-3", duel.key !== "final" && "sm:grid-cols-1 lg:grid-cols-1")}>
+      <div className={cn("grid gap-3", !isFinal && "sm:grid-cols-1 lg:grid-cols-1")}>
         <ContenderCard duel={duel} side="a" showResult={decided} />
         <ContenderCard duel={duel} side="b" showResult={decided} />
       </div>
@@ -202,7 +197,7 @@ function DuelCard({
                 onClick={() => onVote(w)}
                 className={cn(
                   "flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-[13px] font-medium transition-colors",
-                  w === "a" ? "border-border hover:bg-accent" : "border-border hover:bg-accent",
+                  "border-border hover:bg-accent",
                   voting && "cursor-wait opacity-60"
                 )}
               >
@@ -223,6 +218,7 @@ export default function TournamentView() {
   const arena = useArena();
   const { toast } = useToast();
   const [prompt, setPrompt] = useState("");
+  const [size, setSize] = useState<number>(4);
   const [copa, setCopa] = useState<Copa | null>(null);
   const [starting, setStarting] = useState(false);
   const [votingDuel, setVotingDuel] = useState<string | null>(null);
@@ -231,7 +227,7 @@ export default function TournamentView() {
   const startCopa = async () => {
     const p = prompt.trim();
     if (p.length < 2) {
-      setError("Escribe la consigna con la que competirán los 4 modelos.");
+      setError(`Escribe la consigna con la que competirán los ${size} modelos.`);
       return;
     }
     setStarting(true);
@@ -240,7 +236,7 @@ export default function TournamentView() {
       const res = await fetch("/api/tournament", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", prompt: p }),
+        body: JSON.stringify({ action: "start", prompt: p, size }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "No se pudo iniciar la copa.");
@@ -255,7 +251,7 @@ export default function TournamentView() {
     }
   };
 
-  const vote = async (duelKey: "semi1" | "semi2" | "final", winner: "a" | "b") => {
+  const vote = async (duelKey: string, winner: "a" | "b") => {
     if (!copa || votingDuel) return;
     setVotingDuel(duelKey);
     try {
@@ -289,29 +285,64 @@ export default function TournamentView() {
           <div className="copa-pop flex items-center gap-2">
             <Trophy className="h-7 w-7" strokeWidth={2.2} />
             <span className="font-display text-[30px] font-semibold">Copa Todólogo</span>
-            <span className="rounded bg-highlight px-1.5 py-0.5 text-[10px] font-bold uppercase">
-              Nuevo
-            </span>
           </div>
           <h1 className="mt-3 text-center font-display text-[40px] font-light leading-[1.1] tracking-tight sm:text-[48px]">
-            Cuatro modelos.{" "}
+            Hasta 16 modelos.{" "}
             <span className="bg-highlight inline-block px-2 font-medium italic leading-[1.05]">
               Un campeón.
             </span>
           </h1>
           <p className="mt-4 max-w-[560px] text-center text-[14.5px] leading-relaxed text-muted-foreground">
-            El torneo de eliminación directa que no existe en ningún otro arena: sortea 4
-            modelos anónimos, compiten en semifinales con tu misma consigna, tú decides quién
-            gana cada duelo y los finalistas se enfrentan en la gran final. Todos los votos
-            mueven el ELO real del ranking.
+            El torneo de eliminación directa que no existe en ningún otro arena: sortea 4, 8
+            o 16 modelos anónimos, compiten por eliminatorias con tu misma consigna, tú
+            decides quién gana cada duelo y la gran final corona al campeón. Todos los votos
+            mueven el ELO real del ranking — y desde la v1.9.0 también el ELO global
+            persistente.
           </p>
 
+          {/* Selector de tamaño */}
+          <div className="mt-6 flex w-full max-w-[640px] flex-col gap-2 rounded-xl border border-border bg-card p-3">
+            <p className="flex items-center gap-1.5 text-[12.5px] font-medium text-muted-foreground">
+              <Users className="h-3.5 w-3.5" /> Tamaño del cuadro
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {SIZES.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSize(s)}
+                  className={cn(
+                    "rounded-lg border px-3 py-2.5 text-center transition-colors",
+                    size === s
+                      ? "border-foreground bg-accent"
+                      : "border-border hover:bg-accent/60"
+                  )}
+                >
+                  <span className="block font-display text-[19px] font-semibold">{s}</span>
+                  <span className="block text-[10.5px] text-muted-foreground">
+                    {s === 4
+                      ? "Semis + final"
+                      : s === 8
+                        ? "Cuartos + semis + final"
+                        : "Octavos · torneo XXL"}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {size > 4 && (
+              <p className="text-[11.5px] text-muted-foreground">
+                {size === 8
+                  ? "3 rondas y 7 duelos: el sorteo genera los cuartos en paralelo (~15-50 s) y cada ronda se juega al votar."
+                  : "4 rondas y 15 duelos: torneo completo con octavos, cuartos, semis y gran final. Cada ronda se genera al votar la anterior."}
+              </p>
+            )}
+          </div>
+
           {/* Reglas */}
-          <div className="mt-6 grid w-full max-w-[640px] gap-2 sm:grid-cols-4">
+          <div className="mt-4 grid w-full max-w-[640px] gap-2 sm:grid-cols-4">
             {[
-              ["1", "Sorteo", "4 modelos del top del ranking, en anonato total"],
-              ["2", "Semifinales", "Los 4 responden tu consigna; votas 2 ganadores"],
-              ["3", "Gran final", "Los ganadores responden de nuevo; elige al campeón"],
+              ["1", "Sorteo", `${size} modelos del top del ranking, en anonato total`],
+              ["2", "Primera ronda", `Los ${size} responden; votas a los ganadores`],
+              ["3", "Eliminatorias", "Cada ronda se genera al votar la anterior"],
               ["4", "Revelación", "Se destapan las identidades y el ELO se ajusta"],
             ].map(([n, t, d]) => (
               <div key={n} className="rounded-xl border border-border bg-card px-3 py-2.5">
@@ -325,7 +356,7 @@ export default function TournamentView() {
           {/* Consigna */}
           <div className="mt-8 w-full max-w-[640px]">
             <label className="mb-1.5 block text-[12.5px] font-medium text-muted-foreground">
-              Consigna de la copa (los 4 modelos responderán lo mismo)
+              Consigna de la copa (los {size} modelos responderán lo mismo)
             </label>
             <textarea
               value={prompt}
@@ -355,12 +386,12 @@ export default function TournamentView() {
               {starting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Sorteando contendientes y generando semifinales…
+                  Sorteando {size} contendientes y generando la primera ronda…
                 </>
               ) : (
                 <>
                   <Trophy className="h-4 w-4" />
-                  Sortear e iniciar la copa
+                  Sortear e iniciar la copa de {size}
                 </>
               )}
               {starting && (
@@ -368,7 +399,8 @@ export default function TournamentView() {
               )}
             </button>
             <p className="mt-2 text-center text-[11.5px] text-muted-foreground">
-              Semifinales en paralelo (~15-50 s). Después votas las dos rondas y la final.
+              Primera ronda en paralelo (~15-50 s). Después votas ronda a ronda hasta la
+              gran final.
             </p>
           </div>
         </div>
@@ -379,12 +411,7 @@ export default function TournamentView() {
   /* ── Campeón y revelación ── */
   if (copa.revealed && copa.phase === "campeon") {
     const champ = copa.champion;
-    const all: { label: string; model?: Contender["model"] }[] = [
-      { label: "A1", model: copa.semi1?.a.model },
-      { label: "A2", model: copa.semi1?.b.model },
-      { label: "B1", model: copa.semi2?.a.model },
-      { label: "B2", model: copa.semi2?.b.model },
-    ];
+    const all = (copa.rounds[0] ?? []).flatMap((d) => [d.a, d.b]);
     return (
       <div className="relative flex flex-1 flex-col items-center overflow-y-auto scrollbar-thin px-4">
         <Confetti />
@@ -393,7 +420,7 @@ export default function TournamentView() {
             <Trophy className="h-8 w-8" strokeWidth={2.2} />
           </div>
           <p className="mt-4 text-[12.5px] font-medium uppercase tracking-widest text-muted-foreground">
-            Campeón de la Copa Todólogo
+            Campeón de la Copa Todólogo de {copa.size}
           </p>
           <div className="copa-pop mt-2 flex items-center gap-3">
             <ProviderLogo provider={champ?.provider ?? ""} size={30} />
@@ -402,30 +429,30 @@ export default function TournamentView() {
             </span>
           </div>
           <p className="mt-2 font-mono text-[13px] text-muted-foreground">
-            {champ?.elo ? `ELO base ${champ.elo}` : ""} · 3 duelos ganados · votos registrados en el ranking real
+            {champ?.elo ? `ELO base ${champ.elo}` : ""} · {copa.rounds.length} duelos ganados ·
+            votos registrados en el ranking real y el ELO global
           </p>
 
           {/* Revelación de identidades */}
-          <div className="mt-8 w-full max-w-[640px] rounded-2xl border border-border bg-card p-4">
+          <div className="mt-8 w-full max-w-[680px] rounded-2xl border border-border bg-card p-4">
             <p className="mb-3 text-center text-[13px] font-medium">
-              ¿Quién era quién? La copa era anónima y estas son las identidades
+              ¿Quién era quién? La copa de {copa.size} era anónima y estas son las
+              identidades
             </p>
-            <div className="grid grid-cols-2 gap-2">
-              {all.map(({ label, model }) => (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {all.map((c) => (
                 <div
-                  key={label}
+                  key={c.label}
                   className="flex items-center gap-2 rounded-xl border border-border px-3 py-2"
                 >
-                  <ProviderLogo provider={model?.provider ?? ""} size={18} />
+                  <ProviderLogo provider={c.model?.provider ?? ""} size={18} />
                   <div className="min-w-0">
                     <p className="truncate font-mono text-[12.5px] font-medium">
-                      {model?.name ?? "—"}
+                      {c.model?.name ?? "—"}
                     </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Contendiente {label}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">Contendiente {c.label}</p>
                   </div>
-                  {champ && model?.id === champ.id && (
+                  {champ && c.model?.id === champ.id && (
                     <Crown className="ml-auto h-4 w-4 shrink-0 text-amber-500" />
                   )}
                 </div>
@@ -446,9 +473,9 @@ export default function TournamentView() {
   }
 
   /* ── Bracket en curso ── */
-  const semisDecided = Boolean(copa.semi1?.winner && copa.semi2?.winner);
-  const finalLoading = semisDecided && !copa.final?.a.text;
-  const finalDuel = copa.final?.a.text ? copa.final : undefined;
+  const lastIdx = copa.rounds.length - 1;
+  const lastRound = copa.rounds[lastIdx] ?? [];
+  const lastDecided = lastRound.length > 0 && lastRound.every((d) => d.winner);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -459,7 +486,9 @@ export default function TournamentView() {
             <div className="flex min-w-0 items-center gap-2.5">
               <Trophy className="h-4 w-4 shrink-0" />
               <div className="min-w-0">
-                <p className="text-[13.5px] font-medium">Copa Todólogo en curso</p>
+                <p className="text-[13.5px] font-medium">
+                  Copa Todólogo de {copa.size} en curso
+                </p>
                 <p className="truncate text-[12px] text-muted-foreground">«{copa.prompt}»</p>
               </div>
             </div>
@@ -471,65 +500,89 @@ export default function TournamentView() {
             </button>
           </div>
 
-          {/* Semifinales */}
-          <div className="grid gap-5 lg:grid-cols-2">
-            {copa.semi1 && (
-              <DuelCard
-                duel={copa.semi1}
-                title="Semifinal 1"
-                voting={votingDuel === "semi1"}
-                onVote={(w) => vote("semi1", w)}
-              />
-            )}
-            {copa.semi2 && (
-              <DuelCard
-                duel={copa.semi2}
-                title="Semifinal 2"
-                voting={votingDuel === "semi2"}
-                onVote={(w) => vote("semi2", w)}
-              />
-            )}
-          </div>
-
-          {/* Conector hacia la final */}
-          <div className="my-4 flex items-center justify-center gap-2 text-muted-foreground">
-            <span className="h-px w-16 bg-border sm:w-28" />
-            <ArrowDown className={cn("h-4 w-4", semisDecided && "copa-pulse")} />
-            <span className="h-px w-16 bg-border sm:w-28" />
-          </div>
-
-          {/* Gran final */}
-          {finalLoading && (
-            <div className="fade-up mx-auto w-full max-w-[820px]">
-              <h3 className="mb-2 text-center font-display text-[17px] font-semibold">
-                Gran final
-              </h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {["F1", "F2"].map((l) => (
-                  <div
-                    key={l}
-                    className="copa-pulse flex h-[120px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card"
-                  >
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    <p className="mt-2 text-[12.5px] text-muted-foreground">
-                      Ganador de la {l === "F1" ? "SF1" : "SF2"} respondiendo…
+          {copa.rounds.map((round, ri) => {
+            const isFinalRound = ri === lastIdx;
+            const roundDecided = round.every((d) => d.winner);
+            return (
+              <div key={`round-${ri}`}>
+                <div
+                  className={cn(
+                    "grid gap-5",
+                    !isFinalRound && "lg:grid-cols-2",
+                    round.length > 2 && "xl:grid-cols-2"
+                  )}
+                >
+                  {round.map((duel) => (
+                    <DuelCard
+                      key={duel.key}
+                      duel={duel}
+                      title={
+                        isFinalRound
+                          ? "Gran final — ¿quién es el campeón?"
+                          : `${copa.roundNames[ri]} · Duelo ${
+                              Number(duel.key.slice(duel.key.indexOf("d") + 1)) + 1
+                            }`
+                      }
+                      isFinal={isFinalRound}
+                      voting={votingDuel === duel.key}
+                      onVote={(w) => vote(duel.key, w)}
+                    />
+                  ))}
+                </div>
+                {ri < lastIdx && (
+                  <div className="my-4 flex items-center justify-center gap-2 text-muted-foreground">
+                    <span className="h-px w-16 bg-border sm:w-28" />
+                    <ArrowDown className={cn("h-4 w-4", roundDecided && "copa-pulse")} />
+                    <span className="h-px w-16 bg-border sm:w-28" />
+                  </div>
+                )}
+                {isFinalRound && !roundDecided && round.some((d) => !d.a.text) && (
+                  <div className="fade-up mx-auto mt-3 w-full max-w-[820px]">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {round.map((d, di) =>
+                        d.a.text ? null : (
+                          <div
+                            key={d.key}
+                            className="copa-pulse flex h-[120px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card"
+                          >
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            <p className="mt-2 text-[12.5px] text-muted-foreground">
+                              Finalista {di + 1} respondiendo…
+                            </p>
+                          </div>
+                        )
+                      )}
+                    </div>
+                    <p className="mt-3 text-center text-[12px] text-muted-foreground">
+                      Los finalistas están generando sus respuestas ahora mismo.
                     </p>
                   </div>
-                ))}
+                )}
+                {/* Ronda siguiente aún sin generar */}
+                {roundDecided && ri + 1 >= copa.rounds.length && !isFinalRound && (
+                  <div className="fade-up mx-auto mt-2 w-full max-w-[820px]">
+                    <div className="copa-pulse flex h-[86px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      <p className="mt-2 text-[12.5px] text-muted-foreground">
+                        Generando {copa.roundNames[ri + 1]?.toLowerCase() ?? "siguiente ronda"}…
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="mt-3 text-center text-[12px] text-muted-foreground">
-                Los dos finalistas están generando sus respuestas ahora mismo.
-              </p>
-            </div>
-          )}
+            );
+          })}
 
-          {finalDuel && (
-            <DuelCard
-              duel={finalDuel}
-              title="Gran final — ¿quién es el campeón?"
-              voting={votingDuel === "final"}
-              onVote={(w) => vote("final", w)}
-            />
+          {/* Última ronda decidida pero sin revelar (cargando campeón) */}
+          {lastDecided && !copa.revealed && (
+            <div className="fade-up mx-auto mt-2 w-full max-w-[820px]">
+              <div className="copa-pulse flex h-[86px] items-center justify-center rounded-xl border border-dashed border-border bg-card">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <p className="ml-2 text-[12.5px] text-muted-foreground">
+                  Preparando la revelación del campeón…
+                </p>
+              </div>
+            </div>
           )}
 
           <div className="h-6" />

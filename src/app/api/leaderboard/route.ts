@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { MODELS, PROVIDERS } from "@/lib/models-data";
 import { categoryElo, eloDeltaFromVotes, type LeaderRow } from "@/lib/elo";
+import { getGlobalEloMap } from "@/lib/elo-global";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const category = req.nextUrl.searchParams.get("category") ?? "global";
+  const globalMap = await getGlobalEloMap();
 
   let winMap: Record<string, { wins: number; losses: number; ties: number; bads: number }> = {};
   try {
@@ -55,6 +57,8 @@ export async function GET(req: NextRequest) {
       speed: m.speed,
       isNew: Boolean(m.isNew),
       categories: m.categories,
+      eloGlobal: globalMap[m.id]?.elo ?? null,
+      eloGlobalBattles: globalMap[m.id]?.battles ?? 0,
     };
   });
 
