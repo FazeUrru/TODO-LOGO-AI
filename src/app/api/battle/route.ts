@@ -19,7 +19,7 @@ interface BattleRequest {
   single?: boolean;
   historyA?: HistoryTurn[];
   historyB?: HistoryTurn[];
-  composerMode?: "texto" | "codigo" | "imagen" | "video" | "modelos3d" | "web" | "profundo";
+  composerMode?: "texto" | "codigo" | "imagen" | "video" | "modelos3d" | "web" | "profundo" | "juego";
 }
 
 interface WebSource {
@@ -183,6 +183,9 @@ export async function POST(req: NextRequest) {
   if (body.composerMode === "codigo") {
     composerFraming =
       "MODO CÓDIGO: entrega código COMPLETO y ejecutable en bloques ``` etiquetados con el lenguaje, con imports, comentarios breves y una explicación mínima antes y después. Nada de '…' ni código truncado: listo para pegar y funcionar (estándares 2026). El límite de palabras no aplica al código.";
+  } else if (body.composerMode === "juego") {
+    composerFraming =
+      `MODO JUEGO AAA: actúa como DIRECTOR DE JUEGOS de élite (ambición Rockstar: GTA VI, Red Dead Redemption 2). Estructura la respuesta así: (1) **Ficha del juego** — nombre épico, género, pilar de diseño y gancho único en 2-3 líneas. (2) **Sistemas autoevolutivos** — cómo el juego evoluciona SOLO: dificultad adaptativa que aprende del jugador, generación procedural, NPCs tipo Némesis que recuerdan derrotas y cambian de rango, mundo vivo con eventos que mutan. (3) **Stack AAA** — motor y pipeline realistas de 2026 en 1-2 líneas. (4) **PROTOTIPO JUGABLE** — un juego COMPLETO y jugable en UN solo bloque \`\`\`html autocontenido (canvas + JS embebido, cero dependencias externas): controles de teclado o ratón, HUD con puntuación/oleada, dificultad que sube sola según el rendimiento del jugador, al menos un sistema que evolucione (enemigos más rápidos, nuevos patrones, mejora procedural de armas), pantalla de inicio y game over con reinicio, y estética pulida (paleta neón, partículas, sombras). IMPORTANTE: envuelve cualquier localStorage en try/catch (puede estar bloqueado en iframes) y degrada a memoria. El bloque HTML no cuenta en el límite de palabras. Cierra con la sección «¿Siguiente paso?» (¿añado sonido?, ¿modo 2 jugadores?, ¿lo convierto en RPG?).`;
   } else if (body.composerMode === "video") {
     composerFraming =
       "MODO VÍDEO: actúa como director de cine. Convierte la petición en un guion de vídeo con 3 escenas numeradas (ESCENA 1, ESCENA 2, ESCENA 3): plano sugerido, acción, texto en pantalla y música. Lenguaje claro para todos los públicos, máximo 190 palabras. Al final añade una línea con ideas de transición.";

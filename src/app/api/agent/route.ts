@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 export const maxDuration = 90;
 
 const PROJECT_TYPES: Record<string, string> = {
-  "juego-aaa": "Videojuego AAA (motor 3D, gráficos de última generación, gameplay complejo)",
+  "juego-aaa": "Videojuego AAA autoevolutivo (mundo vivo, NPCs que aprenden, oleadas y ecosistema que evolucionan solos — estilo Steam/GTA VI)",
   "app-web": "Aplicación web interactiva (SPA/SSR moderna con backend)",
   "app-movil": "Aplicación móvil nativa/cross-platform",
   saas: "Plataforma SaaS multi-tenant completa (frontend + backend + facturación)",
@@ -78,7 +78,9 @@ function templatePlan(desc: string, typeKey: string, autonomy: string, budget: s
         steps: [
           "Scaffold del proyecto y tooling (lint, tests, CI)",
           "Implementación de módulos críticos en paralelo por sub-agentes",
-          "Integración continua con puertas de calidad",
+          typeKey === "juego-aaa"
+            ? "Sistemas autoevolutivos: dificultad adaptativa, spawns procedurales y némesis que recuerdan"
+            : "Integración continua con puertas de calidad",
         ],
       },
       {
@@ -111,6 +113,9 @@ function templatePlan(desc: string, typeKey: string, autonomy: string, budget: s
     ],
     stack: [
       { layer: "Motor/Framework", choice: typeKey === "juego-aaa" ? "Unreal Engine 5.6 + C++/Blueprints" : "Next.js 16 + TypeScript" },
+      ...(typeKey === "juego-aaa"
+        ? [{ layer: "Autoevolución", choice: "Dificultad adaptativa con ML + generación procedural + NPCs Némesis persistentes; mutaciones estilo Steam Workshop" }]
+        : []),
       { layer: "Backend", choice: "Rust (Axum) + PostgreSQL 17" },
       { layer: "Infra", choice: "Kubernetes + Terraform, CDN global" },
       { layer: "CI/CD", choice: "GitHub Actions con puertas de calidad automáticas" },

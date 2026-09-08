@@ -129,7 +129,7 @@ interface AgentPlan {
   totalEstimate: string;
 }
 
-type ComposerMode = "texto" | "codigo" | "imagen" | "video" | "modelos3d" | "web" | "profundo";
+type ComposerMode = "texto" | "codigo" | "imagen" | "video" | "modelos3d" | "web" | "profundo" | "juego";
 
 const CATEGORIES = BATTLE_CATEGORIES;
 
@@ -137,9 +137,10 @@ const STARTERS = [
   {
     icon: Gamepad2,
     title: "Crea un juego",
-    sub: "Un arcade jugable en el navegador",
+    sub: "Arcade AAA jugable y autoevolutivo",
+    juego: true,
     prompt:
-      "Crea un juego arcade completo en HTML/CSS/JS que se pueda jugar en el navegador:NEÓN snake con puntuación, niveles de velocidad y controles de teclado.",
+      "Crea NEÓN ARENA: un arcade de supervivencia con oleadas que suben solas, enemigos que aprenden de mi estilo y mejoras procedurales entre rondas.",
   },
   {
     icon: ImageIcon,
@@ -232,6 +233,7 @@ const SKILLS: Skill[] = [
   { id: "imagen", icon: ImageIcon, name: "/imagen", desc: "Genera una ilustración con IA", mode: "imagen" },
   { id: "video", icon: Clapperboard, name: "/video", desc: "Escribe un guion de vídeo (beta)", mode: "video" },
   { id: "modelo3d", icon: Box, name: "/modelo3d", desc: "Crea un modelo 3D interactivo", mode: "modelos3d" },
+  { id: "juego", icon: Gamepad2, name: "/juego", desc: "Juego AAA jugable y autoevolutivo", mode: "juego" },
   { id: "codigo", icon: SquareTerminal, name: "/codigo", desc: "Respuesta con código listo", mode: "codigo" },
   { id: "explica", icon: HelpCircle, name: "/explica", desc: "Explicación sencilla para todos", prefix: "Explícame de forma muy sencilla, para todos los públicos: " },
   { id: "resume", icon: ScrollText, name: "/resume", desc: "Resumen en puntos clave", prefix: "Resume en puntos clave lo siguiente:\n\n" },
@@ -303,6 +305,7 @@ export default function ChatExperience() {
   const usedVideo = useUsed("modo-video");
   const used3d = useUsed("modo-3d");
   const usedCodigo = useUsed("modo-codigo");
+  const usedJuego = useUsed("modo-juego");
   const usedSkills = useUsed("skills");
   const usedArchivos = useUsed("archivos");
   const usedWeb = useUsed("modo-web");
@@ -510,6 +513,7 @@ export default function ChatExperience() {
       ensureDirect(next === "modelos3d" ? "El 3D" : `El modo ${next}`);
     }
     if (next === "codigo") markUsed("modo-codigo");
+    if (next === "juego") markUsed("modo-juego");
     if (next === "imagen") markUsed("modo-imagen");
     if (next === "video") markUsed("modo-video");
     if (next === "modelos3d") markUsed("modo-3d");
@@ -1023,6 +1027,8 @@ export default function ChatExperience() {
 
           {/* Modo código */}
           {modeToggle("codigo", SquareTerminal, usedCodigo, "Modo código: respuestas con bloques listos")}
+          {/* Modo Juego AAA */}
+          {modeToggle("juego", Gamepad2, usedJuego, "Modo Juego AAA: diseña y programa un juego jugable autoevolutivo")}
           {/* Modo imagen */}
           {modeToggle("imagen", ImageIcon, usedImagen, "Modo imagen: genera una ilustración con IA")}
           {/* Modo vídeo */}
@@ -1305,6 +1311,10 @@ export default function ChatExperience() {
                       markUsed("modo-codigo");
                       setCMode("codigo");
                       send(s.prompt, "codigo");
+                    } else if ("juego" in s && s.juego) {
+                      markUsed("modo-juego");
+                      setCMode("juego");
+                      send(s.prompt, "juego");
                     } else {
                       setPrompt(s.prompt);
                       send(s.prompt);

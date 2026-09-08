@@ -522,6 +522,113 @@ function recipe3D(prompt: string): { text: string } {
   };
 }
 
+/* ─────────────── Modo Juego AAA: prototipo jugable autoevolutivo ─────────────── */
+
+function gameBlueprint(prompt: string, seed = 0): string {
+  const h = hashStr(prompt) + seed * 7919;
+  const palettes = [
+    { bg: "#0B0E1A", neon: "#22D3EE", hot: "#F472B6", hero: "#F4C406" },
+    { bg: "#120B1E", neon: "#A78BFA", hot: "#34D399", hero: "#FBBF24" },
+    { bg: "#101A14", neon: "#4ADE80", hot: "#F87171", hero: "#38BDF8" },
+  ];
+  const pal = palettes[h % palettes.length];
+  const names = ["NEÓN ARENA", "ECOS DEL VACÍO", "ÚLTIMO FARO", "VECTOR CARMESÍ", "PULSO CERO"];
+  const name = names[(h >> 3) % names.length];
+
+  const html = [
+    "<!DOCTYPE html>",
+    '<html lang="es">',
+    "<head>",
+    '<meta charset="utf-8">',
+    "<title>" + name + "</title>",
+    "<style>",
+    "html,body{margin:0;height:100%;background:#05060F;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}",
+    "canvas{border-radius:12px;box-shadow:0 0 42px " + pal.neon + "55}",
+    "#hud{position:fixed;top:10px;left:14px;color:#fff;font:12px/1.6 ui-monospace,monospace;white-space:pre;text-shadow:0 0 6px " + pal.neon + ";pointer-events:none}",
+    "</style>",
+    "</head>",
+    "<body>",
+    '<canvas id="c" width="480" height="320"></canvas>',
+    '<div id="hud"></div>',
+    "<script>",
+    'var C=document.getElementById("c"),X=C.getContext("2d"),HUD=document.getElementById("hud");',
+    "var W=C.width,H=C.height,BG='" + pal.bg + "',NEON='" + pal.neon + "',HOT='" + pal.hot + "',HERO='" + pal.hero + "';",
+    "var keys={},px,py,foes=[],bullets=[],parts=[],score=0,wave=1,tick=0,cool=0,alive=false,best=0,ev=[];",
+    "try{best=+localStorage.getItem('neon-best')||0}catch(e){best=0}",
+    "function reset(){px=W/2;py=H/2;foes=[];bullets=[];parts=[];score=0;wave=1;tick=0;cool=0;ev=['Mundo procedural generado'];alive=true}",
+    "document.addEventListener('keydown',function(e){var k=e.key.toLowerCase();keys[k]=true;if((k===' '||k==='enter')&&!alive)reset();if(k.indexOf('arrow')===0)e.preventDefault()});",
+    "document.addEventListener('keyup',function(e){keys[e.key.toLowerCase()]=false});",
+    "C.addEventListener('pointerdown',function(){if(!alive)reset()});",
+    "function spawn(){var side=Math.floor(Math.random()*4);var x=side===0?-10:side===1?W+10:Math.random()*W;var y=side===2?-10:side===3?H+10:Math.random()*H;",
+    " var nem=wave>=3&&Math.random()<0.10+wave*0.02;",
+    " foes.push({x:x,y:y,r:nem?14:7+Math.random()*3,v:0.5+wave*0.11+(nem?0.55:0),hp:nem?3+Math.floor(wave/2):1,nem:nem,name:'NEMESIS-'+String.fromCharCode(65+Math.floor(Math.random()*26))+(wave)})}",
+    "function boom(x,y,c,n){for(var i=0;i<n;i++){var a=Math.random()*6.283;parts.push({x:x,y:y,vx:Math.cos(a)*(1+Math.random()*2.5),vy:Math.sin(a)*(1+Math.random()*2.5),l:18+Math.random()*14,c:c})}}",
+    "function nearest(){var m=null,d=1e9;foes.forEach(function(f){var dx=f.x-px,dy=f.y-py,q=dx*dx+dy*dy;if(q<d){d=q;m=f}});return m}",
+    "function loop(){requestAnimationFrame(loop);",
+    " if(alive){tick++;cool--;var s=2.4;",
+    "  if(keys.arrowleft||keys.a)px-=s;if(keys.arrowright||keys.d)px+=s;if(keys.arrowup||keys.w)py-=s;if(keys.arrowdown||keys.s)py+=s;",
+    "  px=Math.max(8,Math.min(W-8,px));py=Math.max(8,Math.min(H-8,py));",
+    "  if(tick%Math.max(20,64-wave*5)===0)spawn();",
+    "  if(cool<=0&&foes.length){var n=nearest();if(n){var an=Math.atan2(n.y-py,n.x-px);var v=3+wave*0.15;bullets.push({x:px,y:py,vx:Math.cos(an)*v,vy:Math.sin(an)*v});cool=Math.max(8,26-wave)}}",
+    "  bullets.forEach(function(b){b.x+=b.vx;b.y+=b.vy});",
+    "  foes.forEach(function(f){var a=Math.atan2(py-f.y,px-f.x);f.x+=Math.cos(a)*f.v;f.y+=Math.sin(a)*f.v});",
+    "  foes.forEach(function(f){bullets.forEach(function(b){var dx=f.x-b.x,dy=f.y-b.y;if(dx*dx+dy*dy<f.r*f.r){b.dead=true;f.hp--;boom(b.x,b.y,HOT,4);",
+    "   if(f.hp<=0){f.dead=true;score+=f.nem?50:10;boom(f.x,f.y,f.nem?HERO:NEON,f.nem?20:9);if(f.nem)ev.push('☠ '+f.name+' cae — sube el rango némesis')}}})});",
+    "  bullets=bullets.filter(function(b){return !b.dead&&b.x>-20&&b.x<W+20&&b.y>-20&&b.y<H+20});",
+    "  foes.forEach(function(f){var dx=f.x-px,dy=f.y-py;if(dx*dx+dy*dy<(f.r+6)*(f.r+6)){alive=false;boom(px,py,HOT,26);try{if(score>best){best=score;localStorage.setItem('neon-best',''+best)}}catch(e){}}});",
+    "  foes=foes.filter(function(f){return !f.dead});",
+    "  var nw=1+Math.floor(score/120);if(nw>wave){wave=nw;ev.push('⚡ Oleada '+wave+': enemigos más rápidos y cadencia mejorada')}",
+    "  parts.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.l--});parts=parts.filter(function(p){return p.l>0});",
+    " }",
+    " // dibujo",
+    " X.fillStyle=BG;X.fillRect(0,0,W,H);",
+    " X.strokeStyle=NEON+'22';X.lineWidth=1;",
+    " for(var gx=0;gx<W;gx+=32){X.beginPath();X.moveTo(gx,0);X.lineTo(gx,H);X.stroke()}",
+    " for(var gy=0;gy<H;gy+=32){X.beginPath();X.moveTo(0,gy);X.lineTo(W,gy);X.stroke()}",
+    " parts.forEach(function(p){X.globalAlpha=p.l/30;X.fillStyle=p.c;X.fillRect(p.x-1.5,p.y-1.5,3,3)});X.globalAlpha=1;",
+    " bullets.forEach(function(b){X.fillStyle=HERO;X.shadowColor=HERO;X.shadowBlur=8;X.beginPath();X.arc(b.x,b.y,2.5,0,6.283);X.fill();X.shadowBlur=0});",
+    " foes.forEach(function(f){X.fillStyle=f.nem?HOT:NEON;X.shadowColor=X.fillStyle;X.shadowBlur=f.nem?16:9;X.beginPath();X.arc(f.x,f.y,f.r,0,6.283);X.fill();X.shadowBlur=0;",
+    "  if(f.nem){X.fillStyle='#fff';X.font='8px monospace';X.fillText(f.name,f.x-24,f.y-f.r-4)}});",
+    " if(alive){X.fillStyle=HERO;X.shadowColor=HERO;X.shadowBlur=12;X.beginPath();var a2=Math.atan2((foes[0]?foes[0].y:py-1)-py,(foes[0]?foes[0].x:px-1)-px);",
+    "  X.moveTo(px+Math.cos(a2)*10,py+Math.sin(a2)*10);X.lineTo(px+Math.cos(a2+2.5)*8,py+Math.sin(a2+2.5)*8);X.lineTo(px+Math.cos(a2-2.5)*8,py+Math.sin(a2-2.5)*8);X.closePath();X.fill();X.shadowBlur=0}",
+    " var txt='PUNTOS '+score+'   OLEADA '+wave+'   RÉCORD '+best+'\\n'+(ev.length?ev[ev.length-1]:'');",
+    " HUD.textContent=txt;",
+    " if(!alive){X.fillStyle='rgba(5,6,15,0.78)';X.fillRect(0,0,W,H);",
+    " X.fillStyle='#fff';X.textAlign='center';X.font='bold 22px system-ui';",
+    " X.fillText('" + name + "',W/2,H/2-26);X.font='13px system-ui';",
+    " X.fillStyle=NEON;X.fillText(score>0?'GAME OVER — '+score+' puntos':'Muévete con WASD o flechas · dispara solo',W/2,H/2+2);",
+    " X.fillStyle='#fff';X.font='12px system-ui';X.fillText('Pulsa ESPACIO o toca para '+(score>0?'reintentar':'empezar'),W/2,H/2+26);",
+    " if(best>0){X.fillStyle=HERO;X.fillText('Récord: '+best,W/2,H/2+48)}}",
+    " X.textAlign='start';}",
+    "loop();",
+    "</scr" + "ipt>",
+    "</body>",
+    "</html>",
+  ].join("\n");
+
+  return [
+    `🎮 **${name}** — *supervivencia arcade autoevolutiva* (prototipo generado para: «${topicOf(prompt)}»)`,
+    ``,
+    `**Ficha del juego** — arena de oleadas con estética neón: un piloto solitario contra enjambres que crecen contigo. Gancho: el mundo **evoluciona solo**, partida a partida.`,
+    ``,
+    `**Sistemas autoevolutivos**`,
+    `- ⚡ **Dificultad adaptativa**: la velocidad y el ritmo de aparición suben solos con tu puntuación (oleadas).`,
+    `- 🧠 **Némesis con rango**: desde la oleada 3 aparecen líderes que recuerdan por nombre y rango; derrotarlos sube el listón.`,
+    `- 🔧 **Mejora procedural**: tu cadencia de disparo y velocidad de proyectil evolucionan con cada oleada.`,
+    `- 💾 **Evolución persistente**: el récord se guarda (localStorage con reserva en memoria si está bloqueado).`,
+    ``,
+    `**Stack AAA real** — Unreal Engine 5.6 (Nanite + Lumen), NetCode dedicado, LiveOps con eventos que mutan el mapa estilo Steam Workshop.`,
+    ``,
+    `**Prototipo jugable** — WASD o flechas para moverte; tu nave dispara sola al enemigo más cercano. Pulsa ESPACIO o toca el lienzo para empezar:`,
+    ``,
+    "```html",
+    html,
+    "```",
+    ``,
+    `### ¿Siguiente paso?`,
+    `¿Añado sonido chiptune con WebAudio? ¿Un modo dos jugadores a bordo dividida? ¿Lo convierto en roguelike con salas procedurales?`,
+  ].join("\n");
+}
 /* ─────────────── Batalla (espejo de POST /api/battle) ─────────────── */
 
 function drawDuel(): [AIModel, AIModel] {
@@ -616,6 +723,9 @@ async function handleBattle(init: RequestInit | undefined): Promise<Response> {
   } else if (composerMode === "video") {
     aText = videoScript(prompt);
     bText = modelB ? videoScript(prompt + " variante B") : null;
+  } else if (composerMode === "juego") {
+    aText = gameBlueprint(prompt, 0);
+    bText = modelB ? gameBlueprint(prompt + " variante", 1) : null;
   } else {
     aText = composeAnswer(modelA.id, prompt);
     bText = modelB ? composeAnswer(modelB.id, prompt + "x") : null;

@@ -17,6 +17,15 @@
 - Internacionalización es/en/pt.
 - Compartir duelos y copas por URL con replay del veredicto.
 
+## [1.8.1] — 2026-09-09 · *Modo Juego AAA autoevolutivo*
+
+### Añadido
+- **Modo Juego AAA** 🎮 (skill `/juego` + botón de mando en el composer): las IAs actúan como directores de juegos de élite (ambición Rockstar: GTA VI, Red Dead Redemption 2) y entregan en cada respuesta **ficha del juego** (nombre, género, pilar de diseño), **sistemas autoevolutivos** (dificultad adaptativa que aprende del jugador, generación procedural, NPCs Némesis que recuerdan, mundo vivo), **stack AAA 2026** y un **prototipo JUGABLE completo** en un único bloque HTML autocontenido.
+- **Juegos jugables en el chat**: gracias a la vista previa automática de la v1.8.0, el prototipo se ejecuta al instante en un iframe sandbox — controles WASD/flechas, HUD con puntuación y oleadas, pantallas de inicio y game over, partículas y estética neón. Persistencia con `try/catch` (degrada a memoria en iframes).
+- **Demo incluida**: el motor demo de GitHub Pages genera su propio juego autoevolutivo real (canvas + JS local, 3 paletas y 5 nombres deterministas por prompt) — el Modo Juego funciona también sin backend.
+- **Modo Agente AAA**: las misiones de tipo «juego-aaa» ahora planifican la capa de autoevolución (dificultad adaptativa con ML, mundo procedural, Némesis persistentes, mutaciones estilo Steam Workshop) en equipo, fases y stack.
+- Starter «Crea un juego» reconectado al nuevo modo; badge de novedad propio (`modo-juego`).
+
 ## [1.8.0] — 2026-09-09 · *Cerebros reentrenados + Markdown pro*
 
 ### Añadido
