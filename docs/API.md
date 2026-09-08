@@ -16,6 +16,8 @@
 - [`GET /api/news`](#get-apinews)
 - [`GET /api/stats`](#get-apistats)
 - [`POST /api/auth/*`](#post-apiauth)
+- [OAuth 2.0 nativo](#oauth-20-nativo-apiauthoauth)
+- [`GET /api/health`](#get-apihealth)
 - [Límites y códigos de error](#límites-y-códigos-de-error)
 
 ---
@@ -241,9 +243,44 @@ Métricas agregadas del arena: total de votos, batallas por categoría y cifras 
 |---|---|---|
 | `/api/auth/register` | `{ name, email, password }` | Contraseña cifrada con scrypt |
 | `/api/auth/login` | `{ email, password }` | Cookie de sesión httpOnly |
-| `/api/auth/social` | `{ provider, email, name }` | Entrada social (google, github, microsoft, x) |
+| `/api/auth/social` | `{ provider, email, name }` | Entrada rápida por correo (google, github, microsoft, x); sin credenciales OAuth esta es la vía de los botones sociales |
 | `/api/auth/me` | — (GET) | Usuario de la sesión actual |
 | `/api/auth/logout` | — | Destruye la sesión |
+
+## OAuth 2.0 nativo (`/api/auth/oauth/*`)
+
+Flujo Authorization Code completo con state CSRF de un solo uso (cookie httpOnly, 10 min). Activo solo cuando el entorno define las credenciales del proveedor.
+
+| Ruta | Método | Descripción |
+|---|---|---|
+| `/api/auth/oauth/google` | `GET` | Redirige (302) al consentimiento de Google. Proveedores: `google`, `github` |
+| `/api/auth/oauth/{provider}/callback` | `GET` | Valida state, intercambia `code` por token, obtiene el perfil verificado, crea/vincula el usuario y abre sesión; redirige a `/` (o a `/iniciar-sesion?oauth=error&motivo=…` si algo falla) |
+| `/api/auth/oauth/status` | `GET` | `{ google: boolean, github: boolean }` — qué proveedores tienen OAuth nativo activo |
+
+Sin credenciales, el inicio de flujo responde `501` con `{ ok: false, error, setup: [...] }` explicando la configuración necesaria (incluida la URI de retorno a registrar).
+
+## `GET /api/health`
+
+Health check para orquestadores (Docker healthcheck, Vercel, K8s, uptime monitors).
+
+```json
+{
+  "ok": true,
+  "service": "todologo-ai",
+  "version": "1.7.0",
+  "buildDate": "2026-09-08",
+  "mode": "standalone",
+  "checks": { "database": "up", "votes": 13 },
+  "catalog": { "models": 56, "providers": 28 },
+  "uptimeSec": 42,
+  "latencyMs": 5,
+  "timestamp": "2026-09-08T14:01:57.899Z"
+}
+```
+
+- `200` con `ok: true` si la base responde a `SELECT 1`; `503` en caso contrario.
+- En la demo estática, el motor local responde con `mode: "static-demo"` y `checks.database: "localstorage"`.
+- Los errores de la app se registran en JSON estructurado (`src/lib/logger.ts`): `{ t, lvl, evt, ...ctx }` por línea.
 
 ---
 

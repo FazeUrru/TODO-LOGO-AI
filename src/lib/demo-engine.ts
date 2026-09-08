@@ -1089,6 +1089,9 @@ export async function handleDemoFetch(rawPath: string, init?: RequestInit): Prom
   const method = (init?.method ?? "GET").toUpperCase();
 
   try {
+    if (path === "/api/auth/oauth/status") {
+      return jsonRes({ google: false, github: false });
+    }
     if (path.startsWith("/api/auth/")) {
       return (await handleAuth(path, init)) ?? errRes("Endpoint de autenticación desconocido.", 404);
     }
@@ -1103,6 +1106,16 @@ export async function handleDemoFetch(rawPath: string, init?: RequestInit): Prom
     }
     if (path === "/api/stats") {
       return jsonRes({ ok: true, totalVotes: getVotes().length + 2, models: MODELS.length, providers: Object.keys(PROVIDERS).length });
+    }
+    if (path === "/api/health") {
+      return jsonRes({
+        ok: true,
+        service: "todologo-ai",
+        mode: "static-demo",
+        checks: { database: "localstorage", votes: getVotes().length },
+        catalog: { models: MODELS.length, providers: Object.keys(PROVIDERS).length },
+        timestamp: new Date().toISOString(),
+      });
     }
   } catch {
     return errRes("El motor demo encontró un error inesperado.", 500);

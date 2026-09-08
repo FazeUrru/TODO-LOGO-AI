@@ -19,6 +19,7 @@ import { MODELS, PROVIDERS, getModel } from "@/lib/models-data";
 import { useArena, type ArenaMode, MODE_META } from "./arena-context";
 import ProviderLogo from "@/components/arena/ProviderLogo";
 import FloatingPanel from "./FloatingPanel";
+import { GithubMark, GITHUB_REPO_URL } from "./GithubMark";
 import { cn } from "@/lib/utils";
 
 const MODE_ICONS: Record<ArenaMode, typeof Swords> = {
@@ -245,6 +246,21 @@ export default function TopBar() {
           {title}
         </div>
       )}
+
+      {/* Repositorio GitHub — siempre visible a la derecha */}
+      <div className="ml-auto flex shrink-0 items-center">
+        <a
+          href={GITHUB_REPO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-medium text-foreground/80 hover:bg-accent hover:text-foreground"
+          title="Ver el repositorio en GitHub"
+          aria-label="Ver el repositorio en GitHub"
+        >
+          <GithubMark className="h-[17px] w-[17px]" />
+          <span className="hidden sm:inline">GitHub</span>
+        </a>
+      </div>
     </header>
   );
 }

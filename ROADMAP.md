@@ -35,19 +35,27 @@
 - **Motor demo local + DemoBridge**: las `/api/*` se resuelven en el navegador con las mismas fórmulas ELO y personas de estilo; persistencia en `localStorage` y píldora informativa honesta.
 - Doble modo de build (`standalone` con backend / export con `BUILD_STATIC=1`) y guía de dominio propio (`todologo.ai`) en el README.
 
+### v1.7.0 — *Honestidad radical + producción* (8 sept 2026)
+- **Transparencia radical**: sección «Qué es real y qué no» en la app y el README; metadatos `engine` en cada respuesta y letra pequeña en la revelación de batallas.
+- **OAuth 2.0 nativo** de Google y GitHub (Authorization Code + state CSRF), activable con credenciales propias y documentado paso a paso.
+- **Calidad de producción**: 18 tests (Vitest) de ELO y catálogo, CI con GitHub Actions (lint · tipos · tests · build), Docker multi-stage con compose y healthcheck, `/api/health` y logging JSON estructurado.
+- **Logo oficial de Qwen** (símbolo azul oficial desde su web) y votación idempotente en `/api/vote`.
+- Botón GitHub integrado en la app, capturas reales en el README y guía de despliegue en Vercel.
+
 ---
 
-## 🔨 En curso — v1.7.0 "La copa crece" *(objetivo: oct 2026)*
+## 🔨 En curso — v1.8.0 "La copa crece" *(objetivo: oct 2026)*
 
 | # | Función | Estado | Detalle |
 |---|---|:---:|---|
 | 1 | **Copa de 8 y 16** | diseño | Bracket configurable con cuartos de final; vista de cuadro completa con zoom en móvil |
-| 2 | **OAuth nativo de Google** | diseño | Flujo OAuth 2.0 real de extremo a extremo (no solo entrada social simulada): consentimiento, refresh y revocación |
-| 3 | **Perfiles con historial en la nube** | idea | Tus copas, votos y conversaciones sincronizados entre dispositivos |
-| 4 | **Hall of Fame de copas** | idea | Página con las últimas copas jugadas: consigna, campeón y margen de la final |
-| 5 | **Estadísticas de la copa** | idea | % de victorias por modelo en torneos, upset más grande, racha de campeonatos |
+| 2 | **Postgres gestionado** | diseño | Migrar `DATABASE_URL` a Postgres para persistencia de ELO global en serverless sin caveats de `/tmp` |
+| 3 | **Voces de proveedores reales** | diseño | Conectar APIs de proveedores (Anthropic, OpenAI, Google…) junto al motor propio, activables por claves |
+| 4 | **Perfiles con historial en la nube** | idea | Tus copas, votos y conversaciones sincronizados entre dispositivos |
+| 5 | **Hall of Fame de copas** | idea | Página con las últimas copas jugadas: consigna, campeón y margen de la final |
+| 6 | **Estadísticas de la copa** | idea | % de victorias por modelo en torneos, upset más grande, racha de campeonatos |
 
-## 🔭 Próximo — v1.8.0 "El arena se abre" *(objetivo: dic 2026)*
+## 🔭 Próximo — v1.9.0 "El arena se abre" *(objetivo: dic 2026)*
 
 - **Arena de imágenes con voto**: dos ilustraciones generadas, tú eliges la mejor; ranking ELO de generación de imágenes separado del de texto.
 - **Internacionalización (i18n)**: es/en/pt con `next-intl`, la comunidad puede traducir la interfaz.

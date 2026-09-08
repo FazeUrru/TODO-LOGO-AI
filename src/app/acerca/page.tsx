@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Landmark, Info, HelpCircle, Scale, Mail, ShieldCheck } from "lucide-react";
+import { Landmark, Info, HelpCircle, Scale, Mail, ShieldCheck, ShieldAlert } from "lucide-react";
 import { markUsed, NewBadge } from "@/lib/badges";
 import { MODELS, PROVIDERS } from "@/lib/models-data";
 import { APP_VERSION } from "@/lib/version";
@@ -105,6 +105,43 @@ export default function AcercaPage() {
           <p>
             <strong>4 · Revelación.</strong> Tras votar se muestran los nombres, las
             organizaciones con su logotipo oficial y el swing de ELO de esa partida.
+          </p>
+        </div>
+
+        {/* Transparencia radical */}
+        <h2 className="mt-10 flex items-center gap-2 font-display text-[24px] font-medium">
+          <ShieldAlert className="h-5 w-5" />
+          Qué es real y qué no (transparencia radical)
+        </h2>
+        <div className="mt-3 space-y-3 rounded-xl border border-border bg-card p-5 text-[13.5px] leading-relaxed text-foreground/90">
+          <p>
+            <strong>Real:</strong> la infraestructura completa —APIs propias, base de datos
+            Prisma/SQLite con persistencia de votos, fórmulas ELO aplicadas en el servidor,
+            votación idempotente, Copa Todólogo con anonato verificado en servidor, cuentas con
+            contraseña scrypt y cookie firmada httpOnly, y OAuth 2.0 nativo (Google/GitHub)
+            activable con credenciales propias.
+          </p>
+          <p>
+            <strong>Simulado con honestidad:</strong> las 56 voces del catálogo salen de un único
+            motor (GLM vía z-ai-web-dev-sdk) que encarna la personalidad de cada modelo mediante
+            instrucciones de estilo — no son los modelos comerciales originales, porque cada
+            proveedor exige sus propias claves de API. Por eso lo declaramos en cada revelación de
+            batalla y en la documentación.
+          </p>
+          <p>
+            <strong>Por entorno:</strong> en el servidor (desarrollo, Docker o Vercel) el ELO es
+            global y compartido: cada voto escribe en la base y mueve el ranking de todos. En la
+            demo estática de GitHub Pages no hay backend, así que las respuestas se generan en tu
+            navegador y el ELO vive en tu almacenamiento local — la píldora «Demo estática» te lo
+            recuerda en todo momento.
+          </p>
+          <p>
+            <strong>Login social:</strong> sin credenciales OAuth configuradas, los botones de
+            Google/GitHub/Microsoft/X usan una entrada rápida por correo (sin contraseña) marcada
+            como tal al pasar el ratón. En cuanto defines <code>GOOGLE_CLIENT_ID</code>/
+            <code>SECRET</code> o <code>GITHUB_CLIENT_ID</code>/<code>SECRET</code>, el mismo
+            botón pasa al consentimiento nativo del proveedor con flujo Authorization Code y
+            state CSRF.
           </p>
         </div>
 

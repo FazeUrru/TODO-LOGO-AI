@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Check } from "lucide-react";
@@ -54,9 +54,15 @@ export const SOCIALS = [
 ] as const;
 
 /**
- * Flujo social directo: eliges proveedor → confirmas tu correo → sesión creada.
- * Si el despliegue define credenciales OAuth oficiales, el mismo botón redirige
- * al consentimiento del proveedor (el endpoint /api/auth/social ya lo recibe).
+ * Flujo social con dos vías:
+ *
+ *  - OAuth 2.0 nativo (Authorization Code + state CSRF) cuando el entorno
+ *    define GOOGLE_CLIENT_ID/SECRET o GITHUB_CLIENT_ID/SECRET: el botón
+ *    redirige al consentimiento real del proveedor y el callback crea la
+ *    sesión con el perfil verificado.
+ *
+ *  - Puente por correo (entrada rápida, sin contraseña) cuando el despliegue
+ *    no tiene credenciales OAuth — útil en demos y desarrollo local.
  */
 export function SocialRow({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
@@ -65,6 +71,20 @@ export function SocialRow({ mode }: { mode: "login" | "register" }) {
   const [step, setStep] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const [native, setNative] = useState<Record<string, boolean> | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/auth/oauth/status")
+      .then((r) => r.json())
+      .then((d) => {
+        if (alive) setTimeout(() => setNative(d), 0);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   async function continueWith(providerId: string, providerLabel: string) {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
@@ -138,19 +158,38 @@ export function SocialRow({ mode }: { mode: "login" | "register" }) {
 
   return (
     <div className="space-y-2">
-      {SOCIALS.map((s) => (
-        <button
-          key={s.id}
-          onClick={() => {
-            setStep(s.id);
-            if (mode === "register") markUsed("cuenta");
-          }}
-          className={`flex w-full items-center justify-center gap-2.5 rounded-lg py-2.5 text-[14px] font-medium transition-colors ${s.btnCls}`}
-        >
-          <s.Logo className="h-[18px] w-[18px]" />
-          Continuar con {s.label}
-        </button>
-      ))}
+      {SOCIALS.map((s) => {
+        const isNative = native?.[s.id] === true;
+        const inner = (
+          <>
+            <s.Logo className="h-[18px] w-[18px]" />
+            Continuar con {s.label}
+          </>
+        );
+        return isNative ? (
+          <a
+            key={s.id}
+            href={`/api/auth/oauth/${s.id}`}
+            onClick={() => mode === "register" && markUsed("cuenta")}
+            title={`Consentimiento nativo de ${s.label}`}
+            className={`flex w-full items-center justify-center gap-2.5 rounded-lg py-2.5 text-[14px] font-medium transition-colors ${s.btnCls}`}
+          >
+            {inner}
+          </a>
+        ) : (
+          <button
+            key={s.id}
+            onClick={() => {
+              setStep(s.id);
+              if (mode === "register") markUsed("cuenta");
+            }}
+            title="Entrada rápida por correo (OAuth nativo no configurado en este entorno)"
+            className={`flex w-full items-center justify-center gap-2.5 rounded-lg py-2.5 text-[14px] font-medium transition-colors ${s.btnCls}`}
+          >
+            {inner}
+          </button>
+        );
+      })}
     </div>
   );
 }

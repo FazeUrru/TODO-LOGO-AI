@@ -1489,6 +1489,10 @@ export default function ChatExperience() {
                 <RotateCcw className="h-3.5 w-3.5" />
                 Nueva batalla
               </button>
+              <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                Transparencia: las respuestas las genera el motor único de Todólogo encarnando la
+                personalidad de cada modelo; el ELO sí es real y nace de votos como el tuyo.
+              </p>
             </div>
           )}
           <div ref={bottomRef} />

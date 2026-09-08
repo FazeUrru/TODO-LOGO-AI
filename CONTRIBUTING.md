@@ -20,6 +20,8 @@ Verificación antes de abrir un PR (los tres deben pasar limpios):
 ```bash
 npx tsc --noEmit   # tipos (los avisos de examples/ y skills/ son de plantillas y se ignoran)
 npm run lint       # ESLint
+npm run typecheck  # TypeScript estricto
+npm test           # Tests (Vitest)
 npm run build      # compilación de producción
 ```
 
@@ -94,7 +96,7 @@ Checklist:
 
 1. Vincula el PR a un Issue existente (o crea uno primero para funciones grandes).
 2. Describe **qué** cambia y **por qué**; para UI, adjunta captura o GIF (en móvil y escritorio si afecta al layout).
-3. Marca en la descripción la verificación realizada (`tsc`, `lint`, `build`, navegación manual).
+3. Marca en la descripción la verificación realizada (`npm run typecheck`, `npm run lint`, `npm test`, `build`, navegación manual). La CI (lint · tipos · tests · build) corre también en cada PR.
 4. Un mantenedor revisa; los cambios de diseño visual requieren captura comparada con el estilo actual.
 
 ## 5. Reportar bugs

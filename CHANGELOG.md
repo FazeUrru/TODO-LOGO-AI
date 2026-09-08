@@ -5,16 +5,43 @@
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.7.0
+### Planeado para v1.8.0
 - Copa de 8 y 16 modelos con cuartos de final y vista de cuadro completa.
-- OAuth nativo real de Google (flujo completo con consentimiento, refresh y revocación).
+- Postgres gestionado (persistencia de ELO global en serverless sin caveats).
 - Perfiles con historial en la nube y Hall of Fame de copas.
 - Estadísticas de torneos: % victorias por modelo, mayor upset, rachas.
+- Voces de proveedores reales conectando APIs externas junto al motor propio.
 
 ### Explorando
 - Arena de imágenes con voto y ranking separado.
 - Internacionalización es/en/pt.
 - Compartir duelos y copas por URL con replay del veredicto.
+
+## [1.7.0] — 2026-09-08 · *Honestidad radical + producción*
+
+### Añadido
+- **Transparencia radical**: nueva sección «Qué es real y qué no» en `/acerca`, letra pequeña en cada revelación de batalla y tabla de honestidad en el README — declara que las 56 voces salen de un motor único con personalidades, que el ELO de la demo vive en tu navegador y qué es 100 % real (ELO de servidor, votos, cuentas, Copa).
+- **OAuth 2.0 nativo de Google y GitHub** (`src/lib/oauth.ts` + `/api/auth/oauth/*`): flujo Authorization Code completo con state CSRF de un solo uso en cookie httpOnly, intercambio de código, perfil verificado, creación/vinculación de cuenta y sesión con la misma cookie firmada. Se activa solo con credenciales (`GOOGLE_CLIENT_ID`/`SECRET`, `GITHUB_CLIENT_ID`/`SECRET`); sin ellas, los botones usan la entrada rápida por correo marcada como tal (tooltip) y `/api/auth/oauth/status` lo expone.
+- **Tests unitarios (Vitest)**: 18 casos sobre `expectedScore`, `eloDeltaFromVotes`, `categoryElo` y la integridad del catálogo (ids únicos, proveedores existentes, ELO en rango creíble). Scripts `npm test` y `npm run test:watch`.
+- **CI con GitHub Actions** (`.github/workflows/ci.yml`): job «calidad» (lint → tipos → tests) y job «build» (compilación standalone completa) en cada push y PR.
+- **Dockerización**: `Dockerfile` multi-stage (Bun, runner slim) + `docker-compose.yml` con volumen `./db` persistente y healthcheck contra `/api/health`.
+- **Health check `/api/health`**: verificación real de la base (`SELECT 1`), versión, modo, uptime, latencia y catálogo; 200/503 para orquestadores.
+- **Logging estructurado JSON** (`src/lib/logger.ts`): eventos de salud y errores listos para indexar en Vercel/Docker.
+- **Arranque auto-suficiente**: `src/instrumentation.ts` + `src/lib/db-init.ts` crean el esquema SQLite al arrancar cada proceso — hace posible Vercel con `file:/tmp` sin pasos manuales.
+- **Capturas reales** en `docs/screenshots/` (portada, ranking, login, transparencia) embebidas en el README.
+- **Botón GitHub integrado** en la app: acceso al repositorio desde el TopBar (siempre visible) y desde el menú «^» del logo.
+- `vercel.json` (región cdg1, maxDuration 60 s) y guía completa de despliegue en Vercel con sus variables de entorno.
+
+### Corregido
+- **Logo oficial de Qwen**: la organización ya no se muestra con la marca de Alibaba Cloud y usa el símbolo oficial de Qwen (`#082DFF`) extraído del SVG servido por su web oficial (chat.qwen.ai); proveedor renombrado a «Qwen» con dominio `qwen.ai`.
+- **Votación idempotente en `/api/vote`**: un `battleId` ya no puede registrar dos votos; los reenvíos devuelven `duplicate: true` con las estadísticas recalculadas.
+- Recuento de organizaciones corregido a 28 en README y banner (el catálogo real).
+- ESLint ignoraba `node_modules` y `.next` pero no `.next-static` (el export de Pages), lo que ensuciaba el lint; `tsc --noEmit` fallaba por las carpetas de plantillas `examples/` y `skills/`, ahora excluidas del tsconfig.
+
+### Mejorado
+- README con badges de CI/demo/tests, índice nuevo y secciones de Tests y CI, Docker, Vercel y OAuth nativo.
+- `/api/battle` devuelve metadatos `engine` que declaran el origen de cada respuesta.
+- La demo estática también expone `/api/health` y `/api/auth/oauth/status` vía motor local.
 
 ## [1.6.0] — 2026-09-08 · *La demo vive en GitHub Pages*
 

@@ -43,7 +43,7 @@ export const PROVIDERS: Record<string, Provider> = {
   anthropic: { id: "anthropic", name: "Anthropic", color: "bg-orange-400", country: "US", domain: "anthropic.com", logo: "/providers/anthropic.png" },
   openai: { id: "openai", name: "OpenAI", color: "bg-teal-400", country: "US", domain: "openai.com", logo: "/providers/openai.png" },
   google: { id: "google", name: "Google DeepMind", color: "bg-amber-400", country: "US", domain: "deepmind.google", logo: "/providers/google.png" },
-  alibaba: { id: "alibaba", name: "Alibaba Cloud", color: "bg-violet-400", country: "CN", domain: "alibaba.com", logo: "/providers/alibaba.png" },
+  qwen: { id: "qwen", name: "Qwen", color: "bg-blue-600", country: "CN", domain: "qwen.ai", logo: "/providers/qwen.png" },
   deepseek: { id: "deepseek", name: "DeepSeek", color: "bg-fuchsia-400", country: "CN", domain: "deepseek.com", logo: "/providers/deepseek.png" },
   microsoft: { id: "microsoft", name: "Microsoft", color: "bg-cyan-400", country: "US", domain: "microsoft.com", logo: "/providers/microsoft.png" },
   yi: { id: "yi", name: "01.AI", color: "bg-pink-400", country: "CN", domain: "01.ai", logo: "/providers/yi.png" },
@@ -324,11 +324,11 @@ export const MODELS: AIModel[] = [
     desc: "El abierto compacto de Google: corre on-premise con calidad sorprendente para su tamaño.",
     tags: ["open-weights", "on-prem"],
   },
-  // ─── Alibaba ─────────────────────────────────────────────
+  // ─── Qwen (Alibaba Cloud) ─────────────────────────────────
   {
     id: "qwen3.8-max",
     name: "Qwen3.8-Max",
-    provider: "alibaba",
+    provider: "qwen",
     license: "abierto",
     categories: ["texto", "codigo", "razonamiento", "agente"],
     elo: 1466,
@@ -345,7 +345,7 @@ export const MODELS: AIModel[] = [
   {
     id: "qwen3.8-coder-plus",
     name: "Qwen3.8-Coder-Plus",
-    provider: "alibaba",
+    provider: "qwen",
     license: "abierto",
     categories: ["codigo", "agente"],
     elo: 1461,
@@ -361,7 +361,7 @@ export const MODELS: AIModel[] = [
   {
     id: "qwen3.8-turbo",
     name: "Qwen3.8-Turbo",
-    provider: "alibaba",
+    provider: "qwen",
     license: "abierto",
     categories: ["texto", "codigo"],
     elo: 1418,

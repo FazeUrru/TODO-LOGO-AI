@@ -59,7 +59,8 @@ worklog.md
 /scripts/*
 !/scripts/build-pages.mjs
 /tool-results/
-/tests/
+/tests/*
+!/tests/elo.test.ts
 /db/
 /public/generated/
 /agent-ctx/

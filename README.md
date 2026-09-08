@@ -9,11 +9,14 @@
 </p>
 
 <p align="center">
-  <a href="#-estado-del-proyecto"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.6.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-estado-del-proyecto"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.7.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
+  <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/badge/CI-lint%20%C2%B7%20tipos%20%C2%B7%20tests%20%C2%B7%20build-2EA043?style=flat-square&logo=githubactions&logoColor=white"></a>
+  <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/deploy-pages.yml"><img alt="demo" src="https://img.shields.io/badge/demo-GitHub%20Pages-blue?style=flat-square&logo=github"></a>
   <img alt="next.js" src="https://img.shields.io/badge/Next.js-16-black?style=flat-square">
   <img alt="modelos" src="https://img.shields.io/badge/modelos-56-2E2B29?style=flat-square">
-  <img alt="organizaciones" src="https://img.shields.io/badge/proveedores-29-2E2B29?style=flat-square">
+  <img alt="organizaciones" src="https://img.shields.io/badge/proveedores-28-2E2B29?style=flat-square">
+  <img alt="tests" src="https://img.shields.io/badge/tests-Vitest-2EA043?style=flat-square&logo=vitest&logoColor=white">
   <a href="CONTRIBUTING.md"><img alt="PRs bienvenidos" src="https://img.shields.io/badge/PRs-bienvenidos-1EAEDB?style=flat-square"></a>
 </p>
 
@@ -27,20 +30,26 @@
 
 1. [¿Qué es todólogo.ai?](#-qué-es-todólogoai)
 2. [Demo en vivo (GitHub Pages)](#-demo-en-vivo-github-pages)
-3. [Por qué no es otro clon de arena.ai](#-por-qué-no-es-otro-clon-de-arenaai)
-4. [Modos de la arena](#-modos-de-la-arena)
-5. [La Copa Todólogo (Modo Torneo)](#-la-copa-todólogo-modo-torneo)
-6. [Superpoderes del chat](#-superpoderes-del-chat)
-7. [Demostraciones animadas](#-demostraciones-animadas)
-8. [Inicio rápido](#-inicio-rápido)
-9. [Arquitectura](#️-arquitectura)
-10. [El sistema ELO](#-el-sistema-elo)
-11. [Referencia de la API](#-referencia-de-la-api)
-12. [Estructura del repositorio](#-estructura-del-repositorio)
-13. [Roadmap y changelog](#-roadmap-y-changelog)
-14. [Contribuir](#-contribuir)
-15. [Seguridad](#-seguridad)
-16. [Licencia](#-licencia)
+3. [Capturas de pantalla](#-capturas-de-pantalla)
+4. [Por qué no es otro clon de arena.ai](#-por-qué-no-es-otro-clon-de-arenaai)
+5. [Modos de la arena](#-modos-de-la-arena)
+6. [La Copa Todólogo (Modo Torneo)](#-la-copa-todólogo-modo-torneo)
+7. [Superpoderes del chat](#-superpoderes-del-chat)
+8. [Demostraciones animadas](#-demostraciones-animadas)
+9. [Honestidad: qué es real y qué no](#-honestidad-qué-es-real-y-qué-no)
+10. [Inicio rápido](#-inicio-rápido)
+11. [Tests y CI](#-tests-y-ci)
+12. [Docker](#-docker)
+13. [Despliegue en Vercel](#-despliegue-en-vercel)
+14. [OAuth nativo (Google / GitHub)](#-oauth-nativo-google--github)
+15. [Arquitectura](#️-arquitectura)
+16. [El sistema ELO](#-el-sistema-elo)
+17. [Referencia de la API](#-referencia-de-la-api)
+18. [Estructura del repositorio](#-estructura-del-repositorio)
+19. [Roadmap y changelog](#-roadmap-y-changelog)
+20. [Contribuir](#-contribuir)
+21. [Seguridad](#-seguridad)
+22. [Licencia](#-licencia)
 
 ---
 
@@ -50,7 +59,7 @@
 
 El proyecto nace con una obsesión: **el detalle**. La interfaz replica la calidez y sobriedad de los mejores productos editoriales —fondo crema `#FCFAF8`, tinta `#2E2B29`, acentos amarillo `#F4C406`, titulares serif y nombres de modelo en tipografía monoespaciada— pero todo el contenido, los textos, las personas de los modelos y las reglas del juego están pensados desde cero para un público hispanohablante. No es una traducción: es un arena concebido en español.
 
-Debajo del capó hay un backend real: 56 modelos de 29 organizaciones compiten con respuestas generadas al vuelo por un SDK de IA, cada voto se escribe en una base de datos SQLite vía Prisma, y el ranking se recalcula a partir de ese historial real de victorias y derrotas. Nada es una simulación estática: si votas, el ELO se mueve; si inicias una Copa, cuatro modelos de verdad se enfrentan en paralelo.
+Debajo del capó hay un backend real: 56 modelos de 28 organizaciones compiten con respuestas generadas al vuelo por un SDK de IA, cada voto se escribe en una base de datos SQLite vía Prisma, y el ranking se recalcula a partir de ese historial real de victorias y derrotas. Nada es una simulación estática: si votas, el ELO se mueve; si inicias una Copa, cuatro modelos de verdad se enfrentan en paralelo.
 
 ## 🌐 Demo en vivo (GitHub Pages)
 
@@ -76,6 +85,20 @@ La demo es la aplicación completa —batallas, Copa Todólogo, ranking, modos d
 2. Crea un archivo `CNAME` (raíz del export) con el texto `todologo.ai` o configura el dominio en *Settings → Pages → Custom domain*.
 3. En tu DNS: registro `A` con `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` (o `CNAME` en `www` → `fazeurru.github.io`).
 4. Marca *Enforce HTTPS*. Desde ese momento `https://todologo.ai` abrirá la app directamente; la URL de `github.io` seguirá funcionando como alias.
+
+## 📸 Capturas de pantalla
+
+Todas reales, tomadas de la aplicación en producción:
+
+| Portada (Modo Batalla) | Ranking ELO |
+|---|---|
+| ![Portada](docs/screenshots/home.png) | ![Leaderboard](docs/screenshots/leaderboard.png) |
+
+| Inicio de sesión (4 vías) | Transparencia radical (/acerca) |
+|---|---|
+| ![Login](docs/screenshots/login.png) | ![Transparencia](docs/screenshots/transparencia.png) |
+
+Hay más demos animadas (CSS-SVG, sin GIFs) en la sección [Demostraciones animadas](#-demostraciones-animadas).
 
 ## Por qué no es otro clon de arena.ai
 
@@ -172,6 +195,20 @@ Todas las demos son **SVG animados** (CSS dentro de SVG, sin JavaScript ni GIFs)
 ### Ranking ELO en vivo
 <p align="center"><img src="docs/demos/demo-elo.svg" alt="Filas del leaderboard moviéndose con barras animadas" width="820" /></p>
 
+## 🤝 Honestidad: qué es real y qué no
+
+Este proyecto se toma en serio la transparencia — hay una sección equivalente dentro de la app (`/acerca`), y cada revelación de batalla lo recuerda:
+
+| Pieza | Estado real | Detalle |
+|---|---|---|
+| Infraestructura | ✅ **Real** | APIs propias, Prisma + SQLite, fórmulas ELO en servidor, votación idempotente por `battleId`, Copa con anonato verificado en servidor, cuentas scrypt + cookie httpOnly firmada |
+| Las «56 voces» | ⚠️ **Un motor con 56 personalidades** | Todas las respuestas salen del motor único de Todólogo (GLM vía `z-ai-web-dev-sdk`) encarnando el estilo de cada modelo — no son los modelos comerciales originales, porque cada proveedor exige sus propias claves de API. Lo declaramos en la revelación y en `/acerca` |
+| Login social | ⚠️ **Dos vías** | Sin credenciales OAuth: entrada rápida por correo (sin contraseña, marcada como tal). Con `GOOGLE_CLIENT_ID`/`SECRET` o `GITHUB_CLIENT_ID`/`SECRET`: flujo OAuth 2.0 nativo (Authorization Code + state CSRF) contra el consentimiento real del proveedor |
+| ELO de la demo Pages | ⚠️ **Local** | En GitHub Pages no hay backend: las respuestas se generan en tu navegador y el ELO vive en tu `localStorage` (la píldora «Demo estática» lo recuerda). En servidor real (local/Docker/Vercel) el ELO sí es **global**: cada voto escribe en la base compartida |
+| Imágenes / 3D / vídeo | ✅ Real en servidor / ⚠️ procedural en demo | Generación por IA con backend; arte SVG procedural determinista en la demo estática |
+
+Esta tabla existe porque preferimos los elogios por lo que funciona a los malentendidos por lo que no. ¿Quieres voces de proveedores reales? Añade las claves de cada API y sustituye el motor: la arquitectura está preparada para ello.
+
 ## Inicio rápido
 
 **Requisitos:** Node.js 20+ (o Bun), y una instancia con acceso al SDK `z-ai-web-dev-sdk` (en este entorno ya viene preconfigurado).
@@ -200,10 +237,92 @@ npm run dev        # http://localhost:3000
 | `npm run build` | Compilación de producción (standalone) |
 | `npm start` | Sirve la compilación de producción |
 | `npm run lint` | ESLint sobre todo el proyecto |
+| `npm run typecheck` | TypeScript estricto sobre `src/` y `tests/` |
+| `npm test` | Suite de tests con Vitest (ELO, catálogo, integridad) |
 | `npm run db:push` | Aplica el esquema Prisma a SQLite |
 | `npm run db:generate` | Regenera el cliente Prisma |
 
 > **Nota:** la primera vez que visites cada página en desarrollo, Next.js la compila bajo demanda; la primera generación de una Copa tarda entre 6 y 50 s según la latencia de los proveedores.
+
+## 🧪 Tests y CI
+
+**Tests unitarios (Vitest)** sobre la lógica crítica — `tests/elo.test.ts`, 18 casos:
+
+- `expectedScore`: ELO clásico (igualdad → 0.5, ventaja de 400 → ~0.909, simetría `E(a,b)+E(b,a)=1`).
+- `eloDeltaFromVotes`: signo correcto, empuje de empates, acotado ±48, entero.
+- `categoryElo`: determinismo, boost por especialidad, rango sensato (±60 del base).
+- Integridad del catálogo: ids únicos, todo modelo apunta a un proveedor existente, Qwen con dominio y logo oficiales, ELO base creíble (1000–1700).
+
+```bash
+npm test            # modo CI (una pasada)
+npm run test:watch  # modo desarrollo
+```
+
+**CI (GitHub Actions)** — `.github/workflows/ci.yml`, dos jobs en cada push y PR:
+
+1. **calidad**: instalación con Bun → `prisma generate` → ESLint → `tsc --noEmit` → Vitest.
+2. **build**: compilación de producción standalone completa (con base de datos efímera).
+
+El despliegue de la demo estática tiene su propio workflow (`deploy-pages.yml`) que se ejecuta tras cada push a `main`.
+
+## 🐳 Docker
+
+Imagen multi-stage (Bun, runner slim ~200 MB) con esquema auto-aplicado y persistencia por volumen:
+
+```bash
+docker compose up --build      # http://localhost:3000
+docker compose logs -f         # logs JSON estructurados
+```
+
+- `docker-compose.yml` monta `./db` como volumen → **el ELO, los votos y las cuentas persisten entre reinicios**.
+- Healthcheck integrado contra `/api/health` (el contenedor se marca `healthy` solo si la base responde).
+- Variables opcionales en `docker-compose.yml`: `AUTH_SECRET`, credenciales OAuth, claves del SDK.
+
+Imagen manual sin compose: `docker build -t todologo-ai . && docker run -p 3000:3000 -v ./db:/app/db todologo-ai`.
+
+## ▲ Despliegue en Vercel
+
+El backend real (batallas con IA, ELO global en base de datos, cuentas, OAuth) también corre en Vercel:
+
+1. **Importa el repo** en [vercel.com/new](https://vercel.com/new) (framework Next.js detectado solo).
+2. **Variables de entorno** (Project → Settings → Environment Variables):
+
+   | Variable | Valor | Nota |
+   |---|---|---|
+   | `DATABASE_URL` | `file:/tmp/todologo.db` | Vercel solo permite escribir en `/tmp`; la app **crea el esquema sola** al arrancar cada instancia (`src/instrumentation.ts`) |
+   | `AUTH_SECRET` | un secreto largo | Firma de cookies de sesión |
+   | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | opcional | Activa el OAuth nativo de Google |
+   | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | opcional | Activa el OAuth nativo de GitHub |
+
+3. **Deploy.** `vercel.json` fija la región `cdg1` (París, latencia mínima a España) y `maxDuration: 60` para las APIs generativas.
+
+> **Honestidad de ingeniería:** `/tmp` en serverless es **efímero por instancia** — los votos sobreviven entre peticiones de la misma instancia y entre horas de alta actividad, pero un reescalado puede restablecer la base. Para ELO global a prueba de balas usa **Docker/VPS con volumen** (sección anterior, persistencia garantizada) o migra `DATABASE_URL` a un Postgres gestionado (Prisma lo hace trivial: cambiar el `provider` y la URL). Está en el [ROADMAP](ROADMAP.md).
+
+Comprobación post-deploy: `curl https://tu-proyecto.vercel.app/api/health` → `{"ok":true,...}`.
+
+## 🔑 OAuth nativo (Google / GitHub)
+
+El flujo **Authorization Code completo** está implementado (`src/lib/oauth.ts` + `/api/auth/oauth/*`) con protección CSRF por state de un solo uso en cookie httpOnly. Se activa solo con credenciales:
+
+<details>
+<summary><strong>Google Cloud (paso a paso)</strong></summary>
+
+1. [console.cloud.google.com](https://console.cloud.google.com/apis/credentials) → *Crear credenciales → ID de cliente OAuth → Aplicación web*.
+2. *URI de redirección autorizadas*: `https://tu-dominio/api/auth/oauth/google/callback` (y `http://localhost:3000/api/auth/oauth/google/callback` para desarrollo).
+3. Copia el ID y el secreto a `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
+
+</details>
+
+<details>
+<summary><strong>GitHub (paso a paso)</strong></summary>
+
+1. [github.com/settings/developers](https://github.com/settings/developers) → *New OAuth App*.
+2. *Authorization callback URL*: `https://tu-dominio/api/auth/oauth/github/callback`.
+3. Copia Client ID y genera el Client Secret a `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`.
+
+</details>
+
+Desde ese instante, los botones «Continuar con Google/GitHub» redirigen al **consentimiento nativo del proveedor**, el callback verifica el perfil real (email verificado), crea o vincula la cuenta y abre sesión con la misma cookie firmada. Sin credenciales, los botones usan la entrada rápida por correo — y así está explicado dentro de la propia app.
 
 ## ⚙️ Arquitectura
 
@@ -236,8 +355,11 @@ flowchart TB
 Pilares técnicos:
 
 - **Timeout blindado** en toda llamada al SDK: `Promise.race` con límite de 55 s y respuesta de reserva que nunca rompe la experiencia.
-- **Personas por modelo** (`src/lib/personas.ts`): cada familia de modelos tiene un estilo de respuesta propio para que los duelos comparen estilos reales.
-- **ELO derivado de votos** (`src/lib/elo.ts`): el delta no se guarda por modelo; se recalcula desde el historial de votos con atenuación por número de partidas (`18·(V−D)/√(2+n)`).
+- **Personas por modelo** (`src/lib/personas.ts`): cada familia de modelos tiene un estilo de respuesta propio para que los duelos comparen estilos reales — y la respuesta viaja con metadatos `engine` que declaran de dónde salió.
+- **ELO derivado de votos** (`src/lib/elo.ts`): el delta no se guarda por modelo; se recalcula desde el historial de votos con atenuación por número de partidas (`18·(V−D)/√(2+n)`), cubierto por tests unitarios.
+- **Votación idempotente**: un `battleId` solo puede recibir un voto; los reenvíos devuelven las estadísticas sin duplicar filas.
+- **Observabilidad**: logging estructurado JSON (`src/lib/logger.ts`) y `/api/health` con verificación real de base de datos para healthchecks de Docker/K8s/Vercel.
+- **Arranque auto-suficiente**: `src/instrumentation.ts` garantiza el esquema SQLite en cada proceso — local, Docker o Vercel — sin pasos manuales.
 - **Estado del cliente** en React puro + contexto (sin stores externos), con persistencia selectiva en `localStorage`.
 
 ## El sistema ELO
@@ -267,7 +389,11 @@ Resumen rápido — la referencia completa con cuerpos de petición, respuestas 
 | `/api/image` | `POST` | Generación de imágenes |
 | `/api/news` | `GET` | Feed de novedades con caché de respaldo |
 | `/api/stats` | `GET` | Métricas agregadas del arena |
+| `/api/health` | `GET` | Health check: base de datos, versión, uptime y catálogo (200/503) |
 | `/api/auth/*` | `POST` | `login`, `register`, `logout`, `social`, `me` |
+| `/api/auth/oauth/{provider}` | `GET` | Inicio del flujo OAuth 2.0 nativo (Google/GitHub; 501 sin credenciales) |
+| `/api/auth/oauth/{provider}/callback` | `GET` | Callback OAuth: valida state, intercambia código, abre sesión |
+| `/api/auth/oauth/status` | `GET` | Indica qué proveedores tienen OAuth nativo activo |
 
 ## Estructura del repositorio
 
@@ -279,29 +405,42 @@ TODO-LOGO-AI/
 │   │   ├── leaderboard/          # Ranking ELO (10 categorías, Pareto, Labs)
 │   │   ├── novedades/  empresas/  calculadora/  conectores/
 │   │   ├── iniciar-sesion/  registro/  ajustes/  acerca/  changelog/
-│   │   └── api/                  # battle · tournament · vote · leaderboard · agent · image · news · stats · auth/*
+│   │   └── api/                  # battle · tournament · vote · leaderboard · agent · image · news · stats · health · auth/* · auth/oauth/*
 │   ├── components/
 │   │   ├── arena/                # ChatExperience · TournamentView · LeaderboardView · Markdown · Viewer3D · ProviderLogo
-│   │   ├── shell/                # AppShell · Sidebar · TopBar · SearchDialog · arena-context
-│   │   └── auth/                 # SocialAuth
-│   └── lib/
-│       ├── models-data.ts        # Catálogo: 56 modelos, 29 organizaciones
-│       ├── personas.ts           # Estilos de respuesta por modelo
-│       ├── elo.ts                # Categorías, expectedScore, deltas
-│       ├── history.ts            # Autoguardado en localStorage
-│       ├── badges.tsx            # Insignias ¡NUEVO! (useSyncExternalStore)
-│       └── settings.tsx          # 15 ajustes persistentes
+│   │   ├── shell/                # AppShell · Sidebar · TopBar (+ botón GitHub) · SearchDialog · arena-context
+│   │   └── auth/                 # SocialAuth (OAuth nativo + puente por correo)
+│   ├── lib/
+│   │   ├── models-data.ts        # Catálogo: 56 modelos, 28 organizaciones
+│   │   ├── personas.ts           # Estilos de respuesta por modelo
+│   │   ├── elo.ts                # Categorías, expectedScore, deltas (testado)
+│   │   ├── oauth.ts              # OAuth 2.0: config, state CSRF, intercambio de código
+│   │   ├── db-init.ts            # Auto-inicialización del esquema (serverless)
+│   │   ├── logger.ts             # Logging estructurado JSON
+│   │   ├── demo-engine.ts        # Motor local para la demo estática de Pages
+│   │   ├── history.ts            # Autoguardado en localStorage
+│   │   ├── badges.tsx            # Insignias ¡NUEVO! (useSyncExternalStore)
+│   │   └── settings.tsx          # 15 ajustes persistentes
+│   └── instrumentation.ts        # register(): garantiza el esquema al arrancar el proceso
 ├── prisma/schema.prisma          # Vote · AgentRun · User
+├── tests/elo.test.ts             # 18 tests (Vitest): ELO, categorías, integridad del catálogo
+├── Dockerfile                    # Multi-stage (Bun, standalone, runner slim)
+├── docker-compose.yml            # App + volumen ./db + healthcheck
+├── vercel.json                   # Región cdg1 + maxDuration de las APIs
+├── .github/workflows/
+│   ├── ci.yml                    # Lint · tipos · tests · build (2 jobs)
+│   └── deploy-pages.yml          # Demo estática → GitHub Pages
 ├── docs/
 │   ├── API.md                    # Referencia completa de la API
+│   ├── screenshots/*.png         # Capturas reales de la app
 │   └── demos/*.svg               # Demostraciones animadas (CSS-SVG)
-├── public/providers/             # Logotipos oficiales de las 29 organizaciones
+├── public/providers/             # Logotipos oficiales de las 28 organizaciones
 └── ARCHITECTURE.md  ROADMAP.md  CHANGELOG.md  CONTRIBUTING.md
 ```
 
 ## Roadmap y changelog
 
-- 🗺️ [`ROADMAP.md`](ROADMAP.md) — hacia dónde va el proyecto: torneos de 8 y 16, OAuth nativo, perfiles con historial en la nube, arena de imágenes, API pública…
+- 🗺️ [`ROADMAP.md`](ROADMAP.md) — hacia dónde va el proyecto: torneos de 8 y 16, Postgres gestionado, perfiles con historial en la nube, arena de imágenes, API pública…
 - 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN, presente y futuro.
 
 ## Contribuir

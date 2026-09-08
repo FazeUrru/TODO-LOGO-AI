@@ -41,6 +41,67 @@ export default function ChangelogPage() {
         </p>
 
         <div className="relative mt-8 space-y-8 border-l border-border pl-6">
+          {/* ── v1.7.0 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-highlight ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-foreground px-2.5 py-1 font-mono text-[13px] font-semibold text-background">
+                v1.7.0
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">8 sept 2026 · Honestidad radical + producción</span>
+              <NewBadge k="changelog" />
+            </div>
+
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Shield className="h-4 w-4" /> Te contamos exactamente qué es real
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Transparencia radical: sección «Qué es real y qué no» en Acerca de, letra pequeña en cada revelación de batalla y metadatos <code>engine</code> en cada respuesta.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> OAuth 2.0 nativo de Google y GitHub: consentimiento real del proveedor con state CSRF; se activa al definir tus credenciales y documentado paso a paso.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Tests con Vitest (18 casos de ELO y catálogo) y CI con GitHub Actions: lint · tipos · tests · build en cada push.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Docker multi-stage + docker-compose con volumen persistente y healthcheck; guía de despliegue en Vercel con backend real.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Endpoint <code>/api/health</code> (base de datos, versión, uptime) y logging estructurado JSON.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Botón GitHub en la barra superior y en el menú del logo para ver el repositorio desde la app.</li>
+                </ul>
+              </div>
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Bug className="h-4 w-4" /> Correcciones
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="correccion" /> Logo oficial de Qwen (símbolo azul oficial de su web, <code>#082DFF</code>) en lugar de la marca de Alibaba Cloud; organización «Qwen · qwen.ai».</li>
+                  <li className="flex gap-2"><Tag kind="correccion" /> Votación idempotente: un mismo <code>battleId</code> ya no puede registrar dos votos.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* ── v1.6.0 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-muted-foreground/30 ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-secondary px-2.5 py-1 font-mono text-[13px] font-semibold text-foreground">
+                v1.6.0
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">8 sept 2026 · La demo vive en GitHub Pages</span>
+            </div>
+
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Rocket className="h-4 w-4" /> La app completa, siempre disponible en el navegador
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Demo permanente en <code>fazeurru.github.io/TODO-LOGO-AI</code> con despliegue automático en cada push.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Motor demo local: batallas, Copa, ranking, imagen, 3D y cuentas resueltos en tu navegador con las mismas fórmulas ELO.</li>
+                  <li className="flex gap-2"><Tag kind="mejora" /> Píldora honesta «Demo estática» y guía de dominio propio (todologo.ai) en el README.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {/* ── v1.5.0 ── */}
           <div className="relative">
             <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-highlight ring-4 ring-background" />

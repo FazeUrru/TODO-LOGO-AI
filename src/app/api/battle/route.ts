@@ -281,6 +281,10 @@ export async function POST(req: NextRequest) {
       thinkingB: modelB ? (resB.thinking ?? undefined) : undefined,
       sources: sources.length > 0 ? sources : undefined,
       usedFallback: !resA.text || (Boolean(modelB) && !resB.text),
+      // Honestidad: las respuestas las genera el motor único de Todólogo
+      // (GLM vía z-ai-web-dev-sdk) encarnando la personalidad de cada modelo,
+      // no los modelos comerciales reales — requieren claves de cada proveedor.
+      engine: { id: "todologo-glm", note: "Motor único de Todólogo con la personalidad de cada modelo" },
     });
   } catch {
     return NextResponse.json({
@@ -292,6 +296,7 @@ export async function POST(req: NextRequest) {
       b: modelB ? fallbackResponse("Modelo Beta", prompt) : null,
       sources: undefined,
       usedFallback: true,
+      engine: { id: "todologo-fallback", note: "Plantillas locales de emergencia (motor no disponible)" },
     });
   }
 }

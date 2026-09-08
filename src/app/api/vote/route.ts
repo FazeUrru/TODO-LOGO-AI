@@ -37,7 +37,37 @@ export async function POST(req: NextRequest) {
     battleId = `btl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
+  // Recalcula deltas en vivo para los dos modelos implicados
+  const computeDelta = async (id: string) => {
+    const [winsA, winsB, tiesA, tiesB] = await Promise.all([
+      db.vote.count({ where: { OR: [{ modelAId: id, winner: "A" }, { modelBId: id, winner: "B" }] } }),
+      db.vote.count({ where: { OR: [{ modelAId: id, winner: "B" }, { modelBId: id, winner: "A" }] } }),
+      db.vote.count({ where: { OR: [{ modelAId: id, winner: "tie" }, { modelBId: id, winner: "tie" }] } }),
+      db.vote.count({ where: { OR: [{ modelAId: id, winner: "bad" }, { modelBId: id, winner: "bad" }] } }),
+    ]);
+    return {
+      delta: eloDeltaFromVotes(winsA, winsB, tiesA),
+      battles: winsA + winsB + tiesA + tiesB,
+    };
+  };
+
   try {
+    // Idempotencia: un battleId solo puede recibir un voto. Si ya existe,
+    // no se duplica: se devuelven de nuevo las estadísticas recalculadas.
+    const existing = await db.vote.findFirst({ where: { battleId } });
+    if (existing) {
+      const [statA0, statB0] = await Promise.all([computeDelta(modelAId), computeDelta(modelBId)]);
+      return NextResponse.json({
+        ok: true,
+        duplicate: true,
+        note: "Esta batalla ya había recibido un voto; no se ha registrado dos veces.",
+        elo: {
+          [modelAId]: { total: A.elo + statA0.delta, delta: statA0.delta, battles: statA0.battles },
+          [modelBId]: { total: B.elo + statB0.delta, delta: statB0.delta, battles: statB0.battles },
+        },
+        swing: 0,
+      });
+    }
     await db.vote.create({
       data: {
         battleId,
@@ -53,20 +83,6 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-
-  // Recalcula deltas en vivo para los dos modelos implicados
-  const computeDelta = async (id: string) => {
-    const [winsA, winsB, tiesA, tiesB] = await Promise.all([
-      db.vote.count({ where: { OR: [{ modelAId: id, winner: "A" }, { modelBId: id, winner: "B" }] } }),
-      db.vote.count({ where: { OR: [{ modelAId: id, winner: "B" }, { modelBId: id, winner: "A" }] } }),
-      db.vote.count({ where: { OR: [{ modelAId: id, winner: "tie" }, { modelBId: id, winner: "tie" }] } }),
-      db.vote.count({ where: { OR: [{ modelAId: id, winner: "bad" }, { modelBId: id, winner: "bad" }] } }),
-    ]);
-    return {
-      delta: eloDeltaFromVotes(winsA, winsB, tiesA),
-      battles: winsA + winsB + tiesA + tiesB,
-    };
-  };
 
   const [statA, statB] = await Promise.all([computeDelta(modelAId), computeDelta(modelBId)]);
 
