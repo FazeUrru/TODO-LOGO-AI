@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog - TODO-LOGO-AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            color: #ffffff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Fondo animado */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            top: -100px;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            bottom: -50px;
+            right: -50px;
+            animation-delay: -5s;
+        }
+
+        .orb-3 {
+            width: 350px;
+            height: 350px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            top: 50%;
+            left: 50%;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -50px) scale(1.1); }
+            50% { transform: translate(-30px, 30px) scale(0.9); }
+            75% { transform: translate(-50px, -30px) scale(1.05); }
+        }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links a {
+            color: #ffffff;
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff 0%, #667eea 50%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 1s ease;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: #a0a0b0;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 1s ease 0.4s both;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #a0a0b0;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+
+        /* Timeline */
+        .timeline-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, #ffffff 0%, #667eea 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .timeline {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(to bottom, #667eea, #764ba2, #4facfe);
+            border-radius: 3px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 4rem;
+            width: 100%;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-content {
+            width: calc(50% - 40px);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content {
+            margin-left: auto;
+        }
+
+        .timeline-item:nth-child(even) .timeline-content {
+            margin-right: auto;
+        }
+
+        .timeline-content:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            border: 4px solid #0a0a0f;
+            z-index: 1;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .version-date {
+            color: #a0a0b0;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .version-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+
+        .version-description {
+            color: #a0a0b0;
+            margin-bottom: 1.5rem;
+            line-height: 1.7;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .feature-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .tag-new {
+            background: rgba(79, 172, 254, 0.2);
+            color: #4facfe;
+        }
+
+        .tag-improved {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+        }
+
+        .tag-fixed {
+            background: rgba(245, 87, 108, 0.2);
+            color: #f5576c;
+        }
+
+        .tag-beta {
+            background: rgba(255, 159, 67, 0.2);
+            color: #ff9f43;
+        }
+
+        /* Demo Section */
+        .demo-section {
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .demo-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .demo-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .demo-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-description {
+            color: #a0a0b0;
+            margin-bottom: 1.5rem;
+        }
+
+        .demo-preview {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .code-line {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .code-keyword { color: #c678dd; }
+        .code-string { color: #98c379; }
+        .code-function { color: #61afef; }
+        .code-comment { color: #5c6370; }
+
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem 2rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .footer-section h4 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+
+        .footer-section a {
+            display: block;
+            color: #a0a0b0;
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: #667eea;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 2rem auto 0;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            color: #a0a0b0;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .timeline::before {
+                left: 20px;
+            }
+
+            .timeline-content {
+                width: calc(100% - 60px);
+                margin-left: 60px !important;
+            }
+
+            .timeline-dot {
+                left: 20px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            nav {
+                padding: 1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fondo animado -->
+    <div class="bg-animation">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav>
+        <div class="logo">TODO-LOGO-AI</div>
+        <div class="nav-links">
+            <a href="#inicio">Inicio</a>
+            <a href="#changelog">Changelog</a>
+            <a href="#demo">Demo</a>
+            <a href="https://github.com/FazeUrru/Tod-logo-AI" target="_blank">GitHub</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="inicio">
+        <h1>TODO-LOGO-AI Changelog</h1>
+        <p>Descubre todas las actualizaciones, nuevas funciones y mejoras que hemos implementado en TODO-LOGO-AI, la IA que replica fielmente la interfaz de arena.ai con funciones y herramientas avanzadas.</p>
+        
+        <div class="hero-buttons">
+            <a href="https://todólogo.ai" class="btn btn-primary">
+                🚀 Empezar Gratis
+            </a>
+            <a href="https://github.com/FazeUrru/Tod-logo-AI" class="btn btn-secondary" target="_blank">
+                ⭐ Ver en GitHub
+            </a>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card fade-in">
+                <div class="stat-number">24</div>
+                <div class="stat-label">Actualizaciones</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-number">150+</div>
+                <div class="stat-label">Funciones Nuevas</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Mejoras</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-number">99.9%</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Timeline Section -->
+    <section class="timeline-section" id="changelog">
+        <h2 class="section-title">Historial de Versiones</h2>
+        
+        <div class="timeline">
+            <!-- v1.0.0 -->
+            <div class="timeline-item fade-in">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <span class="version-badge">v1.0.0</span>
+                    <div class="version-date">8 de Septiembre, 2026</div>
+                    <h3 class="version-title">🎉 Lanzamiento Oficial</h3>
+                    <p class="version-description">
+                        ¡Bienvenido a TODO-LOGO-AI! Después de meses de desarrollo intensivo, 
+                        presentamos la primera versión oficial de nuestra plataforma de IA que replica 
+                        fielmente la interfaz de arena.ai con funciones y herramientas avanzadas.
+                    </p>
+                    
+                    <ul class="feature-list">
+                        <li>
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#4facfe" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                            </svg>
+                            <div>
+                                <span class="feature-tag tag-new">NUEVO</span>
+                                <strong>Interfaz Réplica de arena.ai</strong>
+                                <br>
+                                <span style="color: #a0a0b0;">Diseño pixel-perfect que imita exactamente la interfaz de arena.ai con todos sus componentes visuales, animaciones y comportamientos.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m15.364-6.364l-4.243 4.243m-1.414-1.414L15.364 3.636M3.636 15.364l4.243-4.243m1.414 1.414L3.636 15.364"/>
+                            </svg>
+                            <div>
+                                <span class="feature-tag tag-new">NUEVO</span>
+                                <strong>IA Avanzada Integrada</strong>
+                                <br>
+                                <span style="color: #a0a0b0;">Motor de inteligencia artificial de última generación capaz de entender contexto, generar código, analizar imágenes y proporcionar respuestas precisas.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#764ba2" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                            <div>
+                                <span class="feature-tag tag-new">NUEVO</span>
+                                <strong>Herramientas Avanzadas</strong>
+                                <br>
+                                <span style="color: #a0a0b0;">Conjunto completo de herramientas para desarrolladores: editor de código con resaltado de sintaxis, terminal integrada, depurador y más.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#4facfe" stroke-width="2">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                            </svg>
+                            <div>
+                                <span class="feature-tag tag-improved">MEJORA</span>
+                                <strong>Rendimiento Optimizado</strong>
+                                <br>
+                                <span style="color: #a0a0b0;">Tiempos de respuesta ultrarrápidos gracias a optimizaciones en el backend y caching inteligente de respuestas frecuentes.</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- v0.9.0 Beta -->
+            <div class="timeline-item fade-in">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <span class="version-badge" style="background: linear-gradient(135deg, #ff9f43 0%, #f5576c 100%);">v0.9.0 Beta</span>
+                    <div class="version-date">Próximamente</div>
+                    <h3 class="version-title">🔮 Próximamente</h3>
+                    <p class="version-description">
+                        Estamos trabajando en la próxima versión beta que incluirá mejoras significativas 
+                        en velocidad, personalización y nuevas funcionalidades experimentales.
+                    </p>
+                    
+                    <ul class="feature-list">
+                        <li>
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#ff9f43" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            <div>
+                                <span class="feature-tag tag-beta">BETA</span>
+                                <strong>Respuestas 50% Más Rápidas</strong>
+                                <br>
+                                <span style="color: #a0a0b0;">Nueva arquitectura de procesamiento que reduce drásticamente los tiempos de espera.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#f5576c" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                            <div>
+                                <span class="feature-tag tag-beta">BETA</span>
+                                <strong>Configuración Personalizable</strong>
+                                <br>
+                                <span style="color: #a0a0b0;">Panel de configuración avanzado para personalizar temas, atajos de teclado y comportamiento de la IA.</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="demo-section" id="demo">
+        <h2 class="section-title">Características Destacadas</h2>
+        
+        <div class="demo-grid">
+            <div class="demo-card fade-in">
+                <span class="demo-icon">🤖</span>
+                <h3 class="demo-title">Interfaz Intuitiva</h3>
+                <p class="demo-description">Réplica exacta de arena.ai con todas sus funcionalidades visuales e interactivas.</p>
+                <div class="demo-preview">
+                    <span class="code-line code-comment">// Interfaz responsive</span>
+                    <span class="code-line"><span class="code-keyword">const</span> <span class="code-function">ui</span> = <span class="code-keyword">new</span> ArenaUI()</span>
+                    <span class="code-line">ui.<span class="code-function">render</span>({'{'} theme: 'dark' {'}'})</span>
+                </div>
+            </div>
+
+            <div class="demo-card fade-in">
+                <span class="demo-icon">⚡</span>
+                <h3 class="demo-title">API Potente</h3>
+                <p class="demo-description">Conexión directa con modelos de IA de última generación para respuestas instantáneas.</p>
+                <div class="demo-preview">
+                    <span class="code-line"><span class="code-keyword">async function</span> <span class="code-function">query</span>(prompt) {'{'}</span>
+                    <span class="code-line">  <span class="code-keyword">return</span> <span class="code-keyword">await</span> ai.<span class="code-function">generate</span>(prompt)</span>
+                    <span class="code-line">{'}'}</span>
+                </div>
+            </div>
+
+            <div class="demo-card fade-in">
+                <span class="demo-icon">🎨</span>
+                <h3 class="demo-title">Diseño Moderno</h3>
+                <p class="demo-description">Estética contemporánea con animaciones fluidas y efectos visuales impresionantes.</p>
+                <div class="demo-preview">
+                    <span class="code-line code-comment">// Glassmorphism effects</span>
+                    <span class="code-line">backdrop-<span class="code-function">filter</span>: blur(20px)</span>
+                    <span class="code-line">background: <span class="code-function">rgba</span>(255,255,255,0.05)</span>
+                </div>
+            </div>
+
+            <div class="demo-card fade-in">
+                <span class="demo-icon">🔒</span>
+                <h3 class="demo-title">Privacidad Garantizada</h3>
+                <p class="demo-description">Tus datos están seguros con encriptación de extremo a extremo.</p>
+                <div class="demo-preview">
+                    <span class="code-line code-comment">// End-to-end encryption</span>
+                    <span class="code-line"><span class="code-keyword">const</span> encrypted = <span class="code-function">encrypt</span>(data)</span>
+                    <span class="code-line"><span class="code-function">secureTransmit</span>(encrypted)</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>TODO-LOGO-AI</h4>
+                <p style="color: #a0a0b0; line-height: 1.7;">
+                    La IA que replica fielmente la interfaz de arena.ai 
+                    con funciones y herramientas avanzadas.
+                </p>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Enlaces Rápidos</h4>
+                <a href="https://todólogo.ai">Inicio</a>
+                <a href="#changelog">Changelog</a>
+                <a href="https://github.com/FazeUrru/Tod-logo-AI" target="_blank">GitHub</a>
+                <a href="https://todólogo.ai/docs" target="_blank">Documentación</a>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Recursos</h4>
+                <a href="https://todólogo.ai/docs/getting-started" target="_blank">Guía de Inicio</a>
+                <a href="https://todólogo.ai/docs/api" target="_blank">API Reference</a>
+                <a href="https://todólogo.ai/examples" target="_blank">Ejemplos</a>
+                <a href="https://todólogo.ai/blog" target="_blank">Blog</a>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="https://todólogo.ai/privacy" target="_blank">Privacidad</a>
+                <a href="https://todólogo.ai/terms" target="_blank">Términos</a>
+                <a href="https://todólogo.ai/license" target="_blank">Licencia</a>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2026 TODO-LOGO-AI. Todos los derechos reservados.</p>
+            <p style="margin-top: 0.5rem;">Desarrollado con ❤️ por <a href="https://github.com/FazeUrru" target="_blank" style="color: #667eea; text-decoration: none;">FazeUrru</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Fade in on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Navbar scroll effect
+        let lastScroll = 0;
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            const currentScroll = window.pageYOffset;
+            
+            if (currentScroll > 100) {
+                nav.style.background = 'rgba(10, 10, 15, 0.95)';
+                nav.style.boxShadow = '0 4px 30px rgba(0, 0, 0, 0.3)';
+            } else {
+                nav.style.background = 'rgba(10, 10, 15, 0.8)';
+                nav.style.boxShadow = 'none';
+            }
+            
+            lastScroll = currentScroll;
+        });
+
+        // Parallax effect for orbs
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const orbs = document.querySelectorAll('.orb');
+            
+            orbs[0].style.transform = `translateY(${scrolled * 0.2}px)`;
+            orbs[1].style.transform = `translateY(${scrolled * -0.1}px)`;
+            orbs[2].style.transform = `translateY(${scrolled * 0.15}px)`;
+        });
+    </script>
+</body>
+</html>
