@@ -57,4 +57,22 @@ model User {
   passwordHash String? // null cuando la cuenta entra por proveedor social
   provider     String   @default("email") // email | google | github | microsoft | x
   createdAt    DateTime @default(now())
+
+  // Perfil (v1.9.2) — 15 ajustes en 4 categorías, con autoguardado
+  displayName    String? // Identidad
+  username       String?
+  bio            String?
+  avatar         String? // emoji elegido
+  accent         String? // id de la paleta
+  pronouns       String? // Presencia
+  location       String?
+  website        String?
+  focus          String? // área de IA favorita
+  publicProfile  Boolean? // Privacidad
+  showStats      Boolean?
+  showTrophies   Boolean?
+  weeklyDigest   Boolean? // Notificaciones
+  newModelsAlert Boolean?
+  arenaInvites   Boolean?
+  profileAt      DateTime? // última escritura del perfil (resolución de conflictos)
 }

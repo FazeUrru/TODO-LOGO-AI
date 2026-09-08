@@ -5,93 +5,8 @@ import { useSettings, type AppSettings } from "@/lib/settings";
 import { markUsed } from "@/lib/badges";
 import { BATTLE_CATEGORIES, NEW_CATEGORIES } from "@/lib/elo";
 import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
-import { cn } from "@/lib/utils";
-
-/* ── Controles reutilizables ── */
-
-function Segmented<T extends string | number>({
-  value,
-  options,
-  onChange,
-}: {
-  value: T;
-  options: { value: T; label: string; icon?: typeof Sun }[];
-  onChange: (v: T) => void;
-}) {
-  return (
-    <div className="flex rounded-lg border border-border bg-card p-0.5">
-      {options.map((o) => {
-        const Icon = o.icon;
-        return (
-          <button
-            key={String(o.value)}
-            onClick={() => onChange(o.value)}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12.5px] transition-colors",
-              value === o.value ? "bg-secondary font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {Icon && <Icon className="h-3.5 w-3.5" />}
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function Switch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-        checked ? "bg-primary" : "bg-muted"
-      )}
-    >
-      <span
-        className={cn(
-          "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all",
-          checked ? "left-[22px]" : "left-0.5"
-        )}
-      />
-    </button>
-  );
-}
-
-function Row({
-  title,
-  desc,
-  children,
-}: {
-  title: string;
-  desc: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-border/60 py-3.5 last:border-0">
-      <div className="min-w-0">
-        <p className="text-[13.5px] font-medium">{title}</p>
-        <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">{desc}</p>
-      </div>
-      <div className="shrink-0">{children}</div>
-    </div>
-  );
-}
-
-function Section({ icon: Icon, title, children }: { icon: typeof Palette; title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
-      <h2 className="flex items-center gap-2 text-[15px] font-semibold">
-        <Icon className="h-4 w-4" />
-        {title}
-      </h2>
-      <div className="mt-1">{children}</div>
-    </section>
-  );
-}
+import { Segmented, Switch, Row, Section } from "@/components/ajustes/controles";
+import PerfilAjustes from "@/components/ajustes/PerfilAjustes";
 
 export default function AjustesPage() {
   const { settings, set, reset } = useSettings();
@@ -113,11 +28,15 @@ export default function AjustesPage() {
           <span className="bg-highlight inline-block px-1.5 font-medium italic">todólogo.ai</span>
         </h1>
         <p className="mt-2 max-w-[600px] text-[14px] leading-relaxed text-foreground/85">
-          15 ajustes en 5 categorías. Se guardan automáticamente en este dispositivo en
-          cuanto los tocas y así permanecen entre sesiones.
+          30 ajustes en 9 categorías: 15 de perfil (identidad, presencia,
+          privacidad y notificaciones) y 15 de la aplicación. Todo se guarda
+          automáticamente en cuanto lo tocas y permanece entre sesiones.
         </p>
 
         <div className="mt-6 space-y-4">
+          {/* ── Perfil (15 ajustes en 4 categorías, v1.9.2) ── */}
+          <PerfilAjustes />
+
           {/* ── 1. Apariencia (3) ── */}
           <Section icon={Palette} title="Apariencia">
             <Row title="Tema" desc="Claro estilo arena, oscuro para sesiones nocturnas o el de tu sistema.">

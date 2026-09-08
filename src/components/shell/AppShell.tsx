@@ -7,6 +7,7 @@ import TopBar from "./TopBar";
 import SearchDialog from "./SearchDialog";
 import { SettingsProvider } from "@/lib/settings";
 import { AuthProvider } from "@/lib/auth-client";
+import { ProfileProvider } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -46,6 +47,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <SettingsProvider>
       <AuthProvider>
+        <ProfileProvider>
         <ArenaContext.Provider value={value}>
         <div className="min-h-screen">
           <Sidebar />
@@ -63,6 +65,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {searchOpen && <SearchDialog />}
         </div>
         </ArenaContext.Provider>
+        </ProfileProvider>
       </AuthProvider>
     </SettingsProvider>
   );

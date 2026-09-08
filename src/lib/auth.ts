@@ -1,6 +1,7 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { db as prisma } from "@/lib/db";
+import { sanitizeProfile, type StoredProfile } from "@/lib/profile-shared";
 
 /**
  * Autenticación real de todólogo.ai:
@@ -80,6 +81,45 @@ export interface PublicUser {
 
 export function toPublicUser(u: { id: string; email: string; name: string; provider: string }): PublicUser {
   return { id: u.id, email: u.email, name: u.name, provider: u.provider };
+}
+
+/** Columnas de perfil en la base de datos → StoredProfile (con defaults). */
+export function profileFromDb(u: {
+  displayName: string | null;
+  username: string | null;
+  bio: string | null;
+  avatar: string | null;
+  accent: string | null;
+  pronouns: string | null;
+  location: string | null;
+  website: string | null;
+  focus: string | null;
+  publicProfile: boolean | null;
+  showStats: boolean | null;
+  showTrophies: boolean | null;
+  weeklyDigest: boolean | null;
+  newModelsAlert: boolean | null;
+  arenaInvites: boolean | null;
+  profileAt: Date | null;
+}): StoredProfile {
+  return sanitizeProfile({
+    displayName: u.displayName ?? "",
+    username: u.username ?? "",
+    bio: u.bio ?? "",
+    avatar: u.avatar ?? "",
+    accent: u.accent ?? "",
+    pronouns: u.pronouns ?? "",
+    location: u.location ?? "",
+    website: u.website ?? "",
+    focus: u.focus ?? "",
+    publicProfile: u.publicProfile ?? undefined,
+    showStats: u.showStats ?? undefined,
+    showTrophies: u.showTrophies ?? undefined,
+    weeklyDigest: u.weeklyDigest ?? undefined,
+    newModelsAlert: u.newModelsAlert ?? undefined,
+    arenaInvites: u.arenaInvites ?? undefined,
+    savedAt: u.profileAt ? u.profileAt.getTime() : 0,
+  });
 }
 
 /** Usuario de la sesión actual (o null). */

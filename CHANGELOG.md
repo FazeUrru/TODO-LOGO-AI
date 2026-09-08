@@ -5,15 +5,35 @@
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.10.0
-- Perfiles con historial en la nube y Hall of Fame de copas.
-- Estadísticas de torneos: % victorias por modelo, mayor upset, rachas.
+### Planeado para v1.11.0
+- Postgres gestionado para ELO global en serverless.
 - Voces de proveedores reales conectando APIs externas junto al motor propio.
+- Historial del perfil en la nube y Hall of Fame de copas.
 
 ### Explorando
 - Arena de imágenes con voto y ranking separado.
 - Internacionalización es/en/pt.
 - Compartir duelos y copas por URL con replay del veredicto.
+
+## [1.10.0] — 2026-09-09 · *Perfil con autoguardado + Operación empresarial*
+
+### Añadido
+- **15 ajustes de perfil en 4 categorías** 👤, con **autoguardado total** (sin botón «Guardar»): cada cambio se escribe al instante en el dispositivo y, con sesión iniciada, se **sincroniza con tu cuenta** tras una pausa de escritura (resolución de conflictos por marca de tiempo):
+  - **Identidad (5)**: nombre visible, @usuario, biografía con contador, avatar (12 emojis o inicial) y color de acento (7 paletas).
+  - **Presencia (4)**: pronombres, ubicación, enlace web (validado) y área de IA favorita.
+  - **Privacidad (3)**: perfil público, mostrar estadísticas y mostrar copas.
+  - **Notificaciones (3)**: resumen semanal, aviso de nuevos modelos e invitaciones a copas.
+- **Tarjeta de perfil viva**: la tarjeta de cuenta del sidebar y la previsualización «Así se ve tu tarjeta» en Ajustes reflejan nombre, avatar, acento y @usuario al instante.
+- **Chip de estado de autoguardado**: «Guardando…» → «Guardado en tu cuenta» / «Guardado en este dispositivo», con reintento manual si falla la sincronización.
+- **Cron interno de nivel empresarial** ⚙️ (`src/lib/cron.ts`, arrancado por `instrumentation.ts`): `latido-bd` (5 min), `purga-copas` (10 min) e `informe-diario` (24 h), con tiempo límite por tarea, jitter ±10 %, aislamiento de errores, contador de fallos, guard anti-HMR, parada ordenada y `CRON_DISABLED=1` para apagarlo; **informe completo en `/api/health`**.
+- **Watchdog empresarial** 🐕 (`scripts/watchdog.sh`): vigila `/api/health` (30 s), reinicia el servidor con backoff exponencial 5→120 s, tope de reinicios consecutivos, lockfile anti-duplicados y logs JSON en `logs/watchdog.log`; modo `--once` para cron del sistema.
+- **README premium**: «Resumen en 30 segundos», descargo destacado de la demo estática (y de qué es simulado y qué no), badges actualizados e hipervínculos internos entre secciones (Acerca de, OAuth, despliegue, honestidad).
+
+### Técnico
+- `User` ampliado con los 15 campos de perfil + `profileAt` (índice de resolución de conflictos); `db:push` aplicado.
+- `PATCH /api/auth/me` sanea y valida el perfil con las mismas reglas compartidas cliente/servidor (`profile-shared.ts`); `GET /api/auth/me` devuelve el perfil.
+- Controles de Ajustes extraídos a `components/ajustes/controles.tsx` (Segmented, Switch, Row, RowWide, Section, campos con contador) para reutilizarlos entre perfil y aplicación.
+- Favicon v1.9.1 integrado en el flujo; lint limpio (incluye corrección `set-state-in-effect` en `/games`).
 
 ## [1.9.1] — 2026-09-09 · *Favicon todólogo*
 

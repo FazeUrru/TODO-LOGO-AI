@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
 import { MODELS } from "@/lib/models-data";
+import { cronReport } from "@/lib/cron";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ export async function GET() {
       models: MODELS.length,
       providers: new Set(MODELS.map((m) => m.provider)).size,
     },
+    cron: cronReport(),
     uptimeSec: Math.round(process.uptime()),
     latencyMs: Date.now() - start,
     timestamp: new Date().toISOString(),

@@ -43,6 +43,8 @@ import {
   type SavedChat,
 } from "@/lib/history";
 import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
+import { useProfile } from "@/lib/profile";
+import { accentColor, effectiveName } from "@/lib/profile-shared";
 import { useAuth } from "@/lib/auth-client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -56,6 +58,57 @@ const MODE_ICONS: Record<ArenaMode, typeof Swords> = {
 };
 
 const EMPTY_CHATS: SavedChat[] = [];
+
+/** Tarjeta de cuenta con el perfil aplicado (avatar emoji, acento, @usuario). */
+function UserCard() {
+  const { user, logout } = useAuth();
+  const { profile } = useProfile();
+  const { toast } = useToast();
+
+  async function onLogout() {
+    await logout();
+    toast({ title: "Sesión cerrada", description: "Vuelve pronto a la arena." });
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-2.5">
+      <div className="flex items-center gap-2.5">
+        {profile.avatar ? (
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[17px]"
+            style={{ backgroundColor: accentColor(profile.accent) }}
+            aria-hidden
+          >
+            {profile.avatar}
+          </span>
+        ) : (
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-display text-[15px] font-semibold text-white"
+            style={{ backgroundColor: accentColor(profile.accent) }}
+            aria-hidden
+          >
+            {effectiveName(profile, user?.name ?? "A").charAt(0).toUpperCase()}
+          </span>
+        )}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13.5px] font-medium">
+            {effectiveName(profile, user?.name ?? "")}
+          </span>
+          <span className="block truncate text-[11.5px] text-muted-foreground">
+            {profile.username ? `@${profile.username}` : user?.email}
+          </span>
+        </span>
+      </div>
+      <button
+        onClick={onLogout}
+        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border py-1.5 text-[12.5px] font-medium hover:bg-accent"
+      >
+        <LogOut className="h-3.5 w-3.5" />
+        Cerrar sesión
+      </button>
+    </div>
+  );
+}
 
 /** Punto amarillo de «¡Nuevo!» para botones-icono pequeños. */
 function NewDot({ k, className }: { k: string; className?: string }) {
@@ -399,24 +452,7 @@ export default function Sidebar() {
             </div>
 
             {user ? (
-              <div className="rounded-xl border border-border bg-card p-2.5">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary font-display text-[15px] font-semibold text-primary-foreground">
-                    {user.name.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13.5px] font-medium">{user.name}</span>
-                    <span className="block truncate text-[11.5px] text-muted-foreground">{user.email}</span>
-                  </span>
-                </div>
-                <button
-                  onClick={onLogout}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border py-1.5 text-[12.5px] font-medium hover:bg-accent"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  Cerrar sesión
-                </button>
-              </div>
+              <UserCard />
             ) : (
               <>
                 <button

@@ -58,6 +58,7 @@ worklog.md
 /download/
 /scripts/*
 !/scripts/build-pages.mjs
+!/scripts/watchdog.sh
 /tool-results/
 /tests/*
 !/tests/elo.test.ts
@@ -76,3 +77,4 @@ worklog.md
 /.next-static/
 /.pages-test/
 /.pages-api-hidden/
+logs/
