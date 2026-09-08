@@ -59,10 +59,18 @@
 - **15 ajustes de perfil en 4 categorías** (identidad, presencia, privacidad, notificaciones) con **autoguardado** local instantáneo y sincronización con la cuenta; tarjeta de usuario viva en el sidebar y previsualización en `/ajustes`.
 - **Cron interno** (`latido-bd`, `purga-copas`, `informe-diario`) con informe en `/api/health` y **watchdog** (`scripts/watchdog.sh`) con reinicio automático y backoff — [Operar](README.md#%EF%B8%8F-operar-watchdog-y-cron-nivel-empresarial).
 - README premium: resumen en 30 segundos, descargo visible de la demo y navegación interna completa.
+- Detalles en el [CHANGELOG v1.10.0](CHANGELOG.md#1100--9-sept-2026--perfil-con-autoguardado--operación-empresarial).
+
+### v1.11.0 · 9 sept 2026 — *Streaming en tiempo real + producción sin fricción*
+- **Streaming SSE en el chat**: el texto se genera palabra a palabra (batalla, lado a lado y directo), con razonamiento profundo en vivo — [Superpoderes](README.md#superpoderes-del-chat).
+- **Banner «Demo vs Producción» en la app**: la demo estática se declara en grande con el comando Docker a un clic; en producción no existe.
+- **Cobertura de código**: 48 tests y 97.7 % sobre la lógica central, subida a Codecov desde la CI con badge en vivo.
+- **Changelog navegable**: cada versión enlaza a su commit y a su diff (etiquetas git v1.4.0 → v1.11.0); Docker como opción nº 1 del inicio rápido.
+- Detalles en el [CHANGELOG v1.11.0](CHANGELOG.md).
 
 ---
 
-## 🔨 En curso — v1.11.0 «Perfiles en la nube» *(objetivo: oct 2026)*
+## 🔨 En curso — v1.12.0 «Perfiles en la nube» *(objetivo: oct 2026)*
 
 | # | Función | Estado | Detalle |
 |---|---|:---:|---|
@@ -72,7 +80,7 @@
 | 4 | **Hall of Fame de copas** | idea | Página con las últimas copas jugadas: consigna, campeón y margen de la final |
 | 5 | **Estadísticas de la copa** | idea | % de victorias por modelo en torneos, upset más grande, racha de campeonatos |
 
-## 🔭 Próximo — v1.12.0 «El arena se abre» *(objetivo: dic 2026)*
+## 🔭 Próximo — v1.13.0 «El arena se abre» *(objetivo: dic 2026)*
 
 - **Arena de imágenes con voto**: dos ilustraciones generadas, tú eliges la mejor; ranking ELO de generación de imágenes separado del de texto.
 - **Internacionalización (i18n)**: es/en/pt con `next-intl`, la comunidad puede traducir la interfaz.

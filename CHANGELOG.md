@@ -2,10 +2,12 @@
 
 > Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [Versionado Semántico](https://semver.org/lang/es/).
 > La versión actual y su fecha se muestran también dentro de la app (sidebar → Ajustes).
+>
+> 🔗 **Changelog navegable**: desde la v1.11.0 cada versión enlaza a su **commit exacto** y a su **diff completo** mediante etiquetas git (`v1.4.0` → `v1.11.0`). En la app, la página Changelog reproduce los mismos enlaces.
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.11.0
+### Planeado para v1.12.0
 - Postgres gestionado para ELO global en serverless.
 - Voces de proveedores reales conectando APIs externas junto al motor propio.
 - Historial del perfil en la nube y Hall of Fame de copas.
@@ -15,7 +17,26 @@
 - Internacionalización es/en/pt.
 - Compartir duelos y copas por URL con replay del veredicto.
 
-## [1.10.0] — 2026-09-09 · *Perfil con autoguardado + Operación empresarial*
+## [1.11.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.10.0...v1.11.0) · 9 sept 2026 — *Streaming en tiempo real + producción sin fricción*
+
+### Añadido
+- **Streaming de respuestas (SSE)** ⚡ en batalla, lado a lado y chat directo: el texto se genera **palabra a palabra** con cursor parpadeante — adiós al spinner de 15-50 s. El razonamiento profundo también fluye en vivo (eventos `tA`/`tB` separados del contenido).
+- **Banner «Demo vs Producción» dentro de la app** ⚠️: cuando corres la demo estática (GitHub Pages), un aviso ámbar declara a simple vista que las respuestas y el ELO se generan en tu navegador, con el comando `docker compose up --build` a un clic y enlaces a «Despliegue en 1 clic» y «Qué es real y qué no». En una instancia real, el banner no existe.
+- **Cobertura de código con Codecov** 🛡️: suite ampliada a **48 tests** (perfil, personas, catálogo, ELO) y **97.7 % de cobertura** sobre la lógica central (100 % de funciones); la CI genera el informe con `@vitest/coverage-v8` y lo sube a Codecov — badge en vivo en el README.
+- **Changelog con enlaces vivos** 🔗: cada versión enlaza a su commit exacto y a su diff completo (`/compare/v1.10.0...v1.11.0`); etiquetas git nuevas para todas las versiones desde la v1.4.0. La página Changelog de la app incorpora las versiones 1.8.0 → 1.11.0 que faltaban y los mismos enlaces.
+
+### Mejorado
+- **Docker, opción nº 1**: el README abre el inicio rápido con `docker compose up --build` (despliegue en 1 clic con volumen persistente y healthcheck) y los badges de CI pasan de estáticos a **en vivo** (GitHub Actions + Codecov).
+- Los tests destaparon un filo del saneado de @usuario: ya no deja guiones bajos sobrantes en los bordes (`_usuaria_` → `usuaria`), misma regla en cliente y servidor.
+
+### Técnico
+- `POST /api/battle` acepta `stream: true` y responde `text/event-stream` con eventos `meta` (ids, battleId, fuentes) → `dA`/`dB`/`tA`/`tB` (deltas) → `end`/`error`. El SDK devuelve el `ReadableStream` crudo del upstream (SSE estilo OpenAI) que se decodifica en servidor, con tope de 55 s por lado y **respuesta de reserva por lado** si un contendiente no produce texto. La ruta JSON clásica se conserva intacta como compatibilidad (y la usa el motor demo de Pages).
+- Cliente (`ChatExperience`): los turnos vacíos se pintan al abrir el stream, los deltas se vacían al DOM con throttle de 80 ms y cursor `▍`, y la finalización aplica el mismo post-proceso que el modo JSON (3D con `MODEL:`/`receta3d`, vídeo, razonamiento, fuentes y sonido). Los estados `thinking` y `streaming` bloquean envíos duplicados.
+- Cobertura centrada en la lógica central (`elo`, `personas`, `profile-shared`, `models-data`, `asset-path`, `version`): 97.7 % sentencias · 90 % ramas · 100 % funciones. Script `bun run test:coverage`.
+
+## [1.10.0](https://github.com/FazeUrru/TODO-LOGO-AI/commit/d6bf8ce) · 9 sept 2026 — *Perfil con autoguardado + Operación empresarial*
+
+> 🔍 [Diff completo v1.9.1 → v1.10.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.9.1...v1.10.0)
 
 ### Añadido
 - **15 ajustes de perfil en 4 categorías** 👤, con **autoguardado total** (sin botón «Guardar»): cada cambio se escribe al instante en el dispositivo y, con sesión iniciada, se **sincroniza con tu cuenta** tras una pausa de escritura (resolución de conflictos por marca de tiempo):
@@ -35,7 +56,9 @@
 - Controles de Ajustes extraídos a `components/ajustes/controles.tsx` (Segmented, Switch, Row, RowWide, Section, campos con contador) para reutilizarlos entre perfil y aplicación.
 - Favicon v1.9.1 integrado en el flujo; lint limpio (incluye corrección `set-state-in-effect` en `/games`).
 
-## [1.9.1] — 2026-09-09 · *Favicon todólogo*
+## [1.9.1](https://github.com/FazeUrru/TODO-LOGO-AI/commit/74c757b) · 9 sept 2026 — *Favicon todólogo*
+
+> 🔍 [Diff completo 1.9.0 → 1.9.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.9.0...v1.9.1)
 
 ### Cambiado
 - **Favicon renovado**: el icono de la pestaña ya no es el logo «Z» genérico; ahora reproduce fielmente el **logo del lado izquierdo de la app** (el Landmark del frontispicio, trazado con los paths exactos de lucide usados en la barra lateral, stroke 2.1) sobre la loseta crema `#FCFAF8` con esquinas redondeadas y tinta `#2E2B29`.
@@ -45,7 +68,9 @@
 - Cobertura completa de formatos: `favicon.svg` (navegadores modernos), `favicon.ico` multi-tamaño 16/32/48 (fallback clásico), `icons/icon-192.png` e `icon-512.png` (Android/PWA) y `apple-icon.png` 180×180 (iOS/touch), todos generados con `sharp` desde el SVG maestro mediante el script reproducible `scripts/make-favicons.mjs`.
 - `metadata.icons` en `layout.tsx` actualizado con la lista priorizada (SVG → ICO → PNG) respetando `asset()` para el basePath de GitHub Pages.
 
-## [1.9.0] — 2026-09-09 · *Arcade autoevolutivo + Copas XL + ELO global*
+## [1.9.0](https://github.com/FazeUrru/TODO-LOGO-AI/commit/1c53ea3) · 9 sept 2026 — *Arcade autoevolutivo + Copas XL + ELO global*
+
+> 🔍 [Diff completo 1.8.1 → 1.9.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.8.1...v1.9.0)
 
 ### Añadido
 - **Arcade todólogo** (`/games` + 3 juegos completos en `public/games/`): nace el Prompt Maestro del Modo Juego AAA, destilado de tres juegos reales publicados y jugables en el navegador, todos con música y SFX 100% procedurales (WebAudio, cero archivos), botón «Compartir» (X, Facebook, WhatsApp, Telegram + mensaje personalizable + copiar enlace) y bucle autoevolutivo visible con registro persistente:
@@ -60,7 +85,9 @@
 - `public/games/vendor/three.min.js` (r152 UMD) sirve Three.js local: los juegos funcionan sin CDN ni internet.
 - Schema Prisma ampliado con `EloState` (índice por elo); `db:push` aplicado.
 
-## [1.8.1] — 2026-09-09 · *Modo Juego AAA autoevolutivo*
+## [1.8.1](https://github.com/FazeUrru/TODO-LOGO-AI/commit/590404f) · 9 sept 2026 — *Modo Juego AAA autoevolutivo*
+
+> 🔍 [Diff completo 1.8.0 → 1.8.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.8.0...v1.8.1)
 
 ### Añadido
 - **Modo Juego AAA** 🎮 (skill `/juego` + botón de mando en el composer): las IAs actúan como directores de juegos de élite (ambición Rockstar: GTA VI, Red Dead Redemption 2) y entregan en cada respuesta **ficha del juego** (nombre, género, pilar de diseño), **sistemas autoevolutivos** (dificultad adaptativa que aprende del jugador, generación procedural, NPCs Némesis que recuerdan, mundo vivo), **stack AAA 2026** y un **prototipo JUGABLE completo** en un único bloque HTML autocontenido.
@@ -69,7 +96,9 @@
 - **Modo Agente AAA**: las misiones de tipo «juego-aaa» ahora planifican la capa de autoevolución (dificultad adaptativa con ML, mundo procedural, Némesis persistentes, mutaciones estilo Steam Workshop) en equipo, fases y stack.
 - Starter «Crea un juego» reconectado al nuevo modo; badge de novedad propio (`modo-juego`).
 
-## [1.8.0] — 2026-09-09 · *Cerebros reentrenados + Markdown pro*
+## [1.8.0](https://github.com/FazeUrru/TODO-LOGO-AI/commit/4476bd8) · 9 sept 2026 — *Cerebros reentrenados + Markdown pro*
+
+> 🔍 [Diff completo 1.7.0 → 1.8.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.7.0...v1.8.0)
 
 ### Añadido
 - **IA "reentrenada"** (`src/lib/personas.ts` v2): cada una de las 56 voces del arena encarna ahora el carácter real de su casa — prosa reflexiva y matizada (sello Anthropic), estructura accionable y plan claro (sello OpenAI), tablas enciclopédicas (sello Google), humor afilado con datos duros (sello xAI), rigor de investigador cuantitativo (sello DeepSeek), eficiencia europea (sello Mistral), ingeniería directa (sello Z.ai)… — con tempo según tamaño (flash/turbo/mini = ultraconciso; pro/max/opus = profundo) y especialidad de código para los modelos dev.
@@ -78,7 +107,9 @@
 - **Markdown de nivel arena** (`src/components/arena/Markdown.tsx`): tablas GFM con scroll horizontal, cabecera fija y filas cebra (remark-gfm), resaltado de sintaxis a todo color (react-syntax-highlighter + tema oneDark, 27 lenguajes registrados con alias js/ts/py/sh/html…), listas de tareas con checkboxes y modo oscuro completo para tablas y código.
 - **Vista previa automática de código** como arena.ai: los bloques HTML/SVG abren por defecto una previsualización viva en iframe sandbox (`allow-scripts`, origen aislado) con pestañas «Vista previa / Código», cabecera con lenguaje y botón copiar en cada bloque.
 
-## [1.7.0] — 2026-09-08 · *Honestidad radical + producción*
+## [1.7.0](https://github.com/FazeUrru/TODO-LOGO-AI/commit/8a591f8) · 8 sept 2026 — *Honestidad radical + producción*
+
+> 🔍 [Diff completo 1.6.0 → 1.7.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.6.0...v1.7.0)
 
 ### Añadido
 - **Transparencia radical**: nueva sección «Qué es real y qué no» en `/acerca`, letra pequeña en cada revelación de batalla y tabla de honestidad en el README — declara que las 56 voces salen de un motor único con personalidades, que el ELO de la demo vive en tu navegador y qué es 100 % real (ELO de servidor, votos, cuentas, Copa).
@@ -104,7 +135,9 @@
 - `/api/battle` devuelve metadatos `engine` que declaran el origen de cada respuesta.
 - La demo estática también expone `/api/health` y `/api/auth/oauth/status` vía motor local.
 
-## [1.6.0] — 2026-09-08 · *La demo vive en GitHub Pages*
+## [1.6.0](https://github.com/FazeUrru/TODO-LOGO-AI/commit/ec935d9) · 8 sept 2026 — *La demo vive en GitHub Pages*
+
+> 🔍 [Diff completo 1.5.0 → 1.6.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.5.0...v1.6.0)
 
 ### Añadido
 - **Demo funcional permanente en GitHub Pages**: cada push a `main` despliega automáticamente la aplicación completa en `https://fazeurru.github.io/TODO-LOGO-AI/` (workflow oficial de Pages con despliegue por artefactos).
@@ -119,7 +152,9 @@
 - `src/lib/asset-path.ts`: helper `asset()` que prefija logotipos de proveedores, imágenes de novedades y favicon con el basePath; la demo muestra todos los logos oficiales correctamente.
 - Versionado de la app a 1.6.0 en sidebar, ajustes y changelog.
 
-## [1.5.0] — 2026-09-08 · *La Copa Todólogo*
+## [1.5.0](https://github.com/FazeUrru/TODO-LOGO-AI/commit/f78d4b9) · 8 sept 2026 — *La Copa Todólogo*
+
+> 🔍 [Diff completo 1.4.0 → 1.5.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.4.0...v1.5.0)
 
 ### Añadido
 - **Modo Torneo (Copa Todólogo)** — el torneo de eliminación directa que no existe en ningún otro arena:
@@ -136,7 +171,7 @@
 - El selector de modos ahora incluye la Copa Todólogo con insignia ¡NUEVO! que desaparece al usarla.
 - `src/lib/personas.ts` extrae las personas de estilo de los modelos para reutilizarlas en cualquier modo competitivo.
 
-## [1.4.0] — 2026-09-08 · *El chat gana superpoderes*
+## [1.4.0](https://github.com/FazeUrru/TODO-LOGO-AI/commit/b97407e) · 8 sept 2026 — *El chat gana superpoderes*
 
 ### Añadido
 - **Adjuntos reales**: archivos (PDF, Word, Excel, texto), enlaces y vídeos; el contenido legible viaja al modelo con el mensaje.
@@ -158,7 +193,7 @@
 - Los botones de código, imagen, vídeo, 3D y skills ya se ven también en móvil.
 - El favicon usa el mismo logotipo de todólogo.ai.
 
-## [1.2.0] — 2026-09-08 · *Renovación total de la interfaz*
+## [1.2.0] · 8 sept 2026 — *Renovación total de la interfaz*
 
 ### Añadido
 - Interfaz rehecha al detalle con los tokens visuales cálidos del arena (fondo crema, tinta oscura, acento amarillo, titulares serif).
@@ -172,7 +207,7 @@
 - Solapamiento del botón de expandir con "Nuevo chat" en la sidebar colapsada.
 - Tres violaciones de `react-hooks`/`set-state-in-effect` y errores de re-render en la búsqueda.
 
-## [1.0.0] — 2026-07-28 · *Lanzamiento inicial*
+## [1.0.0] · 28 jul 2026 — *Lanzamiento inicial*
 
 ### Añadido
 - Plataforma web completa tipo arena de IA: batalla anónima con voto ELO, lado a lado, chat directo y Modo Agente con planes de misión generados por IA.

@@ -20,6 +20,8 @@ interface BattleRequest {
   historyA?: HistoryTurn[];
   historyB?: HistoryTurn[];
   composerMode?: "texto" | "codigo" | "imagen" | "video" | "modelos3d" | "web" | "profundo" | "juego";
+  /** Si es true, responde con un flujo SSE (Server-Sent Events) en lugar de JSON. */
+  stream?: boolean;
 }
 
 interface WebSource {
@@ -62,14 +64,11 @@ function fallbackResponse(label: string, prompt: string): string {
   return `**${label}** (respuesta de reserva — el proveedor no respondió a tiempo)\n\nHe recibido tu consulta: _"${prompt.slice(0, 140)}${prompt.length > 140 ? "…" : ""}"_. En condiciones normales, aquí verías la respuesta completa generada por este modelo. El arena registrará tu voto igualmente para no sesgar el ELO.`;
 }
 
-async function generateSide(
-  zai: Awaited<ReturnType<typeof ZAI.create>>,
+function buildMessages(
   systemPrompt: string,
   prompt: string,
-  temperature: number,
-  history: HistoryTurn[],
-  think = false
-): Promise<{ text: string | null; thinking: string | null }> {
+  history: HistoryTurn[]
+): { role: string; content: string }[] {
   const msgs: { role: string; content: string }[] = [
     { role: "assistant", content: systemPrompt },
   ];
@@ -79,6 +78,23 @@ async function generateSide(
     }
   }
   msgs.push({ role: "user", content: prompt });
+  return msgs;
+}
+
+interface GeneratedSide {
+  text: string | null;
+  thinking: string | null;
+}
+
+async function generateSide(
+  zai: Awaited<ReturnType<typeof ZAI.create>>,
+  systemPrompt: string,
+  prompt: string,
+  temperature: number,
+  history: HistoryTurn[],
+  think = false
+): Promise<GeneratedSide> {
+  const msgs = buildMessages(systemPrompt, prompt, history);
   try {
     const completion = await Promise.race([
       zai.chat.completions.create({
@@ -107,6 +123,145 @@ async function generateSide(
   } catch {
     return { text: null, thinking: null };
   }
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Streaming SSE
+ *
+ * El SDK devuelve el ReadableStream crudo del upstream (formato
+ * SSE estilo OpenAI: `data: {"choices":[{"delta":{…}}]}` + [DONE]).
+ * Aquí lo decodificamos y reenviamos como eventos propios:
+ *
+ *   meta {aId,bId,battleId,sources} · dA/dB {v} · tA/tB {v} · end · error
+ * ───────────────────────────────────────────────────────────── */
+
+const STREAM_CONNECT_TIMEOUT_MS = 25_000;
+const STREAM_TOTAL_DEADLINE_MS = 55_000;
+
+interface StreamSideResult {
+  text: string;
+  thinking: string;
+  empty: boolean;
+}
+
+/** Itera el ReadableStream del SDK y extrae deltas {content, reasoning} estilo OpenAI. */
+async function* upstreamDeltas(
+  body: ReadableStream<Uint8Array>
+): AsyncGenerator<{ content: string; reasoning: string }> {
+  const reader = body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let idx: number;
+      while ((idx = buf.indexOf("\n")) !== -1) {
+        const line = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 1);
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (!data || data === "[DONE]") continue;
+        try {
+          const j = JSON.parse(data) as {
+            choices?: { delta?: Record<string, unknown> }[];
+          };
+          const delta = j.choices?.[0]?.delta;
+          if (!delta) continue;
+          const content =
+            typeof delta.content === "string" ? delta.content : "";
+          const reasoning =
+            typeof delta.reasoning_content === "string"
+              ? delta.reasoning_content
+              : typeof delta.reasoning === "string"
+                ? delta.reasoning
+                : "";
+          if (content || reasoning) yield { content, reasoning };
+        } catch {
+          /* línea no JSON (keep-alive, comentario): ignorar */
+        }
+      }
+    }
+  } finally {
+    try {
+      reader.cancel();
+    } catch {
+      /* ya cerrado */
+    }
+  }
+}
+
+/** Genera un lado con streaming: reenvía cada delta vía send() y acumula el texto final. */
+async function streamSide(
+  zai: Awaited<ReturnType<typeof ZAI.create>>,
+  side: "A" | "B",
+  systemPrompt: string,
+  prompt: string,
+  temperature: number,
+  history: HistoryTurn[],
+  think: boolean,
+  send: (ev: Record<string, unknown>) => void
+): Promise<StreamSideResult> {
+  const deltaKey = side === "A" ? "dA" : "dB";
+  const thinkKey = side === "A" ? "tA" : "tB";
+  let text = "";
+  let thinking = "";
+
+  const push = (kind: string, v: string) => {
+    send({ t: kind, v });
+  };
+
+  try {
+    const started = await Promise.race([
+      zai.chat.completions.create({
+        messages: buildMessages(systemPrompt, prompt, history) as never,
+        temperature,
+        thinking: { type: think ? "enabled" : "disabled" },
+        stream: true,
+      }),
+      new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), STREAM_CONNECT_TIMEOUT_MS)
+      ),
+    ]);
+
+    if (started && typeof (started as ReadableStream).getReader === "function") {
+      const deadline = Date.now() + STREAM_TOTAL_DEADLINE_MS;
+      for await (const d of upstreamDeltas(started as ReadableStream<Uint8Array>)) {
+        if (Date.now() > deadline) break;
+        if (d.reasoning) {
+          thinking += d.reasoning;
+          push(thinkKey, d.reasoning);
+        }
+        if (d.content) {
+          text += d.content;
+          push(deltaKey, d.content);
+        }
+      }
+    } else if (
+      started &&
+      typeof started === "object" &&
+      "choices" in (started as Record<string, unknown>)
+    ) {
+      // El upstream ignoró stream:true y devolvió JSON completo: reenviar de una pieza
+      const choice = (
+        started as { choices?: { message?: Record<string, unknown> }[] }
+      ).choices?.[0];
+      const msg = choice?.message;
+      if (typeof msg?.reasoning_content === "string" && msg.reasoning_content) {
+        thinking += msg.reasoning_content;
+        push(thinkKey, msg.reasoning_content.slice(0, 2000));
+      }
+      if (typeof msg?.content === "string" && msg.content.trim()) {
+        text += msg.content;
+        push(deltaKey, msg.content);
+      }
+    }
+  } catch {
+    /* cae a la respuesta de reserva */
+  }
+
+  return { text, thinking, empty: text.trim().length === 0 };
 }
 
 /** Búsqueda web real vía el SDK; nunca rompe el flujo si falla (1 reintento). */
@@ -141,6 +296,25 @@ async function searchWeb(
   return { context: "", sources: [] };
 }
 
+interface BattleSetup {
+  aId: string;
+  bId: string | null;
+  battleId: string;
+  modelA: NonNullable<ReturnType<typeof getModel>>;
+  modelB: ReturnType<typeof getModel>;
+  sys: (name: string, extra?: string) => string;
+  finalPrompt: string;
+  historyA: HistoryTurn[];
+  historyB: HistoryTurn[];
+  think: boolean;
+  sources: WebSource[];
+  single: boolean;
+}
+
+function newBattleId(): string {
+  return `btl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export async function POST(req: NextRequest) {
   let body: BattleRequest;
   try {
@@ -166,7 +340,8 @@ export async function POST(req: NextRequest) {
   // Asignación de modelos: fijos (lado a lado / directo) o sorteo anónimo
   const aId = body.modelAId && getModel(body.modelAId) ? body.modelAId : pickRandom();
   let bId: string | null = null;
-  if (!body.single) {
+  const single = Boolean(body.single);
+  if (!single) {
     bId = body.modelBId && getModel(body.modelBId) ? body.modelBId : pickRandom(aId);
     if (bId === aId) bId = pickRandom(aId);
   }
@@ -218,6 +393,91 @@ export async function POST(req: NextRequest) {
       name === modelA.name ? aId : (bId ?? "")
     )} ${framing} ${composerFraming} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 230 palabras (el código no cuenta en el límite).${extra} Nunca reveles tu nombre ni el de tu proveedor: eres un contendiente anónimo y tu estilo debe hablar por ti.`;
 
+  /* ── Modo streaming (SSE) ─────────────────────────────────── */
+  if (body.stream) {
+    const battleId = newBattleId();
+    const encoder = new TextEncoder();
+    const zai = await ZAI.create();
+
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const send = (ev: Record<string, unknown>) => {
+          try {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(ev)}\n\n`));
+          } catch {
+            /* cliente desconectado */
+          }
+        };
+        try {
+          send({
+            t: "meta",
+            aId,
+            bId,
+            battleId,
+            sources: sources.length > 0 ? sources : undefined,
+          });
+
+          const resA = streamSide(
+            zai, "A", sys(modelA.name), finalPrompt, 0.65, historyA, think, send
+          );
+          const resB =
+            !single && modelB
+              ? streamSide(
+                  zai,
+                  "B",
+                  sys(modelB.name, " Aporta un ángulo distinto al típico."),
+                  finalPrompt,
+                  0.9,
+                  historyB,
+                  think,
+                  send
+                )
+              : null;
+
+          const [outA, outB] = await Promise.all([
+            resA,
+            resB ?? Promise.resolve(null),
+          ]);
+
+          const usedA = outA.empty;
+          const usedB = Boolean(modelB) && (!outB || outB.empty);
+          if (usedA) send({ t: "dA", v: fallbackResponse("Modelo Alfa", prompt) });
+          if (usedB) send({ t: "dB", v: fallbackResponse("Modelo Beta", prompt) });
+
+          send({
+            t: "end",
+            usedFallback: usedA || usedB,
+            engine: {
+              id: "todologo-glm",
+              note: "Motor único de Todólogo con la personalidad de cada modelo",
+            },
+          });
+        } catch {
+          send({
+            t: "error",
+            message: "La arena no pudo generar las respuestas. Inténtalo de nuevo.",
+          });
+        } finally {
+          try {
+            controller.close();
+          } catch {
+            /* ya cerrado */
+          }
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  }
+
+  /* ── Modo JSON clásico (sin streaming) ───────────────────── */
   try {
     const zai = await ZAI.create();
     const genA = generateSide(
@@ -246,7 +506,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       aId,
       bId,
-      battleId: `btl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+      battleId: newBattleId(),
       a: resA.text ?? fallbackResponse("Modelo Alfa", prompt),
       b: modelB ? (resB.text ?? fallbackResponse("Modelo Beta", prompt)) : null,
       thinkingA: resA.thinking ?? undefined,
@@ -263,7 +523,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       aId,
       bId,
-      battleId: `btl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+      battleId: newBattleId(),
       a: fallbackResponse("Modelo Alfa", prompt),
       b: modelB ? fallbackResponse("Modelo Beta", prompt) : null,
       sources: undefined,

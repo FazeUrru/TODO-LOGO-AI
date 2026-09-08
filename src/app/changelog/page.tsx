@@ -1,9 +1,35 @@
 "use client";
 
 import { useEffect } from "react";
-import { History, Rocket, Sparkles, Bug, Shield, Layers, Trophy } from "lucide-react";
+import { History, Rocket, Sparkles, Bug, Shield, Layers, Trophy, GitCommitHorizontal, UserRound, Gamepad2, Palette, Workflow, Radio, Gauge } from "lucide-react";
 import { markUsed, NewBadge } from "@/lib/badges";
 import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
+
+const REPO = "https://github.com/FazeUrru/TODO-LOGO-AI";
+
+/** Enlace vivo al commit exacto (o al diff entre etiquetas) de cada versión. */
+function CodeLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Ver el código exacto de esta versión en GitHub"
+      className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10.5px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+    >
+      <GitCommitHorizontal className="h-3 w-3" aria-hidden />
+      {children}
+    </a>
+  );
+}
+
+function CommitLink({ hash }: { hash: string }) {
+  return (
+    <CodeLink href={`${REPO}/commit/${hash}`}>
+      commit {hash.slice(0, 7)}
+    </CodeLink>
+  );
+}
 
 function Tag({ kind }: { kind: "nuevo" | "mejora" | "correccion" }) {
   const map = {
@@ -36,11 +62,181 @@ export default function ChangelogPage() {
           <span className="bg-highlight inline-block px-1.5 font-medium italic">todólogo.ai</span>
         </h1>
         <p className="mt-2 max-w-[600px] text-[14px] leading-relaxed text-foreground/85">
-          Cada versión documentada, de la renovación de la interfaz al lanzamiento inicial.
-          La versión actual es v{APP_VERSION} ({APP_BUILD_DATE}).
+          Cada versión documentada y, desde la v1.11.0, enlazada a su <strong>commit exacto</strong>:
+          haz clic en el código para ver en GitHub los archivos que cambiaron. La versión actual es
+          v{APP_VERSION} ({APP_BUILD_DATE}).
         </p>
 
         <div className="relative mt-8 space-y-8 border-l border-border pl-6">
+          {/* ── v1.11.0 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-highlight ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-foreground px-2.5 py-1 font-mono text-[13px] font-semibold text-background">
+                v1.11.0
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">9 sept 2026 · Streaming en vivo, Docker de primera y honestidad visual</span>
+              <NewBadge k="changelog" />
+              <CodeLink href={`${REPO}/compare/v1.10.0...v1.11.0`}>diff v1.10.0…v1.11.0</CodeLink>
+            </div>
+
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Radio className="h-4 w-4" /> El chat genera en tiempo real
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Streaming SSE</strong> en batalla, lado a lado y directo: el texto aparece palabra a palabra con cursor parpadeante, sin esperar delante de un spinner. El razonamiento profundo también fluye en vivo.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Protocolo de eventos propio (<code>meta · dA/dB · tA/tB · end</code>) con respuesta de reserva por lado y tope de 55 s; la ruta JSON clásica se conserva como compatibilidad.</li>
+                </ul>
+              </div>
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Shield className="h-4 w-4" /> Demo y producción, a simple vista
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Banner de demo</strong> en la app: la demo estática se declara en grande, con el comando Docker a un clic y enlaces a «Despliegue en 1 clic» y «Qué es real y qué no». En producción no aparece nada.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Docker elevado a opción nº 1 del inicio rápido del README: <code>docker compose up --build</code> y listo.</li>
+                </ul>
+              </div>
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Gauge className="h-4 w-4" /> Calidad medible y changelog vivo
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Suite ampliada a <strong>48 tests</strong> (perfil, personas, catálogo, ELO) con <strong>97.7 % de cobertura</strong> sobre la lógica central; la CI sube el informe a Codecov con badge en vivo.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Este changelog enlaza cada versión a su commit y a su diff completo (etiquetas git v1.4.0 → v1.11.0); lo mismo en el <code>CHANGELOG.md</code> del repositorio.</li>
+                  <li className="flex gap-2"><Tag kind="correccion" /> El @usuario saneado ya no deja guiones bajos sobrantes en los bordes (detectado por los tests nuevos).</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* ── v1.10.0 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-muted-foreground/30 ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-secondary px-2.5 py-1 font-mono text-[13px] font-semibold text-foreground">
+                v1.10.0
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">9 sept 2026 · Perfil con autoguardado + operación empresarial</span>
+              <CommitLink hash="d6bf8ce5ac397236ed7f0c50aa5da8f11b463c69" />
+            </div>
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <UserRound className="h-4 w-4" /> Tu perfil, sin botón «Guardar»
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> <strong>15 ajustes de perfil</strong> en 4 categorías (Identidad, Presencia, Privacidad, Notificaciones) con autoguardado: escritura instantánea en el dispositivo y sincronización con tu cuenta tras una pausa de escritura, con chip de estado y resolución de conflictos por marca de tiempo.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Tarjeta de perfil viva en el sidebar y previsualización «Así se ve tu tarjeta»: nombre, avatar emoji, acento y @usuario al instante.</li>
+                </ul>
+              </div>
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Workflow className="h-4 w-4" /> Operación nivel empresarial
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Cron interno con 3 tareas (latido de base de datos, purga de copas, informe diario) con timeout, jitter y parada ordenada; informe completo en <code>/api/health</code>.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Watchdog: vigila la salud cada 30 s, reinicia con backoff exponencial 5→120 s, lockfile anti-duplicados y logs JSON.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* ── v1.9.1 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-muted-foreground/30 ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-secondary px-2.5 py-1 font-mono text-[13px] font-semibold text-foreground">
+                v1.9.1
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">9 sept 2026 · Favicon fiel al logo</span>
+              <CommitLink hash="74c757b7a2265394bb243132a2b23177aa4b2175" />
+            </div>
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Palette className="h-4 w-4" /> La pestaña viste el frontispicio
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="mejora" /> El favicon reproduce fielmente el logo del sidebar (el Landmark, con los paths exactos de lucide) sobre la loseta crema, con variación automática para el modo oscuro del navegador.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Cobertura completa de formatos: SVG, ICO multi-tamaño 16/32/48, PNG 192/512 y apple-touch-icon 180, regenerables con un script reproducible.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* ── v1.9.0 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-muted-foreground/30 ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-secondary px-2.5 py-1 font-mono text-[13px] font-semibold text-foreground">
+                v1.9.0
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">9 sept 2026 · Arcade autoevolutivo + Copas XL + ELO global</span>
+              <CommitLink hash="1c53ea3" />
+            </div>
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Gamepad2 className="h-4 w-4" /> Tres juegos AAA jugables en el navegador
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Arcade todólogo</strong>: GTA VI · Costa Vice (mundo abierto 3D), Isla Maldita: Evolución (supervivencia) e Imperios: Némesis Adaptativa (RTS contra una IA que contra-tu estrategia), todos con música procedural WebAudio, botón compartir en 4 redes y bucle autoevolutivo visible.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Copas de 4, 8 y 16 modelos</strong>: cuadro completo de eliminación directa con rondas generadas en paralelo y revelación final de identidades.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> <strong>ELO global persistente</strong> en base de datos (Postgres-ready): cada voto mueve un ELO real que sobrevive reinicios.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* ── v1.8.1 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-muted-foreground/30 ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-secondary px-2.5 py-1 font-mono text-[13px] font-semibold text-foreground">
+                v1.8.1
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">9 sept 2026 · Modo Juego AAA autoevolutivo</span>
+              <CommitLink hash="590404f" />
+            </div>
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Gamepad2 className="h-4 w-4" /> Del prompt al prototipo jugable
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> El Modo Juego entrega en cada respuesta ficha del juego, sistemas autoevolutivos (dificultad que aprende, NPCs Némesis, mundo que muta), stack AAA 2026 y un <strong>prototipo jugable completo</strong> en un único bloque HTML que se ejecuta en el chat.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* ── v1.8.0 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-muted-foreground/30 ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-secondary px-2.5 py-1 font-mono text-[13px] font-semibold text-foreground">
+                v1.8.0
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">9 sept 2026 · Cerebros reentrenados + Markdown pro</span>
+              <CommitLink hash="4476bd8" />
+            </div>
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Sparkles className="h-4 w-4" /> Cada casa, con su carácter real
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> <strong>IA «reentrenada»</strong>: las 56 voces encarnan el carácter real de su casa (prosa reflexiva, estructura accionable, tablas enciclopédicas, humor afilado…), con tempo según tamaño y especialidad dev.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Markdown de nivel arena</strong>: tablas GFM con filas cebra, resaltado de sintaxis a todo color, checkboxes y <strong>vista previa automática</strong> de bloques HTML/SVG en iframe sandbox.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Cierre con preguntas de seguimiento «¿Siguiente paso?» tras completar cualquier tarea.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {/* ── v1.7.0 ── */}
           <div className="relative">
             <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-highlight ring-4 ring-background" />
@@ -49,7 +245,7 @@ export default function ChangelogPage() {
                 v1.7.0
               </span>
               <span className="text-[12.5px] text-muted-foreground">8 sept 2026 · Honestidad radical + producción</span>
-              <NewBadge k="changelog" />
+              <CommitLink hash="8a591f8" />
             </div>
 
             <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -86,6 +282,7 @@ export default function ChangelogPage() {
                 v1.6.0
               </span>
               <span className="text-[12.5px] text-muted-foreground">8 sept 2026 · La demo vive en GitHub Pages</span>
+              <CommitLink hash="ec935d9" />
             </div>
 
             <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -110,7 +307,7 @@ export default function ChangelogPage() {
                 v1.5.0
               </span>
               <span className="text-[12.5px] text-muted-foreground">8 sept 2026 · La Copa Todólogo</span>
-              <NewBadge k="changelog" />
+              <CommitLink hash="f78d4b9" />
             </div>
 
             <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -146,7 +343,7 @@ export default function ChangelogPage() {
                 v1.4.0
               </span>
               <span className="text-[12.5px] text-muted-foreground">8 sept 2026 · El chat gana superpoderes</span>
-              <NewBadge k="changelog" />
+              <CommitLink hash="b97407e" />
             </div>
 
             <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -200,7 +397,7 @@ export default function ChangelogPage() {
                 v1.2.0
               </span>
               <span className="text-[12.5px] text-muted-foreground">8 sept 2026 · Renovación total de la interfaz</span>
-              <NewBadge k="changelog" />
+              <CodeLink href={`${REPO}/commits/main/?since=2026-09-08T00:00:00Z&until=2026-09-08T12:00:00Z`}>commits del día</CodeLink>
             </div>
 
             <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -258,6 +455,7 @@ export default function ChangelogPage() {
                 v1.0.0
               </span>
               <span className="text-[12.5px] text-muted-foreground">28 jul 2026 · Lanzamiento inicial</span>
+              <CodeLink href={`${REPO}/tree/main`}>repositorio</CodeLink>
             </div>
             <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
               <div>

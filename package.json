@@ -14,7 +14,8 @@
     "db:generate": "prisma generate",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "test:coverage": "vitest run --coverage.enabled --coverage.include=\"src/lib/{elo,personas,profile-shared,models-data,asset-path,version}.ts\""
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -92,6 +93,7 @@
     "@types/react-dom": "^19",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/three": "^0.185.4",
+    "@vitest/coverage-v8": "^5.0.0",
     "bun-types": "^1.3.4",
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",

@@ -110,6 +110,7 @@ export function sanitizeUsername(raw: string): string {
     .trim()
     .replace(/[@\s]+/g, "_")
     .replace(/[^a-z0-9_]/g, "")
+    .replace(/^_+|_+$/g, "")
     .slice(0, LIMITS.username);
 }
 

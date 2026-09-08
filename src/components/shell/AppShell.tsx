@@ -5,6 +5,7 @@ import { ArenaContext, type ArenaMode } from "./arena-context";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import SearchDialog from "./SearchDialog";
+import DemoBanner from "@/components/DemoBanner";
 import { SettingsProvider } from "@/lib/settings";
 import { AuthProvider } from "@/lib/auth-client";
 import { ProfileProvider } from "@/lib/profile";
@@ -59,6 +60,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 : "ml-0 md:ml-[56px]"
             )}
           >
+            <DemoBanner />
             <TopBar />
             <main className="flex min-h-0 flex-1 flex-col">{children}</main>
           </div>

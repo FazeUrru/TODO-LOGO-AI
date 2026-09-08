@@ -273,6 +273,7 @@ export default function ChatExperience() {
   const [phase, setPhase] = useState<"home" | "chat">("home");
   const [prompt, setPrompt] = useState("");
   const [thinking, setThinking] = useState(false);
+  const [streaming, setStreaming] = useState<{ A: boolean; B: boolean }>({ A: false, B: false });
   const [turnsA, setTurnsA] = useState<Turn[]>([]);
   const [turnsB, setTurnsB] = useState<Turn[]>([]);
   const [battle, setBattle] = useState<BattleInfo | null>(null);
@@ -548,7 +549,7 @@ export default function ChatExperience() {
   async function send(text?: string, forceMode?: ComposerMode) {
     const activeMode = forceMode ?? cMode;
     const raw = (text ?? prompt).trim();
-    if (!raw || thinking) return;
+    if (!raw || thinking || streaming.A || streaming.B) return;
     const content = buildContent(raw, atts);
     setPrompt("");
     setAtts([]);
@@ -595,6 +596,7 @@ export default function ChatExperience() {
       single: isDirect,
       historyA: nextA.slice(0, -1),
       composerMode: activeMode,
+      stream: true,
     };
     if (mode === "battle") {
       body.category = activeMode === "codigo" ? "codigo" : category;
@@ -610,46 +612,195 @@ export default function ChatExperience() {
       body.modelAId = arena.modelDirectId;
     }
 
+    // Acumuladores del streaming (texto y razonamiento por lado)
+    let accA = "";
+    let accB = "";
+    let thinkA: string | undefined;
+    let thinkB: string | undefined;
+    let finalSources: WebSource[] | undefined;
+    let aborted = false;
+
+    /** Convierte los acumuladores en el turno final (post-proceso como siempre). */
+    const finalizeTurns = () => {
+      const splitA = splitThinking(accA, activeMode);
+      const splitB = splitThinking(accB, activeMode);
+      setTurnsA((t) => [
+        ...t.slice(0, -1),
+        {
+          role: "assistant",
+          ...(activeMode === "video"
+            ? { content: accA, media: { type: "video" } as TurnMedia }
+            : mediaFor3D(splitA.content, activeMode)),
+          thinking: splitA.thinking ?? thinkA,
+          sources: finalSources,
+        },
+      ]);
+      if (!isDirect)
+        setTurnsB((t) => [
+          ...t.slice(0, -1),
+          {
+            role: "assistant",
+            ...(activeMode === "video"
+              ? { content: accB, media: { type: "video" } as TurnMedia }
+              : mediaFor3D(splitB.content, activeMode)),
+            thinking: splitB.thinking ?? thinkB,
+            sources: finalSources,
+          },
+        ]);
+    };
+
+    const rollback = () => {
+      setTurnsA(nextA.slice(0, -1));
+      setTurnsB(nextB.slice(0, -1));
+    };
+
     try {
       const res = await fetch("/api/battle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error ?? "La arena no pudo generar las respuestas.");
+      const ctype = res.headers.get("content-type") ?? "";
+      if (!res.ok) {
+        let msg = "La arena no pudo generar las respuestas.";
+        try {
+          const j = await res.json();
+          if (j?.error) msg = j.error as string;
+        } catch {
+          /* sin cuerpo JSON */
+        }
+        throw new Error(msg);
       }
-      const prev = battle;
-      if (mode === "battle") {
-        setBattle({
-          aId: data.aId,
-          bId: data.bId,
-          battleId: prev && prev.aId === data.aId ? prev.battleId : data.battleId,
-          revealed: false,
+
+      if (!ctype.includes("text/event-stream") || !res.body) {
+        // Ruta de compatibilidad: respuesta JSON completa (sin streaming)
+        const data = await res.json();
+        if (!data.ok) {
+          throw new Error(data.error ?? "La arena no pudo generar las respuestas.");
+        }
+        const prev = battle;
+        if (mode === "battle") {
+          setBattle({
+            aId: data.aId,
+            bId: data.bId,
+            battleId: prev && prev.aId === data.aId ? prev.battleId : data.battleId,
+            revealed: false,
+          });
+        }
+        accA = data.a as string;
+        accB = (data.b as string) ?? "";
+        thinkA = data.thinkingA as string | undefined;
+        thinkB = data.thinkingB as string | undefined;
+        finalSources = (data.sources as WebSource[] | undefined) ?? undefined;
+        finalizeTurns();
+        if (settings.soundOnDone) playDoneChime();
+        return;
+      }
+
+      // ── Streaming SSE: el texto aparece a medida que se genera ──
+      setTurnsA([...nextA, { role: "assistant", content: "" }]);
+      if (!isDirect) setTurnsB([...nextB, { role: "assistant", content: "" }]);
+      setThinking(false);
+      setStreaming({ A: true, B: !isDirect });
+
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+      // Pinta como máximo cada 80 ms: fluidez visual sin renderizar cada token
+      const flush = () => {
+        flushTimer = null;
+        const paint = (acc: string) => `${acc}\u258D`;
+        setTurnsA((t) => {
+          const n = [...t];
+          const last = n.length > 0 ? n[n.length - 1] : undefined;
+          if (last?.role === "assistant") {
+            n[n.length - 1] = { ...last, content: paint(accA), thinking: thinkA, sources: finalSources };
+          }
+          return n;
         });
+        if (!isDirect) {
+          setTurnsB((t) => {
+            const n = [...t];
+            const last = n.length > 0 ? n[n.length - 1] : undefined;
+            if (last?.role === "assistant") {
+              n[n.length - 1] = { ...last, content: paint(accB), thinking: thinkB, sources: finalSources };
+            }
+            return n;
+          });
+        }
+      };
+      const schedule = () => {
+        if (flushTimer === null) flushTimer = setTimeout(flush, 80);
+      };
+
+      const handleEvent = (payload: Record<string, unknown>) => {
+        const type = payload.t as string;
+        if (type === "meta") {
+          if (mode === "battle") {
+            const prev = battle;
+            setBattle({
+              aId: payload.aId as string,
+              bId: (payload.bId as string) ?? null,
+              battleId:
+                prev && prev.aId === payload.aId
+                  ? prev.battleId
+                  : (payload.battleId as string),
+              revealed: false,
+            });
+          }
+          const s = payload.sources as WebSource[] | undefined;
+          if (s && s.length > 0) finalSources = s;
+        } else if (type === "dA") {
+          accA += payload.v as string;
+          schedule();
+        } else if (type === "dB") {
+          accB += payload.v as string;
+          schedule();
+        } else if (type === "tA") {
+          thinkA = (thinkA ?? "") + (payload.v as string);
+          schedule();
+        } else if (type === "tB") {
+          thinkB = (thinkB ?? "") + (payload.v as string);
+          schedule();
+        } else if (type === "error") {
+          aborted = true;
+        }
+        /* "end": el cierre del lector dispara la finalización */
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let idx: number;
+        while ((idx = buf.indexOf("\n\n")) !== -1) {
+          const raw = buf.slice(0, idx).trim();
+          buf = buf.slice(idx + 2);
+          if (!raw.startsWith("data:")) continue;
+          try {
+            handleEvent(JSON.parse(raw.slice(5).trim()) as Record<string, unknown>);
+          } catch {
+            /* evento malformado: ignorar */
+          }
+        }
       }
-      const splitA = splitThinking(data.a as string, activeMode);
-      const splitB = splitThinking((data.b as string) ?? "", activeMode);
-      setTurnsA((t) => [
-        ...t,
-        {
-          role: "assistant",
-          ...(activeMode === "video" ? { content: data.a as string, media: { type: "video" } as TurnMedia } : mediaFor3D(splitA.content, activeMode)),
-          thinking: splitA.thinking ?? (data.thinkingA as string | undefined) ?? undefined,
-          sources: (data.sources as WebSource[] | undefined) ?? undefined,
-        },
-      ]);
-      if (!isDirect)
-        setTurnsB((t) => [
-          ...t,
-          {
-            role: "assistant",
-            ...(activeMode === "video" ? { content: data.b as string, media: { type: "video" } as TurnMedia } : mediaFor3D(splitB.content, activeMode)),
-            thinking: splitB.thinking ?? (data.thinkingB as string | undefined) ?? undefined,
-            sources: (data.sources as WebSource[] | undefined) ?? undefined,
-          },
-        ]);
+      if (flushTimer !== null) {
+        clearTimeout(flushTimer);
+        flushTimer = null;
+      }
+
+      if (aborted && !accA.trim() && !accB.trim()) {
+        rollback();
+        throw new Error("La arena no pudo generar las respuestas. Inténtalo de nuevo.");
+      }
+      if (aborted) {
+        if (accA.trim()) accA = `${accA}\n\n_(generación interrumpida)_`;
+        if (accB.trim()) accB = `${accB}\n\n_(generación interrumpida)_`;
+      }
+
+      finalizeTurns();
       if (settings.soundOnDone) playDoneChime();
     } catch (e) {
       toast({
@@ -657,10 +808,10 @@ export default function ChatExperience() {
         description: e instanceof Error ? e.message : "Inténtalo de nuevo.",
         variant: "destructive",
       });
-      setTurnsA(nextA.slice(0, -1));
-      setTurnsB(nextB.slice(0, -1));
+      rollback();
     } finally {
       setThinking(false);
+      setStreaming({ A: false, B: false });
     }
   }
 

@@ -9,9 +9,10 @@
 </p>
 
 <p align="center">
-  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.10.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.11.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
-  <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/badge/CI-lint%20%C2%B7%20tipos%20%C2%B7%20tests%20%C2%B7%20build-2EA043?style=flat-square&logo=githubactions&logoColor=white"></a>
+  <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI"><img alt="cobertura" src="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI/graph/badge.svg"></a>
   <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/deploy-pages.yml"><img alt="demo" src="https://img.shields.io/badge/demo-GitHub%20Pages-blue?style=flat-square&logo=github"></a>
   <img alt="next.js" src="https://img.shields.io/badge/Next.js-16-black?style=flat-square">
   <img alt="modelos" src="https://img.shields.io/badge/modelos-56-2E2B29?style=flat-square">
@@ -30,13 +31,16 @@
 
 | | |
 |---|---|
+| 🐳 **En 1 clic** | `docker compose up --build` — backend real con IA, base de datos y ELO persistente en un solo comando ([guía Docker](#-docker)) |
 | 🥊 **Qué es** | Arena de IA en español: batallas anónimas, Copa de eliminación directa (4/8/16 modelos) y ranking ELO que se mueve con cada voto real |
+| ⚡ **Cómo responde** | Streaming SSE: el texto aparece palabra a palabra, también el razonamiento profundo — sin spinners eternos |
 | 🤖 **Con qué** | 56 modelos de 28 organizaciones · respuestas generadas al vuelo · backend real (Next.js 16 + Prisma + SQLite) |
 | 🎮 **Extras únicos** | Arcade con 3 juegos autoevolutivos (GTA VI Costa Vice, Isla Maldita, Imperios RTS) · Modo Agente · imágenes, 3D, web y pensamiento profundo en el chat |
+| 🛡️ **Calidad** | 48 tests · 97.7 % de cobertura en la lógica central · CI en vivo ([Tests y CI](#-tests-y-ci)) |
 | ⚙️ **Operación** | Cron interno con informe de salud en [`/api/health`](#-referencia-de-la-api) + watchdog con reinicio automático ([sección Operar](#%EF%B8%8F-operar-watchdog-y-cron-nivel-empresarial)) |
 | 🔒 **Honestidad** | Las «56 voces» salen de un motor propio con 56 personalidades — [qué es real y qué no](#-honestidad-qué-es-real-y-qué-no) |
 
-> ⚠️ **Descargo sobre la demo de GitHub Pages** — la demo juega **en tu navegador** (sin servidor): respuestas, votos y ELO se generan y guardan en tu `localStorage` con las mismas fórmulas. **No significa que el proyecto sea una simulación**: el mismo código, sin cambios, arranca un **backend real con IA, base de datos Prisma/SQLite y OAuth** (local, Docker o Vercel — [cómo](#inicio-rápido)). La app lo señala siempre con la píldora «Demo estática». Detalles: [tabla de honestidad](#-honestidad-qué-es-real-y-qué-no).
+> ⚠️ **Descargo sobre la demo de GitHub Pages** — la demo juega **en tu navegador** (sin servidor): respuestas, votos y ELO se generan y guardan en tu `localStorage` con las mismas fórmulas. **No significa que el proyecto sea una simulación**: el mismo código, sin cambios, arranca un **backend real con IA, base de datos Prisma/SQLite y OAuth** (local, Docker o Vercel — [cómo](#-inicio-rápido)). La app lo declara **en grande**: un banner ámbar en la parte superior con el comando Docker a un clic, además de la píldora «Demo estática». Detalles: [tabla de honestidad](#-honestidad-qué-es-real-y-qué-no).
 
 ## Índice
 
@@ -185,6 +189,7 @@ El composer (disponible en Batalla, Lado a Lado y Directo) incluye:
 
 | Superpoder | Qué hace |
 |---|---|
+| ⚡ **Streaming en vivo (SSE)** | Las respuestas se generan **palabra a palabra** con cursor parpadeante — en batalla, lado a lado y directo; el razonamiento profundo también fluye en tiempo real |
 | 📎 **Adjuntos reales** | Arrastra archivos o pega enlaces (PDF, Word, Excel, vídeo, texto); el contenido legible viaja al modelo con tu mensaje |
 | ⌨️ **`/` Skills** | 14 habilidades (`/web`, `/profundo`, `/imagen`, `/video`, `/codigo`, `/resume`, `/traduce`, `/sql`…) que configuran el modo del chat por ti |
 | 🎨 **Modo imagen** | Generación real de ilustraciones por IA a partir de tu descripción, con descarga directa |
@@ -225,6 +230,20 @@ Esta tabla existe porque preferimos los elogios por lo que funciona a los malent
 
 ## Inicio rápido
 
+### Opción A — Docker (1 clic, recomendada) 🐳
+
+La respuesta a «¿cómo lo ejecuto en mi máquina?» sin tocar nada más: backend real con IA, base de datos y ELO persistente en un solo comando.
+
+```bash
+git clone https://github.com/FazeUrru/TODO-LOGO-AI.git
+cd TODO-LOGO-AI
+docker compose up --build      # http://localhost:3000
+```
+
+Incluido de fábrica: imagen multi-stage (Bun, runner slim ~200 MB) con el esquema de base **auto-aplicado**, volumen `./db` (el ELO, los votos y las cuentas sobreviven a los reinicios), healthcheck contra `/api/health` y logs JSON estructurados. Variables opcionales (`AUTH_SECRET`, credenciales OAuth, claves del SDK): [sección Docker](#-docker).
+
+### Opción B — Local con Node/Bun
+
 **Requisitos:** Node.js 20+ (o Bun), y una instancia con acceso al SDK `z-ai-web-dev-sdk` (en este entorno ya viene preconfigurado).
 
 ```bash
@@ -252,7 +271,8 @@ npm run dev        # http://localhost:3000
 | `npm start` | Sirve la compilación de producción |
 | `npm run lint` | ESLint sobre todo el proyecto |
 | `npm run typecheck` | TypeScript estricto sobre `src/` y `tests/` |
-| `npm test` | Suite de tests con Vitest (ELO, catálogo, integridad) |
+| `npm test` | Suite de tests con Vitest (48 casos) |
+| `npm run test:coverage` | Tests con informe de cobertura (v8 → Codecov en CI) |
 | `npm run db:push` | Aplica el esquema Prisma a SQLite |
 | `npm run db:generate` | Regenera el cliente Prisma |
 
@@ -260,28 +280,31 @@ npm run dev        # http://localhost:3000
 
 ## 🧪 Tests y CI
 
-**Tests unitarios (Vitest)** sobre la lógica crítica — `tests/elo.test.ts`, 18 casos:
+**Tests unitarios (Vitest)** sobre la lógica crítica — **48 casos en 4 suites**:
 
-- `expectedScore`: ELO clásico (igualdad → 0.5, ventaja de 400 → ~0.909, simetría `E(a,b)+E(b,a)=1`).
-- `eloDeltaFromVotes`: signo correcto, empuje de empates, acotado ±48, entero.
-- `categoryElo`: determinismo, boost por especialidad, rango sensato (±60 del base).
-- Integridad del catálogo: ids únicos, todo modelo apunta a un proveedor existente, Qwen con dominio y logo oficiales, ELO base creíble (1000–1700).
+- `tests/elo.test.ts` — `expectedScore` (igualdad → 0.5, ventaja de 400 → ~0.909, simetría), `eloDeltaFromVotes` (signo, empates, acotado ±48, entero) e integridad del catálogo (ids únicos, proveedores existentes, ELO creíble).
+- `tests/profile.test.ts` — saneado y validación del perfil de 15 ajustes: @usuario (mayúsculas, acentos, guiones sobrantes), webs válidas, límites de campos, valores por defecto y `savedAt`.
+- `tests/personas-asset.test.ts` — las personas de las 56 voces (determinismo, variedad, seguridad con ids raros) y `asset()` con basePath de GitHub Pages.
+- `tests/catalogo.test.ts` — `getModel`, `providerOf`, `formatContext` y categorías sin duplicados.
 
 ```bash
-npm test            # modo CI (una pasada)
-npm run test:watch  # modo desarrollo
+npm test                  # modo CI (una pasada)
+npm run test:watch        # modo desarrollo
+npm run test:coverage     # informe de cobertura (v8)
 ```
+
+**Cobertura:** **97.7 % sentencias · 90 % ramas · 100 % funciones** sobre la lógica central (`elo`, `personas`, `profile-shared`, `models-data`, `asset-path`, `version`). La CI genera el informe y lo sube a [Codecov](https://codecov.io/gh/FazeUrru/TODO-LOGO-AI) — el badge de arriba es real y se actualiza en cada push.
 
 **CI (GitHub Actions)** — `.github/workflows/ci.yml`, dos jobs en cada push y PR:
 
-1. **calidad**: instalación con Bun → `prisma generate` → ESLint → `tsc --noEmit` → Vitest.
+1. **calidad**: instalación con Bun → `prisma generate` → ESLint → `tsc --noEmit` → Vitest con cobertura → subida a Codecov.
 2. **build**: compilación de producción standalone completa (con base de datos efímera).
 
 El despliegue de la demo estática tiene su propio workflow (`deploy-pages.yml`) que se ejecuta tras cada push a `main`.
 
 ## 🐳 Docker
 
-Imagen multi-stage (Bun, runner slim ~200 MB) con esquema auto-aplicado y persistencia por volumen:
+La forma recomendada de ejecutar todólogo.ai — y la respuesta a la pregunta número 1 de cualquier repositorio. Imagen multi-stage (Bun, runner slim ~200 MB) con esquema auto-aplicado y persistencia por volumen:
 
 ```bash
 docker compose up --build      # http://localhost:3000
@@ -487,7 +510,7 @@ TODO-LOGO-AI/
 ## Roadmap y changelog
 
 - 🗺️ [`ROADMAP.md`](ROADMAP.md) — hacia dónde va el proyecto: torneos de 8 y 16, Postgres gestionado, perfiles con historial en la nube, arena de imágenes, API pública…
-- 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN, presente y futuro.
+- 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN y, desde la v1.11.0, **enlaces a su commit exacto y a su diff completo** (etiquetas git `v1.4.0` → `v1.11.0`): un changelog navegable, no un texto estático.
 
 ## Contribuir
 
