@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-label="Animación del Modo Batalla: dos modelos anónimos responden, el usuario vota y el ELO se actualiza">
+  <style>
+    .bdot { animation: bblink 1.3s infinite; }
+    .b2 { animation-delay:.18s } .b3 { animation-delay:.36s }
+    @keyframes bblink { 0%,100% { opacity:.2 } 50% { opacity:1 } }
+    .resp { opacity:0; animation: respIn 8s ease infinite; }
+    @keyframes respIn { 0%,10% { opacity:0 } 16%,86% { opacity:1 } 94%,100% { opacity:0 } }
+    .votebar { opacity:0; animation: respIn 8s ease infinite; }
+    .pick { opacity:0; animation: pickIn 8s ease infinite; }
+    @keyframes pickIn { 0%,40% { opacity:0 } 46%,86% { opacity:1 } 94%,100% { opacity:0 } }
+    .reveal { opacity:0; animation: revIn 8s cubic-bezier(.2,.9,.3,1.3) infinite; }
+    @keyframes revIn { 0%,52% { opacity:0; transform: translateY(8px) } 58%,86% { opacity:1; transform:none } 94%,100% { opacity:0 } }
+    .eloChip { opacity:0; animation: eloIn 8s cubic-bezier(.2,.9,.3,1.4) infinite; transform-origin: 450px 466px; }
+    @keyframes eloIn { 0%,60% { opacity:0; transform: scale(.5) } 66%,86% { opacity:1; transform: scale(1) } 94%,100% { opacity:0 } }
+    .lbl { font-family: 'Cascadia Code', Consolas, monospace; }
+  </style>
+
+  <rect width="900" height="520" rx="18" fill="#FCFAF8"/>
+  <rect x="0.5" y="0.5" width="899" height="519" rx="18" fill="none" stroke="#EEEDEC"/>
+
+  <text x="36" y="50" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="600" fill="#2E2B29">Modo Batalla <tspan font-style="italic" fill="#6B6660">— anónimo hasta que votas</tspan></text>
+
+  <!-- Panel A -->
+  <g>
+    <rect x="36" y="76" width="398" height="290" rx="14" fill="#FFFFFF" stroke="#EEEDEC"/>
+    <rect x="52" y="92" width="120" height="24" rx="12" fill="#F2EEE9"/>
+    <text x="112" y="108" text-anchor="middle" class="lbl" font-size="12.5" fill="#2E2B29">Modelo A</text>
+    <circle class="bdot" cx="64" cy="140" r="4" fill="#2E2B29"/><circle class="bdot b2" cx="78" cy="140" r="4" fill="#2E2B29"/><circle class="bdot b3" cx="92" cy="140" r="4" fill="#2E2B29"/>
+    <rect class="resp" x="56" y="134" width="352" height="9" rx="4.5" fill="#F2EEE9"/>
+    <rect class="resp" x="56" y="152" width="330" height="9" rx="4.5" fill="#F2EEE9"/>
+    <rect class="resp" x="56" y="170" width="356" height="9" rx="4.5" fill="#F2EEE9"/>
+    <rect class="resp" x="56" y="188" width="300" height="9" rx="4.5" fill="#F2EEE9"/>
+    <rect class="resp" x="56" y="212" width="352" height="9" rx="4.5" fill="#F2EEE9"/>
+    <rect class="resp" x="56" y="230" width="318" height="9" rx="4.5" fill="#F2EEE9"/>
+    <rect class="resp" x="56" y="248" width="340" height="9" rx="4.5" fill="#F2EEE9"/>
+    <rect class="resp" x="56" y="266" width="220" height="9" rx="4.5" fill="#F2EEE9"/>
+    <text class="resp lbl" x="56" y="316" font-size="12" fill="#6B6660" style="animation-delay:.2s">velocidad 4,2 s · 190 palabras máx.</text>
+    <g class="reveal">
+      <circle cx="66" cy="344" r="11" fill="#D97757"/>
+      <text x="66" y="348" text-anchor="middle" class="lbl" font-size="10" font-weight="700" fill="#fff">A</text>
+      <text x="86" y="349" font-family="system-ui, 'Segoe UI', sans-serif" font-size="13.5" font-weight="600" fill="#2E2B29">Claude Opus 5 · Anthropic</text>
+    </g>
+  </g>
+
+  <!-- Panel B -->
+  <g>
+    <rect x="466" y="76" width="398" height="290" rx="14" fill="#FFFFFF" stroke="#EEEDEC"/>
+    <rect x="482" y="92" width="120" height="24" rx="12" fill="#F2EEE9"/>
+    <text x="542" y="108" text-anchor="middle" class="lbl" font-size="12.5" fill="#2E2B29">Modelo B</text>
+    <circle class="bdot" cx="494" cy="140" r="4" fill="#2E2B29"/><circle class="bdot b2" cx="508" cy="140" r="4" fill="#2E2B29"/><circle class="bdot b3" cx="522" cy="140" r="4" fill="#2E2B29"/>
+    <rect class="resp" x="486" y="134" width="344" height="9" rx="4.5" fill="#F2EEE9" style="animation-delay:.3s"/>
+    <rect class="resp" x="486" y="152" width="356" height="9" rx="4.5" fill="#F2EEE9" style="animation-delay:.4s"/>
+    <rect class="resp" x="486" y="170" width="316" height="9" rx="4.5" fill="#F2EEE9" style="animation-delay:.5s"/>
+    <rect class="resp" x="486" y="188" width="348" height="9" rx="4.5" fill="#F2EEE9" style="animation-delay:.6s"/>
+    <rect class="resp" x="486" y="212" width="330" height="9" rx="4.5" fill="#F2EEE9" style="animation-delay:.7s"/>
+    <rect class="resp" x="486" y="230" width="352" height="9" rx="4.5" fill="#F2EEE9" style="animation-delay:.8s"/>
+    <rect class="resp" x="486" y="248" width="298" height="9" rx="4.5" fill="#F2EEE9" style="animation-delay:.9s"/>
+    <rect class="resp" x="486" y="266" width="240" height="9" rx="4.5" fill="#F2EEE9" style="animation-delay:1s"/>
+    <text class="resp lbl" x="486" y="316" font-size="12" fill="#6B6660" style="animation-delay:.5s">velocidad 3,1 s · 190 palabras máx.</text>
+    <g class="reveal">
+      <circle cx="496" cy="344" r="11" fill="#4D6BFE"/>
+      <text x="496" y="348" text-anchor="middle" class="lbl" font-size="10" font-weight="700" fill="#fff">B</text>
+      <text x="516" y="349" font-family="system-ui, 'Segoe UI', sans-serif" font-size="13.5" font-weight="600" fill="#2E2B29">DeepSeek V4-Pro · DeepSeek</text>
+    </g>
+  </g>
+
+  <!-- Barra de voto -->
+  <g class="votebar">
+    <text x="450" y="400" text-anchor="middle" font-family="system-ui, 'Segoe UI', sans-serif" font-size="14" fill="#6B6660">¿Cuál responde mejor? Tu voto actualiza el ELO en vivo.</text>
+    <rect x="56"  y="414" width="190" height="38" rx="10" fill="#FFFFFF" stroke="#EEEDEC"/>
+    <text x="151" y="438" text-anchor="middle" font-family="system-ui, 'Segoe UI', sans-serif" font-size="13" fill="#2E2B29">A es mejor</text>
+    <rect x="262" y="414" width="190" height="38" rx="10" fill="#FFFFFF" stroke="#EEEDEC"/>
+    <text x="357" y="438" text-anchor="middle" font-family="system-ui, 'Segoe UI', sans-serif" font-size="13" fill="#2E2B29">B es mejor</text>
+    <rect x="468" y="414" width="190" height="38" rx="10" fill="#FFFFFF" stroke="#EEEDEC"/>
+    <text x="563" y="438" text-anchor="middle" font-family="system-ui, 'Segoe UI', sans-serif" font-size="13" fill="#2E2B29">Empate</text>
+    <rect x="674" y="414" width="190" height="38" rx="10" fill="#FFFFFF" stroke="#EEEDEC"/>
+    <text x="769" y="438" text-anchor="middle" font-family="system-ui, 'Segoe UI', sans-serif" font-size="13" fill="#2E2B29">Ambos malos</text>
+    <g class="pick">
+      <rect x="54" y="412" width="194" height="42" rx="11" fill="none" stroke="#2E2B29" stroke-width="2.5"/>
+      <text x="151" y="411" text-anchor="middle" class="lbl" font-size="11" font-weight="700" fill="#2E2B29">TU VOTO</text>
+    </g>
+  </g>
+
+  <!-- Chip ELO -->
+  <g class="eloChip">
+    <rect x="330" y="452" width="240" height="34" rx="17" fill="#F4C406"/>
+    <text x="450" y="474" text-anchor="middle" font-family="system-ui, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#2E2B29">Ganador: Claude Opus 5 · +12 ELO</text>
+  </g>
+
+  <text x="36" y="506" font-family="system-ui, 'Segoe UI', sans-serif" font-size="13" fill="#6B6660">Sorteo ponderado por ELO · respuestas reales del SDK · votos persistidos en SQLite</text>
+</svg>

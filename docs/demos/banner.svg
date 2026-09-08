@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" role="img" aria-label="Todólogo: el arena de IA en español">
+  <defs>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F4C406" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#F4C406" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#F4C406" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="titleClip"><rect x="150" y="86" width="600" height="74"/></clipPath>
+  </defs>
+  <style>
+    .sweep { animation: sweep 3.2s ease-in-out infinite; }
+    @keyframes sweep { 0% { transform: translateX(-340px); } 55%,100% { transform: translateX(340px); } }
+    .dot { animation: blink 1.4s infinite; }
+    .d2 { animation-delay: .2s } .d3 { animation-delay: .4s }
+    @keyframes blink { 0%,100% { opacity:.25 } 50% { opacity:1 } }
+    .tag { animation: fadein 1.6s ease both .5s; }
+    .chips { animation: fadein 1.6s ease both 1s; }
+    @keyframes fadein { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
+    .hl { animation: grow 1.2s cubic-bezier(.2,.9,.3,1) both .3s; transform-origin: 238px 132px; }
+    @keyframes grow { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+  </style>
+
+  <rect width="900" height="300" rx="18" fill="#FCFAF8"/>
+  <rect x="0.5" y="0.5" width="899" height="299" rx="18" fill="none" stroke="#EEEDEC"/>
+
+  <text x="60" y="52" font-family="Georgia, 'Times New Roman', serif" font-size="19" fill="#2E2B29" opacity=".75">arena de IA · hecho en español</text>
+
+  <!-- Titular con barrido de brillo -->
+  <g clip-path="url(#titleClip)">
+    <rect class="hl" x="238" y="102" width="300" height="52" fill="#F4C406" transform="skewX(-8)" transform-origin="238 132"/>
+    <text x="150" y="142" font-family="Georgia, 'Times New Roman', serif" font-size="64" font-weight="600" fill="#2E2B29">Todó<tspan font-style="italic">logo</tspan></text>
+    <rect class="sweep" x="150" y="86" width="150" height="74" fill="url(#shine)"/>
+  </g>
+
+  <text class="tag" x="152" y="196" font-family="system-ui, 'Segoe UI', sans-serif" font-size="22" fill="#2E2B29">Batallas anónimas · Copa de eliminación · Ranking ELO en vivo</text>
+  <text class="chips" x="152" y="232" font-family="system-ui, 'Segoe UI', sans-serif" font-size="16" fill="#6B6660">56 modelos · 29 organizaciones · 10 categorías · 100% interfaz en español</text>
+
+  <!-- Puntos de tecleo -->
+  <g transform="translate(152,258)">
+    <rect x="0" y="0" width="200" height="20" rx="10" fill="#F2EEE9"/>
+    <circle class="dot" cx="100" cy="10" r="4" fill="#2E2B29"/>
+    <circle class="dot d2" cx="114" cy="10" r="4" fill="#2E2B29"/>
+    <circle class="dot d3" cx="128" cy="10" r="4" fill="#2E2B29"/>
+  </g>
+
+  <g transform="translate(690,196)">
+    <rect width="150" height="64" rx="14" fill="#2E2B29"/>
+    <text x="75" y="28" text-anchor="middle" font-family="system-ui, 'Segoe UI', sans-serif" font-size="14" fill="#FCFAF8">ELO actualizado</text>
+    <text x="75" y="50" text-anchor="middle" font-family="'Cascadia Code', Consolas, monospace" font-size="15" font-weight="700" fill="#F4C406">+12 en vivo</text>
+  </g>
+</svg>
