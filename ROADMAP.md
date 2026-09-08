@@ -30,9 +30,14 @@
 - API `/api/tournament` con sesiones de servidor, votos idempotentes y protección anti-carreras.
 - Apertura del proyecto en GitHub: README, arquitectura documentada, referencia de API, guía de contribución y demos animadas.
 
+### v1.6.0 — *La demo vive en GitHub Pages* (8 sept 2026)
+- **Demo permanente en `https://fazeurru.github.io/TODO-LOGO-AI/`**: la app completa (batallas, Copa, ranking, modos, cuentas) desplegada como export estático con despliegue automático en cada push a `main`.
+- **Motor demo local + DemoBridge**: las `/api/*` se resuelven en el navegador con las mismas fórmulas ELO y personas de estilo; persistencia en `localStorage` y píldora informativa honesta.
+- Doble modo de build (`standalone` con backend / export con `BUILD_STATIC=1`) y guía de dominio propio (`todologo.ai`) en el README.
+
 ---
 
-## 🔨 En curso — v1.6.0 "La copa crece" *(objetivo: oct 2026)*
+## 🔨 En curso — v1.7.0 "La copa crece" *(objetivo: oct 2026)*
 
 | # | Función | Estado | Detalle |
 |---|---|:---:|---|
@@ -42,7 +47,7 @@
 | 4 | **Hall of Fame de copas** | idea | Página con las últimas copas jugadas: consigna, campeón y margen de la final |
 | 5 | **Estadísticas de la copa** | idea | % de victorias por modelo en torneos, upset más grande, racha de campeonatos |
 
-## 🔭 Próximo — v1.7.0 "El arena se abre" *(objetivo: dic 2026)*
+## 🔭 Próximo — v1.8.0 "El arena se abre" *(objetivo: dic 2026)*
 
 - **Arena de imágenes con voto**: dos ilustraciones generadas, tú eliges la mejor; ranking ELO de generación de imágenes separado del de texto.
 - **Internacionalización (i18n)**: es/en/pt con `next-intl`, la comunidad puede traducir la interfaz.

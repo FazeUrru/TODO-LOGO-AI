@@ -5,7 +5,7 @@
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.6.0
+### Planeado para v1.7.0
 - Copa de 8 y 16 modelos con cuartos de final y vista de cuadro completa.
 - OAuth nativo real de Google (flujo completo con consentimiento, refresh y revocación).
 - Perfiles con historial en la nube y Hall of Fame de copas.
@@ -15,6 +15,21 @@
 - Arena de imágenes con voto y ranking separado.
 - Internacionalización es/en/pt.
 - Compartir duelos y copas por URL con replay del veredicto.
+
+## [1.6.0] — 2026-09-08 · *La demo vive en GitHub Pages*
+
+### Añadido
+- **Demo funcional permanente en GitHub Pages**: cada push a `main` despliega automáticamente la aplicación completa en `https://fazeurru.github.io/TODO-LOGO-AI/` (workflow oficial de Pages con despliegue por artefactos).
+- **Motor demo local** (`src/lib/demo-engine.ts`): las respuestas de batalla, copa, ranking, imágenes, agente y cuentas se generan en el navegador replicando exactamente los contratos de las APIs reales, con las personas de estilo de los 56 modelos, ELO calculado con las mismas fórmulas y persistencia en `localStorage`.
+- **DemoBridge** (`src/components/DemoBridge.tsx`): interceptor de `fetch` que enruta `/api/*` al motor demo solo cuando la app corre en el export estático; en el servidor con backend no interviene. Incluye píldora informativa «Demo estática» que se puede cerrar.
+- **Doble modo de build** en `next.config.ts`: `standalone` con backend (por defecto) o export puro con `BUILD_STATIC=1` (basePath `/TODO-LOGO-AI`, rutas con barra final, imágenes sin optimizar).
+- `scripts/build-pages.mjs`: aparta las rutas API, construye el export, restaura siempre, añade `.nojekyll` y `404.html`.
+- Workflow `.github/workflows/deploy-pages.yml` para despliegue continuo a Pages.
+- Guía completa en el README para servir la demo desde un dominio propio (`todologo.ai`) con DNS y HTTPS.
+
+### Mejorado
+- `src/lib/asset-path.ts`: helper `asset()` que prefija logotipos de proveedores, imágenes de novedades y favicon con el basePath; la demo muestra todos los logos oficiales correctamente.
+- Versionado de la app a 1.6.0 en sidebar, ajustes y changelog.
 
 ## [1.5.0] — 2026-09-08 · *La Copa Todólogo*
 

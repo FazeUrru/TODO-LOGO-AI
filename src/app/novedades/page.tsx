@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CalendarDays, Camera, ChevronDown, Clock3, Newspaper } from "lucide-react";
 import { NEWS_ARTICLES, type NewsArticle } from "@/lib/news-data";
+import { asset } from "@/lib/asset-path";
 import { markUsed, NewBadge } from "@/lib/badges";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +19,7 @@ function ArticleCard({ a, defaultOpen }: { a: NewsArticle; defaultOpen?: boolean
     <article className="fade-up overflow-hidden rounded-2xl border border-border bg-card">
       {/* Imagen real de internet + pie de foto */}
       <figure>
-        <img src={a.image} alt={a.imageAlt} className="block max-h-[360px] w-full object-cover" />
+        <img src={asset(a.image)} alt={a.imageAlt} className="block max-h-[360px] w-full object-cover" />
         <figcaption className="flex items-start gap-1.5 border-b border-border bg-secondary/50 px-4 py-2 text-[12px] leading-snug text-muted-foreground">
           <Camera className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>

@@ -56,7 +56,8 @@ server.log
 # ── Workspace local (no forma parte del repositorio público) ──
 worklog.md
 /download/
-/scripts/
+/scripts/*
+!/scripts/build-pages.mjs
 /tool-results/
 /tests/
 /db/
@@ -69,3 +70,8 @@ worklog.md
 .env
 /.zscripts/
 /mini-services/
+
+# Export estático de GitHub Pages y servidor de prueba local
+/.next-static/
+/.pages-test/
+/.pages-api-hidden/

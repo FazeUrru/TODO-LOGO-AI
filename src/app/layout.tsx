@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { asset } from "@/lib/asset-path";
+import DemoBridge from "@/components/DemoBridge";
 import AppShell from "@/components/shell/AppShell";
 
 const geistSans = Geist({
@@ -33,9 +35,9 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "todólogo.ai" }],
   icons: {
-    icon: "/logo.svg",
-    shortcut: "/logo.svg",
-    apple: "/logo.svg",
+    icon: asset("/logo.svg"),
+    shortcut: asset("/logo.svg"),
+    apple: asset("/logo.svg"),
   },
   openGraph: {
     title: "todólogo.ai — La arena definitiva de IA empresarial",
@@ -57,6 +59,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
+        <DemoBridge />
         <AppShell>{children}</AppShell>
         <Toaster />
       </body>

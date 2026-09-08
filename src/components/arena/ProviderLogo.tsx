@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PROVIDERS } from "@/lib/models-data";
+import { asset } from "@/lib/asset-path";
 import { cn } from "@/lib/utils";
 
 /**
@@ -39,7 +40,7 @@ export default function ProviderLogo({
 
   return (
     <img
-      src={p.logo}
+      src={asset(p.logo)}
       alt={`Logotipo de ${p.name}`}
       width={size}
       height={size}

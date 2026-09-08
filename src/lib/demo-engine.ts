@@ -1,0 +1,1111 @@
+/**
+ * Motor demo local para el export estático (GitHub Pages).
+ *
+ * GitHub Pages no tiene backend: ninguna /api/* existe allí. DemoBridge
+ * intercepta las peticiones de fetch y las resuelve aquí, replicando
+ * EXACTAMENTE las formas de respuesta de las APIs reales del servidor
+ * (batalla, voto, ranking, copa, imagen, agente y cuentas).
+ *
+ * El texto se genera localmente con las personas de estilo de cada modelo
+ * (src/lib/personas.ts) y plantillas por arquetipo: no es IA real en este
+ * modo, y la propia app lo indica con una píldora «Demo estática».
+ */
+
+import { MODELS, PROVIDERS, getModel, type AIModel } from "./models-data";
+import { categoryElo, eloDeltaFromVotes, expectedScore, type LeaderRow, type Winner } from "./elo";
+import { RECIPES_3D } from "./models-3d";
+
+/* ───────────────────────── Utilidades ───────────────────────── */
+
+type JSON = Record<string, unknown>;
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function rid(prefix: string) {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i) | 0;
+  return Math.abs(h);
+}
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function jsonRes(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function errRes(error: string, status = 400): Response {
+  return jsonRes({ ok: false, error }, status);
+}
+
+/* ─────────────────── Almacén local (localStorage) ─────────────────── */
+
+const K_VOTES = "todologo_demo_votes_v1";
+const K_USERS = "todologo_demo_users_v1";
+const K_SESSION = "todologo_demo_session_v1";
+
+function lsGet<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function lsSet(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* cuota llena: la demo continúa sin persistir */
+  }
+}
+
+interface DemoVote {
+  battleId: string;
+  modelAId: string;
+  modelBId: string;
+  winner: Winner;
+  category: string;
+}
+
+function getVotes(): DemoVote[] {
+  return lsGet<DemoVote[]>(K_VOTES, []);
+}
+
+function addVote(v: DemoVote) {
+  const votes = getVotes();
+  votes.push(v);
+  lsSet(K_VOTES, votes);
+}
+
+/** Deltas por modelo a partir de los votos locales (igual que el servidor). */
+function tallyFor(id: string) {
+  let wins = 0, losses = 0, ties = 0, bads = 0;
+  for (const v of getVotes()) {
+    if (v.modelAId !== id && v.modelBId !== id) continue;
+    if (v.winner === "tie") ties++;
+    else if (v.winner === "bad") bads++;
+    else {
+      const winnerId = v.winner === "A" ? v.modelAId : v.modelBId;
+      if (winnerId === id) wins++;
+      else losses++;
+    }
+  }
+  return { wins, losses, ties, bads };
+}
+
+/* ───────────────────────── Cuentas demo ───────────────────────── */
+
+interface DemoUser {
+  id: string;
+  email: string;
+  name: string;
+  provider: string;
+}
+
+interface StoredAccount {
+  name: string;
+  hash: string;
+  provider: string;
+}
+
+async function sha256(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function nameFromEmail(email: string): string {
+  const local = email.split("@")[0].replace(/[._\-0-9]+/g, " ").trim();
+  const clean = local.length >= 2 ? local : email.split("@")[0];
+  return clean
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+const SOCIAL_LABEL: Record<string, string> = {
+  google: "Google",
+  github: "GitHub",
+  microsoft: "Microsoft",
+  x: "X",
+};
+
+async function handleAuth(path: string, init: RequestInit | undefined): Promise<Response | null> {
+  const body = (() => {
+    try {
+      return JSON.parse(String(init?.body ?? "{}")) as JSON;
+    } catch {
+      return {};
+    }
+  })();
+
+  if (path === "/api/auth/me") {
+    return jsonRes({ user: lsGet<DemoUser | null>(K_SESSION, null) });
+  }
+  if (path === "/api/auth/logout") {
+    lsSet(K_SESSION, null);
+    return jsonRes({ ok: true });
+  }
+  if (path === "/api/auth/register") {
+    const email = String(body.email ?? "").toLowerCase().trim();
+    const password = String(body.password ?? "");
+    const name = String(body.name ?? "").trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return errRes("Escribe un correo válido.");
+    if (password.length < 8) return errRes("La contraseña necesita al menos 8 caracteres.");
+    const users = lsGet<Record<string, StoredAccount>>(K_USERS, {});
+    if (users[email]) return errRes("Ya existe una cuenta con ese correo. Inicia sesión.");
+    users[email] = { name: name || nameFromEmail(email), hash: await sha256(password), provider: "email" };
+    lsSet(K_USERS, users);
+    const user: DemoUser = { id: `u_${hashStr(email).toString(36)}`, email, name: users[email].name, provider: "email" };
+    lsSet(K_SESSION, user);
+    return jsonRes({ ok: true, user });
+  }
+  if (path === "/api/auth/login") {
+    const email = String(body.email ?? "").toLowerCase().trim();
+    const users = lsGet<Record<string, StoredAccount>>(K_USERS, {});
+    const acc = users[email];
+    if (!acc || acc.hash !== (await sha256(String(body.password ?? "")))) {
+      return errRes("Correo o contraseña incorrectos.", 401);
+    }
+    const user: DemoUser = { id: `u_${hashStr(email).toString(36)}`, email, name: acc.name, provider: acc.provider };
+    lsSet(K_SESSION, user);
+    return jsonRes({ ok: true, user });
+  }
+  if (path === "/api/auth/social") {
+    const provider = String(body.provider ?? "google");
+    const email = String(body.email ?? "").toLowerCase().trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return errRes("Escribe el correo de tu cuenta.");
+    const users = lsGet<Record<string, StoredAccount>>(K_USERS, {});
+    if (!users[email]) {
+      users[email] = { name: nameFromEmail(email), hash: "", provider };
+      lsSet(K_USERS, users);
+    }
+    const user: DemoUser = {
+      id: `u_${hashStr(email).toString(36)}`,
+      email,
+      name: users[email].name,
+      provider,
+    };
+    lsSet(K_SESSION, user);
+    return jsonRes({ ok: true, user });
+  }
+  return null;
+}
+
+/* ─────────────── Composición de texto (personas por arquetipo) ─────────────── */
+
+const STOP = new Set(
+  ("el la los las un una unos unas al del lo les se su sus mi mis tu tus le nos os me te te he has ha han hay de del al a ante bajo con contra desde durante en entre hacia hasta mediante para por segun sin sobre tras y o u e ni que como cuando donde quien cual cuales cual es son era fue ser estar soy estas esta este estos estas eso esa ese eso si no pero porque muy mas menos ya aun tambien quo the and for with from that this what how why can you your").split(
+    " "
+  )
+);
+
+function keywordsOf(prompt: string): string[] {
+  const words = prompt
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9áéíóúñü\s]/gi, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 4 && !STOP.has(w));
+  const freq = new Map<string, number>();
+  for (const w of words) freq.set(w, (freq.get(w) ?? 0) + 1);
+  return [...freq.entries()]
+    .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
+    .slice(0, 6)
+    .map(([w]) => w);
+}
+
+function topicOf(prompt: string): string {
+  const kws = keywordsOf(prompt);
+  if (kws.length === 0) return "tu pregunta";
+  return kws.slice(0, 3).join(", ");
+}
+
+function titleCase(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+type Ctx = { prompt: string; topic: string; kws: string[]; fresh: number };
+
+/** Arquetipos de estilo (espejo de src/lib/personas.ts). */
+function archetypeOf(modelId: string): string {
+  const map: [string, string][] = [
+    ["glm-5-coder", "engineer"],
+    ["qwen3.8-coder", "engineer"],
+    ["starcoder", "engineer"],
+    ["glm", "structured"],
+    ["claude", "reflexive"],
+    ["fable", "narrative"],
+    ["muse", "narrative"],
+    ["gpt", "consultant"],
+    ["o5", "researcher"],
+    ["deepseek", "researcher"],
+    ["phi", "researcher"],
+    ["gemini", "encyclopedic"],
+    ["grok", "witty"],
+    ["mistral", "pragmatic"],
+    ["kimi", "documentalist"],
+    ["minimax", "minimal"],
+    ["haiku", "minimal"],
+    ["flash", "minimal"],
+    ["mini", "minimal"],
+    ["llama", "community"],
+    ["qwen", "community"],
+  ];
+  for (const [k, v] of map) if (modelId.includes(k)) return v;
+  return "professional";
+}
+
+const OPENERS: Record<string, string[]> = {
+  structured: ["Voy al grano con {t}.", "Respuesta directa sobre {t}:"],
+  reflexive: ["{T} merece un poco de matiz antes de decidir.", "Vamos por partes con {t}."],
+  consultant: ["Encaro {t} como un framework de tres bloques.", "Analicemos {t} con criterio de consultoría."],
+  encyclopedic: ["Un poco de contexto sobre {t} ayuda a decidir mejor.", "{T}: contexto y datos clave."],
+  witty: ["{T} sin rodeos (bueno, dos rodeos).", "Vale, {t}: te lo cuento sin humo."],
+  engineer: ["Trato {t} como un problema de diseño.", "Solución técnica para {t}:"],
+  narrative: ["Hay algo fascinante en {t}.", "{T} es de esas historias que conviene contar bien."],
+  minimal: ["Clave sobre {t}:", "Lo esencial de {t}:"],
+  researcher: ["Planteo {t} como hipótesis verificable.", "Análisis riguroso de {t}:"],
+  pragmatic: ["Lo práctico primero: {t}.", "{T}, sin idealismos:"],
+  documentalist: ["Documentado lo esencial sobre {t}:", "Fuentes y estructura para {t}."],
+  community: ["En comunidad esto se resuelve así: {t}.", "{T} desde la experiencia compartida."],
+  professional: ["Sobre {t}, esto es lo que importa.", "{T}: guía clara."],
+};
+
+const BODY_BLOCKS: Record<string, ((c: Ctx) => string)[]> = {
+  structured: [
+    () => "- **Decisión:** elige la opción más simple que cumpla el objetivo hoy; la complejidad se añade, nunca se regala.\n- **Por qué:** cada capa extra multiplica coste de mantenimiento y puntos de fallo.\n- **Cómo:** define la métrica de éxito antes de escribir la primera línea.",
+    () => "1. Define el resultado en una frase medible.\n2. Reduce el problema al caso mínimo viable.\n3. Itera con feedback real, no con suposiciones.",
+    () => "- **Lo crítico:** no perder de vista el criterio de éxito.\n- **Lo olvidado siempre:** el coste de operación posterior al lanzamiento.\n- **El atajo honesto:** reutilizar lo que ya funciona.",
+  ],
+  reflexive: [
+    () => "1. **Entiende el contexto real** — la respuesta correcta depende más del caso que de la teoría.\n2. **Sopesa alternativas** — casi nunca existe una única vía buena; existen compromisos distintos.\n3. **Verifica supuestos** — la mayoría de errores nacen de dar por hecho algo que no lo es.\n4. **Decide y documenta** — anota por qué elegiste así; tu yo futuro lo agradecerá.",
+    () => "Hay tres consideraciones que suelen decidir el resultado:\n\n- El **alcance**: mejor un área resuelta de verdad que cinco a medias.\n- El **tiempo**: los plazos realistas incluyen imprevistos; los idealistas, no.\n- El **mantenimiento**: todo lo que construyas lo tendrá que cuidar alguien.",
+  ],
+  consultant: [
+    () => "**Diagnóstico** — el problema de fondo casi nunca es el síntoma visible.\n\n**Pros y contras**\n- Ventaja principal: foco y velocidad de aprendizaje.\n- Riesgo principal: subestimar el coste de cambio.\n\n**Recomendación** — empieza por un piloto acotado, mide y escala solo lo que funcione.",
+    () => "Framework rápido:\n\n1. **Impacto**: ¿qué cambia si lo resuelves bien?\n2. **Esfuerzo**: ¿cuál es el camino más corto con calidad aceptable?\n3. **Riesgo**: ¿qué puede romperse y cómo lo detectas pronto?\n\nCon esas tres respuestas, la decisión casi se toma sola.",
+  ],
+  encyclopedic: [
+    () => "- **Contexto:** este tipo de decisiones se han estudiado mucho; los patrones que funcionan comparten un patrón: empezar pequeño y medir.\n- **Dato útil:** los proyectos que documentan sus decisiones desde el día uno fallan bastante menos al escalar.\n- **Enfoque multimodal:** combina fuentes — texto, ejemplos visuales y datos numéricos — antes de concluir.",
+    () => "Contexto amplio en tres ideas:\n\n1. El estado del arte cambia rápido; los principios, despacio.\n2. Los datos concretos baten a las opiniones generales.\n3. La mejor referencia es el caso más parecido al tuyo, no el más famoso.",
+  ],
+  witty: [
+    () => "- La respuesta corta: sí, pero al revés de lo que te han contado.\n- La larga: funciona hasta que escala; entonces lo simple gana.\n- Dato duro: el 80 % del valor suele estar en el 20 % del esfuerzo bien colocado.",
+    () => "Tres verdades incómodas:\n\n1. Nadie lee la documentación, pero todos la echan de menos.\n2. La solución elegante de hoy es el legacy de mañana — elígela simple.\n3. Si necesitas un diagrama para explicar tu plan, el plan aún no está listo.",
+  ],
+  engineer: [
+    () => "**Diseño:** separa la lógica del transporte y el estado; cada módulo con una sola razón para cambiar.\n\n**Implementación:** empieza por el caso feliz, añade errores después.\n\n**Prueba:** un test por comportamiento, no por línea.",
+    () => "Decisiones técnicas justificadas:\n\n- **Estructura plana** sobre jerarquías profundas: menos transformaciones, menos bugs.\n- **Validación en el borde**: el sistema interno confía en datos ya validados.\n- **Observabilidad desde el minuto uno**: un log estructurado ahorra horas de depuración.",
+  ],
+  narrative: [
+    () => "Piénsalo como una novela bien estructurada: primero el conflicto (tu objetivo), luego los personajes (los recursos de que dispones) y al final el giro (aquello que nadie había probado). Las mejores soluciones casi siempre empiezan siendo incómodamente simples.",
+    () => "Hay una analogía que lo explica: construir esto es como montar un jardín, no una estatua. La estatua se esculpe una vez; el jardín se poda cada semana. Si tu proyecto vive y respira, elige el jardín.",
+  ],
+  minimal: [
+    () => "- Empieza por el caso mínimo.\n- Mide antes de optimizar.\n- Documenta la decisión, no el código.",
+    () => "- Objetivo en una frase.\n- Un paso hoy, otro mañana.\n- Métrica clara desde el inicio.",
+  ],
+  researcher: [
+    () => "**Hipótesis:** el factor limitante no es técnico sino de criterio: sin una métrica clara, cualquier resultado parece válido.\n\n**Análisis:** al comparar alternativas, fija variables y cambia solo una; si el escenario cambia dos cosas a la vez, la conclusión será ruido.\n\n**Conclusión:** define primero cómo medirás el éxito; el resto se deriva de ahí.",
+    () => "Verificación paso a paso:\n\n1. **Supuesto inicial:** que el problema es estable — conviene validarlo.\n2. **Dato:** los casos similares resueltos con éxito comparten iteraciones cortas.\n3. **Contraste:** busca activamente el caso que refute tu plan; si sobrevive, avanza.",
+  ],
+  pragmatic: [
+    () => "- **Robustez:** lo que no se puede romper en producción no se rompe; lo demás, supervisiona.\n- **Cumplimiento:** documenta datos personales y retenciones desde el diseño.\n- **Claridad:** si un compañero no lo entiende en cinco minutos, simplifícalo.",
+    () => "Enfoque pragmático:\n\n1. Resuelve el caso real que tienes hoy, no el hipotético de 2030.\n2. Elige herramientas con comunidad grande y problemas ya respondidos.\n3. Deja puerta de salida: migrar debe ser caro por decisión, no por arquitectura.",
+  ],
+  documentalist: [
+    () => "Secciones relevantes del tema:\n\n- **Definición y alcance** — qué entra y qué no.\n- **Estado actual** — qué existe ya y quién lo mantiene.\n- **Siguientes pasos** — con responsables y fechas.",
+    () => "Documentación mínima viable:\n\n1. Un párrafo de contexto (el «por qué»).\n2. La decisión tomada y sus alternativas descartadas.\n3. El efecto esperado, con fecha de revisión.",
+  ],
+  community: [
+    () => "Lo que funciona en la práctica comunitaria:\n\n- Ejemplos reproducibles ganan a explicaciones abstractas.\n- Comparte pronto: el feedback externo corrige en horas lo que solo tardarías semanas en ver.\n- Licencia y créditos claros desde el primer commit.",
+    () => "Perspectivas comparadas:\n\n1. **Enfoque A (rápido):** resultado hoy, deuda mañana.\n2. **Enfoque B (sólido):** más arranque, menos sustos.\n3. **Enfoque mixto:** prototipa A, documenta hacia B.",
+  ],
+  professional: [
+    () => "- **Objetivo:** tenlo en una frase.\n- **Camino:** el más corto con calidad aceptable.\n- **Evidencia:** una métrica que diga si funcionó.",
+    () => "Resumen ejecutivo en tres líneas: define el éxito, reduce el alcance al mínimo útil y mide. Lo demás es ejecución.",
+  ],
+};
+
+const CLOSERS = [
+  "Si me das más contexto (presupuesto, plazo, público), afino la recomendación.",
+  "Con un ejemplo concreto de tu caso, bajo esto a pasos exactos.",
+  "La clave está en empezar: el plan perfecto no existe, el iterado sí.",
+  "Y sobre todo: mide. Sin números, esto es opinión; con ellos, estrategia.",
+];
+
+function composeAnswer(modelId: string, prompt: string, opts?: { shorter?: boolean }): string {
+  const ctx: Ctx = {
+    prompt,
+    topic: topicOf(prompt),
+    kws: keywordsOf(prompt),
+    fresh: hashStr(modelId + prompt) % 3,
+  };
+  const arch = archetypeOf(modelId);
+  const openers = OPENERS[arch] ?? OPENERS.professional;
+  const opener = openers[ctx.fresh % openers.length]
+    .replace("{t}", ctx.topic)
+    .replace("{T}", titleCase(ctx.topic));
+  const blocks = BODY_BLOCKS[arch] ?? BODY_BLOCKS.professional;
+  const body = blocks[ctx.fresh % blocks.length](ctx);
+  const closer = opts?.shorter ? "" : `\n\n${CLOSERS[ctx.fresh % CLOSERS.length]}`;
+  return `${opener}\n\n${body}${closer}`;
+}
+
+/* ─────────────── Modo código: snippets reales parametrizados ─────────────── */
+
+function codeSnippet(prompt: string): { lang: string; code: string } {
+  const p = prompt.toLowerCase();
+  const kws = keywordsOf(prompt);
+  const slug = kws[0] ?? "tarea";
+  const fn = slug.replace(/[^a-z0-9]/gi, "") || "proceso";
+
+  if (/react|componente|hook|jsx|tsx|ui/.test(p)) {
+    return {
+      lang: "tsx",
+      code: `import { useEffect, useState } from "react";
+
+/** Cargador de ${slug} con estados de carga y error. */
+export function ${titleCase(fn)}Panel() {
+  const [data, setData] = useState<${titleCase(fn)}[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch("/api/${slug}", { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then(setData)
+      .catch((e) => e.name !== "AbortError" && setError(e.message));
+    return () => ctrl.abort();
+  }, []);
+
+  if (error) return <p role="alert">No se pudo cargar: {error}</p>;
+  if (!data) return <p>Cargando ${slug}…</p>;
+
+  return (
+    <ul>
+      {data.map((item) => (
+        <li key={item.id}>{item.nombre}</li>
+      ))}
+    </ul>
+  );
+}`,
+    };
+  }
+  if (/sql|consulta|base de datos|tabla|join|query/.test(p)) {
+    return {
+      lang: "sql",
+      code: `-- ${titleCase(prompt.slice(0, 70))}
+SELECT
+  c.id,
+  c.nombre,
+  COUNT(p.id)              AS total_pedidos,
+  SUM(p.importe)           AS importe_total,
+  ROUND(AVG(p.importe), 2) AS ticket_medio
+FROM clientes AS c
+JOIN pedidos AS p ON p.cliente_id = c.id
+WHERE p.creado_en >= DATE('now', '-90 days')
+GROUP BY c.id, c.nombre
+HAVING COUNT(p.id) > 3
+ORDER BY importe_total DESC
+LIMIT 20;`,
+    };
+  }
+  if (/python|pandas|script|scrap|datos csv/.test(p)) {
+    return {
+      lang: "python",
+      code: `"""${titleCase(prompt.slice(0, 70))}"""
+import argparse, json, sys
+from pathlib import Path
+
+def ${fn}(ruta: Path) -> dict:
+    if not ruta.exists():
+        sys.exit(f"No existe: {ruta}")
+    datos = json.loads(ruta.read_text(encoding="utf-8"))
+    return {"total": len(datos), "muestras": datos[:3]}
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("entrada", type=Path)
+    args = parser.parse_args()
+    print(json.dumps(${fn}(args.entrada), ensure_ascii=False, indent=2))`,
+    };
+  }
+  return {
+    lang: "ts",
+    code: `/** Reintenta una operación con espera exponencial (útil para APIs inestables). */
+export async function ${fn}Reintentos<T>(
+  operacion: () => Promise<T>,
+  intentos = 3,
+  esperaMs = 400
+): Promise<T> {
+  let ultimoError: unknown;
+  for (let i = 0; i < intentos; i++) {
+    try {
+      return await operacion();
+    } catch (e) {
+      ultimoError = e;
+      await new Promise((r) => setTimeout(r, esperaMs * 2 ** i));
+    }
+  }
+  throw ultimoError;
+}`,
+  };
+}
+
+/* ─────────────── Modo vídeo: guion por escenas ─────────────── */
+
+function videoScript(prompt: string): string {
+  const t = titleCase(topicOf(prompt));
+  return `**GUION · ${t}** (60–75 s, formato vertical 9:16)
+
+**ESCENA 1 — Gancho (0:00–0:06)**
+Plano: primerísimo del elemento clave, luz lateral cálida.
+Voz en off: «¿Y si ${t} fuera mucho más simple de lo que crees?»
+Música: pulso electrónico mínimo, sube de intensidad.
+
+**ESCENA 2 — Problema (0:06–0:20)**
+Plano: travelling lateral sobre el contexto cotidiano.
+Voz en off: el problema tal y como lo vive la gente, sin tecnicismos.
+Transición: barrido rápido de pantalla.
+
+**ESCENA 3 — Solución (0:20–0:45)**
+Planos: tres cortes secos, uno por beneficio, con rótulos de una palabra.
+Música: entra la melodía principal; percusión marcada.
+
+**ESCENA 4 — Prueba (0:45–0:58)**
+Plano: pantalla dividida, antes/después; zoom sutil al resultado.
+Voz en off: el dato que demuestra el cambio.
+
+**ESCENA 5 — Cierre (0:58–1:10)**
+Plano: frontal fijo, silencio de 1 s, call to action clara.
+Música: resuelve en la tónica; fade out con el logotipo.`;
+}
+
+/* ─────────────── Modo 3D: receta procedural determinista ─────────────── */
+
+function recipe3D(prompt: string): { text: string } {
+  const p = prompt.toLowerCase();
+  const match = RECIPES_3D.find((r) => r.kw.some((k) => p.includes(k)) || p.includes(r.id));
+  if (match) {
+    return {
+      text: `He localizado en el catálogo de todólogo.ai el modelo que mejor encaja con tu petición: **${match.name}** (${match.cat}). Gíralo, acércate y explora cada pieza desde el visor; si quieres variaciones de color o escala, pídemelas.\n\nMODEL: ${match.id}`,
+    };
+  }
+  // Escultura abstracta generada de forma determinista a partir del prompt
+  const h = hashStr(prompt);
+  const hues = ["#D94F3D", "#E8863A", "#F4C406", "#5D9C59", "#4A7DBD", "#7A6BB5", "#4FA3A5", "#C8A06A"];
+  const parts: (string | number)[][] = [
+    ["cy", 0, 0.08, 0, 1.15, 1.3, "#E7E1D8", 0, 0, 0],
+    ["bx", 0, 0.85, 0, 0.7, 0.9, 0.7, hues[h % hues.length], 0, (h % 30) / 57, 0],
+    ["sp", 0, 1.62, 0, 0.34, 0, 0, hues[(h >> 3) % hues.length], 0, 0, 0],
+    ["to", 0, 1.62, 0, 0.62, 0.07, hues[(h >> 5) % hues.length], 0, 0, 0],
+    ["co", 0, 2.1, 0, 0.16, 0.5, hues[(h >> 7) % hues.length], 0, 0, 0],
+    ["sp", 0.52, 0.55, 0.52, 0.11, 0, 0, "#F4C406", 0, 0, 0],
+    ["sp", -0.52, 0.55, -0.52, 0.11, 0, 0, "#F4C406", 0, 0, 0],
+  ];
+  return {
+    text: `Te he esculpido una pieza original a partir de tu idea: una **torre con equilibrante orbital** — pedestal de mármol claro, núcleo girado en ${hues[h % hues.length]}, esfera central anillada y dos satélites ámbar. La genero como receta de primitivas para que pese menos que una foto:\n\n\`\`\`receta3d\n${JSON.stringify(parts)}\n\`\`\`\n\nPuedo ajustar altura, paleta o silueta: dime «más esbelta», «en rojo» o «estilo robot» y te doy otra variante al instante.`,
+  };
+}
+
+/* ─────────────── Batalla (espejo de POST /api/battle) ─────────────── */
+
+function drawDuel(): [AIModel, AIModel] {
+  const sorted = [...MODELS].sort((a, b) => b.elo - a.elo);
+  const pool = sorted.slice(0, Math.ceil(sorted.length * 0.7));
+  const a = pick(pool);
+  let b = pick(pool);
+  while (b.id === a.id) b = pick(pool);
+  return [a, b];
+}
+
+function thinkingFor(modelId: string, prompt: string): string[] {
+  const t = topicOf(prompt);
+  return [
+    "**Razonamiento:**",
+    `Descompongo la petición: el núcleo es ${t}.`,
+    "Identifico qué asunciones son seguras y cuáles conviene verificar.",
+    "Comparo dos caminos posibles y elijo el de menor riesgo.",
+    "Compruebo que la respuesta responde exactamente a lo pedido antes de cerrar.",
+  ];
+}
+
+function sourcesFor(prompt: string): { title: string; url: string; snippet: string }[] {
+  const kws = keywordsOf(prompt);
+  const q = kws.slice(0, 2).join("+") || "arena+ia";
+  return [
+    {
+      title: `Guía ${new Date().getFullYear()} sobre ${topicOf(prompt)}`,
+      url: `https://es.wikipedia.org/wiki/Special:Search?search=${q}`,
+      snippet: `Contexto general y referencias sobre ${topicOf(prompt)}.`,
+    },
+    {
+      title: `Documentación oficial recomendada para ${kws[0] ?? "el tema"}`,
+      url: `https://developer.mozilla.org/es/search?q=${q}`,
+      snippet: "Referencia técnica con ejemplos verificados por la comunidad.",
+    },
+    {
+      title: `Análisis comparativo: ${topicOf(prompt)}`,
+      url: `https://arxiv.org/search/?query=${q}`,
+      snippet: "Estudios recientes con datos cuantitativos del tema consultado.",
+    },
+  ];
+}
+
+async function handleBattle(init: RequestInit | undefined): Promise<Response> {
+  const body = (() => {
+    try {
+      return JSON.parse(String(init?.body ?? "{}")) as JSON;
+    } catch {
+      return {};
+    }
+  })();
+
+  const prompt = String(body.prompt ?? "").trim();
+  const single = Boolean(body.single);
+  const composerMode = String(body.composerMode ?? "texto");
+  const historyA = Array.isArray(body.historyA) ? (body.historyA as unknown[]) : [];
+  const historyB = Array.isArray(body.historyB) ? (body.historyB as unknown[]) : [];
+
+  let modelA: AIModel;
+  let modelB: AIModel | null = null;
+  if (single) {
+    modelA = getModel(String(body.modelAId ?? "")) ?? drawDuel()[0];
+  } else if (body.modelAId && body.modelBId) {
+    modelA = getModel(String(body.modelAId)) ?? drawDuel()[0];
+    modelB = getModel(String(body.modelBId)) ?? drawDuel()[1];
+  } else if (body.modelAId) {
+    modelA = getModel(String(body.modelAId)) ?? drawDuel()[0];
+    modelB = drawDuel()[1];
+    if (modelB.id === modelA.id) modelB = MODELS[(MODELS.indexOf(modelA) + 7) % MODELS.length];
+  } else {
+    [modelA, modelB] = drawDuel();
+  }
+
+  await sleep(650 + Math.random() * 950 + Math.min(historyA.length * 120, 500));
+
+  let aText: string;
+  let bText: string | null = null;
+  let sources: { title: string; url: string; snippet: string }[] | undefined;
+
+  if (composerMode === "modelos3d") {
+    const rec = recipe3D(prompt);
+    aText = rec.text;
+    bText = modelB ? composeAnswer(modelB.id, prompt) : null;
+  } else if (composerMode === "codigo") {
+    const { lang, code } = codeSnippet(prompt);
+    aText = `Vamos con el código para ${topicOf(prompt)}, listo para copiar y pegar:\n\n\`\`\`${lang}\n${code}\n\`\`\`\n\n**Notas rápidas**\n- Manejo de errores incluido: falla con mensajes claros, no en silencio.\n- Tipado estricto para que el editor trabaje a tu favor.\n- Adáptalo a tu estilo: el esqueleto es lo importante.`;
+    if (modelB) {
+      const alt = codeSnippet(prompt + " variante");
+      bText = `Otra perspectiva, con un enfoque más directo:\n\n\`\`\`${alt.lang}\n${alt.code}\n\`\`\`\n\n**Cuándo usar cada uno**\n- Este: menos piezas, ideal para empezar hoy.\n- El otro: más cinturón de seguridad para producción.`;
+    }
+  } else if (composerMode === "video") {
+    aText = videoScript(prompt);
+    bText = modelB ? videoScript(prompt + " variante B") : null;
+  } else {
+    aText = composeAnswer(modelA.id, prompt);
+    bText = modelB ? composeAnswer(modelB.id, prompt + "x") : null;
+    if (composerMode === "profundo") {
+      const thA = thinkingFor(modelA.id, prompt);
+      const thB = modelB ? thinkingFor(modelB.id, prompt) : null;
+      aText = thA.map((l) => `> ${l}`).join("\n") + "\n\n---\n\n" + composeAnswer(modelA.id, prompt, { shorter: true });
+      if (modelB && thB) {
+        bText = thB.map((l) => `> ${l}`).join("\n") + "\n\n---\n\n" + composeAnswer(modelB.id, prompt + "x", { shorter: true });
+      }
+    }
+    if (composerMode === "web") {
+      sources = sourcesFor(prompt);
+      aText = `${aText}\n\nReferencias consultadas en vivo: [1] y [2].`;
+      if (bText) bText = `${bText}\n\nMe apoyo en [1] y [3] para los datos concretos.`;
+    }
+  }
+
+  return jsonRes({
+    ok: true,
+    aId: modelA.id,
+    bId: modelB?.id ?? null,
+    battleId: rid("btl"),
+    a: aText,
+    b: bText,
+    sources,
+    usedFallback: false,
+  });
+}
+
+/* ─────────────── Voto (espejo de POST /api/vote) ─────────────── */
+
+async function handleVote(init: RequestInit | undefined): Promise<Response> {
+  const body = ((): JSON => {
+    try {
+      return JSON.parse(String(init?.body ?? "{}")) as JSON;
+    } catch {
+      return {};
+    }
+  })();
+  const modelAId = String(body.modelAId ?? "");
+  const modelBId = String(body.modelBId ?? "");
+  const winner = String(body.winner ?? "") as Winner;
+  if (!modelAId || !modelBId || !["A", "B", "tie", "bad"].includes(winner)) {
+    return errRes("Faltan campos obligatorios.");
+  }
+  const A = getModel(modelAId);
+  const B = getModel(modelBId);
+  if (!A || !B) return errRes("Modelo desconocido.", 404);
+
+  const battleId = String(body.battleId ?? "") || rid("btl");
+  addVote({ battleId, modelAId, modelBId, winner, category: String(body.category ?? "global") });
+
+  const tA = tallyFor(modelAId);
+  const tB = tallyFor(modelBId);
+  const deltaA = eloDeltaFromVotes(tA.wins, tA.losses, tA.ties);
+  const deltaB = eloDeltaFromVotes(tB.wins, tB.losses, tB.ties);
+  const newA = A.elo + deltaA;
+  const newB = B.elo + deltaB;
+
+  let swing = 0;
+  if (winner === "A" || winner === "B") {
+    const exp = expectedScore(newA, newB);
+    swing = Math.round(24 * ((winner === "A" ? 1 : 0) - exp));
+  }
+
+  await sleep(120);
+  return jsonRes({
+    ok: true,
+    battleId,
+    elo: {
+      [modelAId]: { base: A.elo, delta: deltaA, total: newA },
+      [modelBId]: { base: B.elo, delta: deltaB, total: newB },
+    },
+    swing,
+    message:
+      winner === "tie"
+        ? "Empate registrado. El ELO se mantiene estable."
+        : winner === "bad"
+          ? "Feedback registrado: ambos modelos perderán visibilidad."
+          : "Voto registrado. El ELO del arena se ha actualizado.",
+  });
+}
+
+/* ─────────────── Ranking (espejo de GET /api/leaderboard) ─────────────── */
+
+function handleLeaderboard(path: string): Response {
+  const category = new URLSearchParams(path.split("?")[1] ?? "").get("category") ?? "global";
+  const rows: LeaderRow[] = MODELS.map((m) => {
+    const t = tallyFor(m.id);
+    const delta = eloDeltaFromVotes(t.wins, t.losses, t.ties);
+    const decided = t.wins + t.losses;
+    return {
+      id: m.id,
+      name: m.name,
+      provider: m.provider,
+      providerName: PROVIDERS[m.provider]?.name ?? m.provider,
+      license: m.license,
+      elo: categoryElo(m, category) + delta,
+      delta,
+      ci: 2 + ((m.elo + m.id.length * 7) % 4),
+      votes: t.wins + t.losses + t.ties + t.bads,
+      winRate: decided > 0 ? Math.round((t.wins / decided) * 100) : 50,
+      context: m.context,
+      priceOut: m.priceOut,
+      speed: m.speed,
+      isNew: Boolean(m.isNew),
+      categories: m.categories as string[],
+    };
+  });
+  rows.sort((a, b) => b.elo - a.elo);
+  rows.forEach((r, i) => (r.rank = i + 1));
+  return jsonRes({
+    category,
+    total: rows.length,
+    rows,
+    syncedAt: new Date().toISOString(),
+  });
+}
+
+/* ─────────────── Imagen (espejo de POST /api/image) ─────────────── */
+
+function svgArt(prompt: string, size: string): string {
+  const [w, h] = (size === "1024x1024" ? [1024, 1024] : size === "768x1344" ? [768, 1344] : size === "864x1152" ? [864, 1152] : size === "1344x768" ? [1344, 768] : size === "1152x864" ? [1152, 864] : size === "1440x720" ? [1440, 720] : [720, 1440]) as number[];
+  const h0 = hashStr(prompt);
+  let seed = h0 || 1;
+  const rnd = () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+  const hue = h0 % 360;
+  const hue2 = (hue + 40 + Math.floor(rnd() * 80)) % 360;
+  let shapes = "";
+  for (let i = 0; i < 7; i++) {
+    const cx = Math.round(rnd() * w);
+    const cy = Math.round(rnd() * h);
+    const r = Math.round((0.12 + rnd() * 0.38) * Math.min(w, h));
+    const oh = (hue + i * 37 + Math.floor(rnd() * 30)) % 360;
+    const op = (0.18 + rnd() * 0.4).toFixed(2);
+    shapes += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="hsl(${oh} 70% ${(46 + rnd() * 22).toFixed(0)}%)" opacity="${op}"/>`;
+  }
+  for (let i = 0; i < 2; i++) {
+    const cx = Math.round(rnd() * w);
+    const cy = Math.round(rnd() * h);
+    const r = Math.round((0.2 + rnd() * 0.3) * Math.min(w, h));
+    shapes += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="hsl(${(hue2 + i * 60) % 360} 85% 60%)" stroke-width="${3 + Math.floor(rnd() * 5)}" opacity="0.55"/>`;
+  }
+  let dots = "";
+  for (let i = 0; i < 46; i++) {
+    dots += `<circle cx="${Math.round(rnd() * w)}" cy="${Math.round(rnd() * h)}" r="${(1 + rnd() * 3.4).toFixed(1)}" fill="#FFFFFF" opacity="${(0.25 + rnd() * 0.6).toFixed(2)}"/>`;
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue} 62% 22%)"/><stop offset="0.55" stop-color="hsl(${hue2} 58% 38%)"/><stop offset="1" stop-color="hsl(${(hue + 300) % 360} 52% 16%)"/></linearGradient><filter id="b" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="${Math.round(Math.min(w, h) * 0.055)}"/></filter><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.06"/></feComponentTransfer><feComposite operator="over" in2="SourceGraphic"/></filter></defs><rect width="${w}" height="${h}" fill="url(#g)"/><g filter="url(#b)">${shapes}</g>${dots}<rect width="${w}" height="${h}" filter="url(#n)" fill="none"/></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+async function handleImage(init: RequestInit | undefined): Promise<Response> {
+  const body = ((): JSON => {
+    try {
+      return JSON.parse(String(init?.body ?? "{}")) as JSON;
+    } catch {
+      return {};
+    }
+  })();
+  const prompt = String(body.prompt ?? "").trim();
+  if (prompt.length < 3) return errRes("Describe qué imagen quieres (mínimo 3 caracteres).");
+  const size = String(body.size ?? "1024x1024");
+  await sleep(900 + Math.random() * 900);
+  return jsonRes({ ok: true, url: svgArt(prompt, size), prompt, size });
+}
+
+/* ─────────────── Agente (espejo de POST /api/agent) ─────────────── */
+
+const PROJECT_TYPES: Record<string, string> = {
+  "juego-aaa": "videojuego AAA",
+  "app-web": "aplicación web interactiva",
+  "app-movil": "aplicación móvil",
+  saas: "plataforma SaaS",
+  escritorio: "aplicación de escritorio",
+  api: "API / microservicios",
+  extension: "extensión",
+  "data-ml": "pipeline de datos / ML",
+};
+
+async function handleAgent(init: RequestInit | undefined): Promise<Response> {
+  const body = ((): JSON => {
+    try {
+      return JSON.parse(String(init?.body ?? "{}")) as JSON;
+    } catch {
+      return {};
+    }
+  })();
+  const desc = String(body.description ?? "").trim();
+  if (desc.length < 2) return errRes("Describe la misión para que el enjambre la planifique.");
+  const type = PROJECT_TYPES[String(body.projectType ?? "")] ?? "proyecto de software";
+  const autonomy = String(body.autonomy ?? "L2");
+  const budget = String(body.budget ?? "standard");
+  const lead = budget === "saturn" ? "GPT-6 Astra" : budget === "intensivo" ? "Claude Opus 5" : "GLM-5.3";
+  const topic = topicOf(desc);
+
+  await sleep(1000 + Math.random() * 1200);
+
+  return jsonRes({
+    ok: true,
+    generated: true,
+    plan: {
+      mission: `Entregar ${type} funcional: «${desc.slice(0, 120)}»`,
+      summary: `El enjambre del Modo Agente analizará el objetivo (${topic}), diseñará la arquitectura y ejecutará un pipeline completo con nivel de autonomía ${autonomy}. Cada fase incluye verificación automática antes de avanzar; los fallos se corrigen en bucle sin intervención humana.`,
+      team: [
+        { role: "Orquestador", model: lead, task: "Planificar, delegar y verificar cada fase" },
+        { role: "Arquitecto", model: "o5-pro", task: "Diseño de sistema, decisiones técnicas y ADRs" },
+        { role: "Desarrollador principal", model: "glm-5-coder", task: "Implementación del núcleo y tests unitarios" },
+        { role: "Frontend/UX", model: "fable-5.1", task: "Interfaz, copywriting y experiencia de usuario" },
+        { role: "QA & Seguridad", model: "kimi-swarm", task: "Pruebas automatizadas, fuzzing y auditoría" },
+        { role: "DevOps", model: "devstral-2", task: "CI/CD, despliegue y observabilidad" },
+      ],
+      phases: [
+        {
+          name: "Análisis y requisitos",
+          duration: "6 min",
+          steps: [
+            "Descomposición del objetivo en requisitos medibles",
+            "Identificación de riesgos y dependencias críticas",
+            "Especificación técnica viva",
+          ],
+        },
+        {
+          name: "Arquitectura",
+          duration: "10 min",
+          steps: [
+            "Selección de stack y patrones (con alternativas descartadas)",
+            "Diagrama de componentes y contratos de API",
+            "Plan de datos, caché y escalado",
+          ],
+        },
+        {
+          name: "Construcción del núcleo",
+          duration: "45 min",
+          steps: [
+            "Scaffold del proyecto y tooling (lint, tests, CI)",
+            "Implementación de módulos críticos en paralelo por sub-agentes",
+            "Integración continua con verificación automática",
+          ],
+        },
+        {
+          name: "Interfaz y experiencia",
+          duration: "25 min",
+          steps: [
+            "Sistema de diseño y componentes accesibles",
+            "Estados de carga, error y vacío cuidados",
+            "Pruebas de usabilidad automatizadas",
+          ],
+        },
+        {
+          name: "Verificación y despliegue",
+          duration: "18 min",
+          steps: [
+            "Suite E2E sobre los flujos críticos",
+            "Auditoría de seguridad y rendimiento",
+            "Despliegue con rollback automático",
+          ],
+        },
+      ],
+      stack: [
+        { layer: "Frontend", choice: "Next.js + TypeScript + Tailwind" },
+        { layer: "Backend", choice: "API routes + Prisma + SQLite/PostgreSQL" },
+        { layer: "Infra", choice: "Contenedor + CI/CD con preview por PR" },
+        { layer: "Calidad", choice: "Vitest + Playwright + ESLint estricto" },
+      ],
+      deliverables: [
+        `${type} funcionando de extremo a extremo`,
+        "Repositorio con tests verdes y pipeline activo",
+        "Documentación de arquitectura y decisiones",
+      ],
+      risks: [
+        { risk: "Ambigüedad en los requisitos iniciales", mitigation: "Especificación validada antes de construir" },
+        { risk: "Crecimiento de alcance durante la ejecución", mitigation: "Congelar alcance por fase; extras al backlog" },
+        { risk: "Deuda técnica en integraciones externas", mitigation: "Adaptadores aislados y tests de contrato" },
+      ],
+      successCriteria: [
+        "Todos los flujos críticos pasan E2E",
+        "Tiempo de respuesta percibido < 200 ms en interacciones clave",
+        "Cero errores críticos en auditoría de seguridad",
+      ],
+      totalEstimate: budget === "saturn" ? "~2 h de cómputo paralelo" : budget === "intensivo" ? "~50 min con sub-agentes" : "~30 min",
+    },
+  });
+}
+
+/* ─────────────── Copa Todólogo (espejo de POST /api/tournament) ─────────────── */
+
+interface CopaContender {
+  modelId: string;
+  label: string;
+  text: string;
+}
+interface CopaDuel {
+  key: "semi1" | "semi2" | "final";
+  a: CopaContender;
+  b: CopaContender;
+  winner?: "a" | "b";
+  swing?: number;
+}
+interface Copa {
+  id: string;
+  prompt: string;
+  createdAt: number;
+  semi1: CopaDuel;
+  semi2: CopaDuel;
+  final?: CopaDuel;
+  championModelId?: string;
+  revealed: boolean;
+}
+
+const copaStore = new Map<string, Copa>();
+
+function pickFour(): string[] {
+  const sorted = [...MODELS].sort((a, b) => b.elo - a.elo);
+  const pool = sorted.slice(0, Math.ceil(sorted.length * 0.7));
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 4).map((m) => m.id);
+}
+
+function contenderText(modelId: string, prompt: string): string {
+  return composeAnswer(modelId, prompt, { shorter: true });
+}
+
+async function generateSemis(copa: Copa) {
+  await sleep(700);
+  copa.semi1.a.text = contenderText(copa.semi1.a.modelId, copa.prompt);
+  copa.semi1.b.text = contenderText(copa.semi1.b.modelId, copa.prompt);
+  await sleep(500);
+  copa.semi2.a.text = contenderText(copa.semi2.a.modelId, copa.prompt);
+  copa.semi2.b.text = contenderText(copa.semi2.b.modelId, copa.prompt);
+}
+
+function recordDuel(duel: CopaDuel, winner: "a" | "b"): number {
+  const A = getModel(duel.a.modelId);
+  const B = getModel(duel.b.modelId);
+  if (!A || !B) return 0;
+  addVote({
+    battleId: `copa_${duel.key}`,
+    modelAId: duel.a.modelId,
+    modelBId: duel.b.modelId,
+    winner: winner === "a" ? "A" : "B",
+    category: "global",
+  });
+  const exp = expectedScore(A.elo, B.elo);
+  return Math.round(24 * ((winner === "a" ? 1 : 0) - exp));
+}
+
+function publicContender(copa: Copa, c: CopaContender) {
+  if (!copa.revealed) return { label: c.label, text: c.text };
+  const m = getModel(c.modelId);
+  return {
+    label: c.label,
+    text: c.text,
+    model: m
+      ? { id: m.id, name: m.name, provider: m.provider, elo: m.elo }
+      : { id: c.modelId, name: c.modelId, provider: "", elo: 0 },
+  };
+}
+
+function publicDuel(copa: Copa, d?: CopaDuel) {
+  if (!d) return undefined;
+  return {
+    key: d.key,
+    a: publicContender(copa, d.a),
+    b: publicContender(copa, d.b),
+    winner: d.winner,
+    swing: d.swing,
+  };
+}
+
+function publicState(copa: Copa) {
+  const bothSemisDone = Boolean(copa.semi1.winner && copa.semi2.winner);
+  const finalReady = Boolean(copa.final && copa.final.a.text);
+  return {
+    id: copa.id,
+    prompt: copa.prompt,
+    revealed: copa.revealed,
+    phase: copa.revealed
+      ? ("campeon" as const)
+      : finalReady
+        ? ("final" as const)
+        : bothSemisDone
+          ? ("final-cargando" as const)
+          : ("semis" as const),
+    champion:
+      copa.revealed && copa.championModelId
+        ? publicContender(copa, { modelId: copa.championModelId, label: "CAMPEÓN", text: "" }).model
+        : null,
+    semi1: publicDuel(copa, copa.semi1),
+    semi2: publicDuel(copa, copa.semi2),
+    final: publicDuel(copa, copa.final),
+  };
+}
+
+async function handleTournament(init: RequestInit | undefined): Promise<Response> {
+  const body = ((): JSON => {
+    try {
+      return JSON.parse(String(init?.body ?? "{}")) as JSON;
+    } catch {
+      return {};
+    }
+  })();
+  const action = String(body.action ?? "");
+
+  if (action === "start") {
+    const prompt = String(body.prompt ?? "").trim();
+    if (prompt.length < 2) return errRes("Escribe la consigna de la copa para sortear a los contendientes.");
+    const [p1, p2, p3, p4] = pickFour();
+    const copa: Copa = {
+      id: rid("copa"),
+      prompt,
+      createdAt: Date.now(),
+      semi1: { key: "semi1", a: { modelId: p1, label: "A1", text: "" }, b: { modelId: p2, label: "A2", text: "" } },
+      semi2: { key: "semi2", a: { modelId: p3, label: "B1", text: "" }, b: { modelId: p4, label: "B2", text: "" } },
+      revealed: false,
+    };
+    copaStore.set(copa.id, copa);
+    await generateSemis(copa);
+    return jsonRes({ ok: true, copa: publicState(copa) });
+  }
+
+  if (action === "vote") {
+    const duelKey = String(body.duel ?? "");
+    const winner = String(body.winner ?? "");
+    const copa = copaStore.get(String(body.id ?? ""));
+    if (!copa) return errRes("La copa ha expirado. Inicia una nueva desde el Modo Torneo.", 404);
+    if (!["a", "b"].includes(winner)) return errRes("Faltan campos del voto (id, duel, winner).");
+    const duel = duelKey === "semi1" ? copa.semi1 : duelKey === "semi2" ? copa.semi2 : copa.final;
+    if (!duel || !duel.a.text) return errRes("Ese duelo todavía no está disponible.", 409);
+
+    if (!duel.winner) {
+      duel.winner = winner as "a" | "b";
+      duel.swing = recordDuel(duel, duel.winner);
+
+      if (duelKey !== "final" && copa.semi1.winner && copa.semi2.winner && !copa.final) {
+        const w1 = copa.semi1.winner === "a" ? copa.semi1.a : copa.semi1.b;
+        const w2 = copa.semi2.winner === "a" ? copa.semi2.a : copa.semi2.b;
+        const finalDuel: CopaDuel = {
+          key: "final",
+          a: { modelId: w1.modelId, label: "F1", text: "" },
+          b: { modelId: w2.modelId, label: "F2", text: "" },
+        };
+        copa.final = finalDuel;
+        await sleep(800);
+        finalDuel.a.text = contenderText(finalDuel.a.modelId, copa.prompt);
+        finalDuel.b.text = contenderText(finalDuel.b.modelId, copa.prompt);
+      }
+
+      if (duelKey === "final" && copa.final) {
+        copa.revealed = true;
+        copa.championModelId = winner === "a" ? copa.final.a.modelId : copa.final.b.modelId;
+      }
+    }
+    await sleep(150);
+    return jsonRes({ ok: true, copa: publicState(copa) });
+  }
+
+  return errRes("Acción desconocida.");
+}
+
+/* ───────────────────────── Enrutador ───────────────────────── */
+
+export async function handleDemoFetch(rawPath: string, init?: RequestInit): Promise<Response | null> {
+  const path = rawPath.split("?")[0];
+  const method = (init?.method ?? "GET").toUpperCase();
+
+  try {
+    if (path.startsWith("/api/auth/")) {
+      return (await handleAuth(path, init)) ?? errRes("Endpoint de autenticación desconocido.", 404);
+    }
+    if (path === "/api/battle" && method === "POST") return await handleBattle(init);
+    if (path === "/api/vote" && method === "POST") return await handleVote(init);
+    if (path === "/api/leaderboard") return handleLeaderboard(rawPath);
+    if (path === "/api/image" && method === "POST") return await handleImage(init);
+    if (path === "/api/agent" && method === "POST") return await handleAgent(init);
+    if (path === "/api/tournament" && method === "POST") return await handleTournament(init);
+    if (path === "/api/news") {
+      return jsonRes({ ok: true, articles: [], cached: true, note: "demo" });
+    }
+    if (path === "/api/stats") {
+      return jsonRes({ ok: true, totalVotes: getVotes().length + 2, models: MODELS.length, providers: Object.keys(PROVIDERS).length });
+    }
+  } catch {
+    return errRes("El motor demo encontró un error inesperado.", 500);
+  }
+  return null;
+}

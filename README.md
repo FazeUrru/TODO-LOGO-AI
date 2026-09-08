@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="#-estado-del-proyecto"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.5.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-estado-del-proyecto"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.6.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
   <img alt="next.js" src="https://img.shields.io/badge/Next.js-16-black?style=flat-square">
   <img alt="modelos" src="https://img.shields.io/badge/modelos-56-2E2B29?style=flat-square">
@@ -17,25 +17,30 @@
   <a href="CONTRIBUTING.md"><img alt="PRs bienvenidos" src="https://img.shields.io/badge/PRs-bienvenidos-1EAEDB?style=flat-square"></a>
 </p>
 
+<p align="center">
+  🌐 <strong><a href="https://fazeurru.github.io/TODO-LOGO-AI/">VER LA DEMO EN VIVO — https://fazeurru.github.io/TODO-LOGO-AI/</a></strong> 🌐
+</p>
+
 ---
 
 ## Índice
 
 1. [¿Qué es todólogo.ai?](#-qué-es-todólogoai)
-2. [Por qué no es otro clon de arena.ai](#-por-qué-no-es-otro-clon-de-arenaai)
-3. [Modos de la arena](#-modos-de-la-arena)
-4. [La Copa Todólogo (Modo Torneo)](#-la-copa-todólogo-modo-torneo)
-5. [Superpoderes del chat](#-superpoderes-del-chat)
-6. [Demostraciones animadas](#-demostraciones-animadas)
-7. [Inicio rápido](#-inicio-rápido)
-8. [Arquitectura](#️-arquitectura)
-9. [El sistema ELO](#-el-sistema-elo)
-10. [Referencia de la API](#-referencia-de-la-api)
-11. [Estructura del repositorio](#-estructura-del-repositorio)
-12. [Roadmap y changelog](#-roadmap-y-changelog)
-13. [Contribuir](#-contribuir)
-14. [Seguridad](#-seguridad)
-15. [Licencia](#-licencia)
+2. [Demo en vivo (GitHub Pages)](#-demo-en-vivo-github-pages)
+3. [Por qué no es otro clon de arena.ai](#-por-qué-no-es-otro-clon-de-arenaai)
+4. [Modos de la arena](#-modos-de-la-arena)
+5. [La Copa Todólogo (Modo Torneo)](#-la-copa-todólogo-modo-torneo)
+6. [Superpoderes del chat](#-superpoderes-del-chat)
+7. [Demostraciones animadas](#-demostraciones-animadas)
+8. [Inicio rápido](#-inicio-rápido)
+9. [Arquitectura](#️-arquitectura)
+10. [El sistema ELO](#-el-sistema-elo)
+11. [Referencia de la API](#-referencia-de-la-api)
+12. [Estructura del repositorio](#-estructura-del-repositorio)
+13. [Roadmap y changelog](#-roadmap-y-changelog)
+14. [Contribuir](#-contribuir)
+15. [Seguridad](#-seguridad)
+16. [Licencia](#-licencia)
 
 ---
 
@@ -46,6 +51,31 @@
 El proyecto nace con una obsesión: **el detalle**. La interfaz replica la calidez y sobriedad de los mejores productos editoriales —fondo crema `#FCFAF8`, tinta `#2E2B29`, acentos amarillo `#F4C406`, titulares serif y nombres de modelo en tipografía monoespaciada— pero todo el contenido, los textos, las personas de los modelos y las reglas del juego están pensados desde cero para un público hispanohablante. No es una traducción: es un arena concebido en español.
 
 Debajo del capó hay un backend real: 56 modelos de 29 organizaciones compiten con respuestas generadas al vuelo por un SDK de IA, cada voto se escribe en una base de datos SQLite vía Prisma, y el ranking se recalcula a partir de ese historial real de victorias y derrotas. Nada es una simulación estática: si votas, el ELO se mueve; si inicias una Copa, cuatro modelos de verdad se enfrentan en paralelo.
+
+## 🌐 Demo en vivo (GitHub Pages)
+
+**Cada push a `main` despliega automáticamente una demo funcional de la app en GitHub Pages:**
+
+> ### → [**https://fazeurru.github.io/TODO-LOGO-AI/**](https://fazeurru.github.io/TODO-LOGO-AI/)
+
+La demo es la aplicación completa —batallas, Copa Todólogo, ranking, modos de imagen/3D/vídeo/web, cuentas— funcionando íntegramente en tu navegador gracias a un **motor demo local** (`src/lib/demo-engine.ts`): como GitHub Pages es un hosting estático sin backend, un interceptor de `fetch` resuelve las llamadas `/api/*` en el cliente, genera las respuestas con las personas de estilo de cada modelo y guarda los votos y el ELO en tu `localStorage`. La app lo indica con una píldora discreta «Demo estática»; una pequeña honradez que además demuestra la arquitectura: la misma base de código sirve **backend real con IA** (local/Vercel/Docker) **o** demo 100 % estática sin tocar los componentes.
+
+| | Servidor real (local / preview / Vercel) | Demo GitHub Pages |
+|---|---|---|
+| Respuestas | IA real vía SDK | Motor local con personas de estilo |
+| Votos y ELO | SQLite + Prisma (persistentes y globales) | `localStorage` (persistentes en tu navegador) |
+| Imágenes | Generación real por IA | Arte procedural SVG determinista |
+| Cuentas | scrypt + sesiones en servidor | SHA-256 + sesión en `localStorage` |
+| URL | la que configures | `https://fazeurru.github.io/TODO-LOGO-AI/` |
+
+**Regenerar la demo a mano:** `node scripts/build-pages.mjs` produce el export en `.next-static/`; el workflow `.github/workflows/deploy-pages.yml` lo hace solo en cada push a `main`.
+
+**¿Dominio propio (`todologo.ai`)?** GitHub Pages permite servir esta misma demo desde tu dominio:
+
+1. Compra `todologo.ai` en tu registrador favorito.
+2. Crea un archivo `CNAME` (raíz del export) con el texto `todologo.ai` o configura el dominio en *Settings → Pages → Custom domain*.
+3. En tu DNS: registro `A` con `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` (o `CNAME` en `www` → `fazeurru.github.io`).
+4. Marca *Enforce HTTPS*. Desde ese momento `https://todologo.ai` abrirá la app directamente; la URL de `github.io` seguirá funcionando como alias.
 
 ## Por qué no es otro clon de arena.ai
 
