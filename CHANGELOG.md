@@ -15,6 +15,16 @@
 - Internacionalización es/en/pt.
 - Compartir duelos y copas por URL con replay del veredicto.
 
+## [1.9.1] — 2026-09-09 · *Favicon todólogo*
+
+### Cambiado
+- **Favicon renovado**: el icono de la pestaña ya no es el logo «Z» genérico; ahora reproduce fielmente el **logo del lado izquierdo de la app** (el Landmark del frontispicio, trazado con los paths exactos de lucide usados en la barra lateral, stroke 2.1) sobre la loseta crema `#FCFAF8` con esquinas redondeadas y tinta `#2E2B29`.
+- **SVG con modo oscuro**: `public/favicon.svg` incluye una media query `prefers-color-scheme: dark` que invierte los colores (loseta `#1C1917` + trazo crema) para que la pestaña luzca bien también en temas oscuros del navegador.
+
+### Técnico
+- Cobertura completa de formatos: `favicon.svg` (navegadores modernos), `favicon.ico` multi-tamaño 16/32/48 (fallback clásico), `icons/icon-192.png` e `icon-512.png` (Android/PWA) y `apple-icon.png` 180×180 (iOS/touch), todos generados con `sharp` desde el SVG maestro mediante el script reproducible `scripts/make-favicons.mjs`.
+- `metadata.icons` en `layout.tsx` actualizado con la lista priorizada (SVG → ICO → PNG) respetando `asset()` para el basePath de GitHub Pages.
+
 ## [1.9.0] — 2026-09-09 · *Arcade autoevolutivo + Copas XL + ELO global*
 
 ### Añadido

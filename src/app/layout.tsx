@@ -35,9 +35,14 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "todólogo.ai" }],
   icons: {
-    icon: asset("/logo.svg"),
-    shortcut: asset("/logo.svg"),
-    apple: asset("/logo.svg"),
+    icon: [
+      { url: asset("/favicon.svg"), type: "image/svg+xml" },
+      { url: asset("/favicon.ico"), sizes: "48x48", type: "image/x-icon" },
+      { url: asset("/icons/icon-192.png"), sizes: "192x192", type: "image/png" },
+      { url: asset("/icons/icon-512.png"), sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: asset("/favicon.ico"),
+    apple: asset("/icons/apple-icon.png"),
   },
   openGraph: {
     title: "todólogo.ai — La arena definitiva de IA empresarial",

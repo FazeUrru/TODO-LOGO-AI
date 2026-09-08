@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { ExternalLink, Gamepad2, Share2, Sparkles, Dna, Music } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,10 +39,14 @@ const GAMES = [
 
 const MASTER_PROMPT = `MODO JUEGO AAA · PROMPT MAESTRO — El juego debe entregarse en UN solo archivo HTML autocontenido y jugable, con: (1) pantalla de inicio con título, controles y botón JUGAR (desbloquea el audio); (2) HUD en español con barras, récord y registro de evolución; (3) audio 100% procedural con WebAudio (música por escenas y SFX, sin archivos); (4) un bucle autoevolutivo visible: cada N noches / oleadas / misiones el mundo sube de nivel (más enemigos, nuevos tipos, IA que aprende: flanqueo, contra-unidades) y lo anota en un registro persistente (localStorage con try/catch); (5) feedback jugoso: partículas, números de daño, screen shake, cámara suave; (6) rendimiento: pixelRatio limitado, pooling, un solo bucle requestAnimationFrame; (7) botón Compartir con X/Twitter, Facebook, WhatsApp, Telegram + mensaje personalizable y copia de enlace.`;
 
+/* Suscripción vacía: el origen es constante por sesión y se lee sin setState en el efecto,
+   evitando el mismatch de hidratación (servidor = "", cliente = window.location.origin). */
+const subscribeNoop = () => () => {};
+const getOrigin = () => window.location.origin;
+const getOriginServer = () => "";
+
 export default function GamesPage() {
-  /* El origen se resuelve tras el mount para evitar mismatch de hidratación */
-  const [origin, setOrigin] = useState("");
-  useEffect(() => setOrigin(window.location.origin), []);
+  const origin = useSyncExternalStore(subscribeNoop, getOrigin, getOriginServer);
   const shareUrl = (g: (typeof GAMES)[number]) =>
     origin ? origin + g.href : g.href;
 
