@@ -1,3 +1,3 @@
 // Versión de la aplicación — se muestra en la barra lateral, ajustes y changelog
-export const APP_VERSION = "1.7.0";
-export const APP_BUILD_DATE = "2026-09-08";
+export const APP_VERSION = "1.8.0";
+export const APP_BUILD_DATE = "2026-09-09";

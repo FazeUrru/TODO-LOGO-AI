@@ -5,7 +5,7 @@
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.8.0
+### Planeado para v1.9.0
 - Copa de 8 y 16 modelos con cuartos de final y vista de cuadro completa.
 - Postgres gestionado (persistencia de ELO global en serverless sin caveats).
 - Perfiles con historial en la nube y Hall of Fame de copas.
@@ -16,6 +16,15 @@
 - Arena de imágenes con voto y ranking separado.
 - Internacionalización es/en/pt.
 - Compartir duelos y copas por URL con replay del veredicto.
+
+## [1.8.0] — 2026-09-09 · *Cerebros reentrenados + Markdown pro*
+
+### Añadido
+- **IA "reentrenada"** (`src/lib/personas.ts` v2): cada una de las 56 voces del arena encarna ahora el carácter real de su casa — prosa reflexiva y matizada (sello Anthropic), estructura accionable y plan claro (sello OpenAI), tablas enciclopédicas (sello Google), humor afilado con datos duros (sello xAI), rigor de investigador cuantitativo (sello DeepSeek), eficiencia europea (sello Mistral), ingeniería directa (sello Z.ai)… — con tempo según tamaño (flash/turbo/mini = ultraconciso; pro/max/opus = profundo) y especialidad de código para los modelos dev.
+- **Reglas de calidad compartidas**: abre con la respuesta directa, desarrolla lo justo con ejemplos y datos, cero relleno ni preámbulos, Markdown profesional (títulos, negritas, listas, tablas) y código SIEMPRE completo y ejecutable — prohibido truncar con "…".
+- **Cierre con preguntas de seguimiento**: tras completar cualquier tarea (programar, escribir, analizar, traducir…), la IA termina con una sección «¿Siguiente paso?» de 1-3 preguntas u opciones concretas. Límites de batalla y Copa suben a 230/200 palabras con el código exento del cómputo.
+- **Markdown de nivel arena** (`src/components/arena/Markdown.tsx`): tablas GFM con scroll horizontal, cabecera fija y filas cebra (remark-gfm), resaltado de sintaxis a todo color (react-syntax-highlighter + tema oneDark, 27 lenguajes registrados con alias js/ts/py/sh/html…), listas de tareas con checkboxes y modo oscuro completo para tablas y código.
+- **Vista previa automática de código** como arena.ai: los bloques HTML/SVG abren por defecto una previsualización viva en iframe sandbox (`allow-scripts`, origen aislado) con pestañas «Vista previa / Código», cabecera con lenguaje y botón copiar en cada bloque.
 
 ## [1.7.0] — 2026-09-08 · *Honestidad radical + producción*
 

@@ -163,6 +163,39 @@
 .arena-prose th, .arena-prose td { border: 1px solid hsl(30 5% 90%); padding: 0.35rem 0.6rem; text-align: left; }
 .arena-prose th { background: hsl(33 31% 95%); font-weight: 600; }
 
+/* ── Tablas estilo arena (wrapper con scroll horizontal) ── */
+.arena-table-wrap {
+  overflow-x: auto;
+  border: 1px solid hsl(30 5% 88%);
+  border-radius: 10px;
+  background: hsl(0 0% 100%);
+  box-shadow: 0 1px 2px hsl(24 6% 40% / 0.06);
+}
+.arena-table-wrap table { margin: 0; border: none; font-size: 0.845rem; }
+.arena-table-wrap th, .arena-table-wrap td {
+  border: 0;
+  border-right: 1px solid hsl(30 5% 90%);
+  border-bottom: 1px solid hsl(30 5% 90%);
+  padding: 0.45rem 0.7rem;
+  vertical-align: top;
+}
+.arena-table-wrap th:last-child, .arena-table-wrap td:last-child { border-right: 0; }
+.arena-table-wrap thead th {
+  background: hsl(33 31% 95%);
+  font-weight: 600;
+  border-bottom: 2px solid hsl(30 5% 85%);
+  white-space: nowrap;
+}
+.arena-table-wrap tbody tr:last-child td { border-bottom: 0; }
+.arena-table-wrap tbody tr:nth-child(even) { background: hsl(33 20% 98.5%); }
+.arena-task-check { accent-color: hsl(45 96% 42%); width: 0.9em; height: 0.9em; vertical-align: -0.05em; }
+
+/* ── Tablas estilo arena en tema oscuro ── */
+.dark .arena-table-wrap { background: hsl(240 4% 12%); border-color: hsl(240 4% 22%); }
+.dark .arena-table-wrap th, .dark .arena-table-wrap td { border-color: hsl(240 4% 22%); }
+.dark .arena-table-wrap thead th { background: hsl(240 4% 17%); border-bottom-color: hsl(240 4% 26%); }
+.dark .arena-table-wrap tbody tr:nth-child(even) { background: hsl(240 4% 14%); }
+
 /* ── Animaciones ── */
 @keyframes typing-dot {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
