@@ -7,12 +7,14 @@ import {
   Sparkles,
   Columns2,
   MessageCircle,
+  Trophy,
   ChevronDown,
   Search,
   PanelLeft,
   Check,
   Grid3X3,
 } from "lucide-react";
+import { useUsed, NewBadge } from "@/lib/badges";
 import { MODELS, PROVIDERS, getModel } from "@/lib/models-data";
 import { useArena, type ArenaMode, MODE_META } from "./arena-context";
 import ProviderLogo from "@/components/arena/ProviderLogo";
@@ -24,6 +26,7 @@ const MODE_ICONS: Record<ArenaMode, typeof Swords> = {
   agent: Sparkles,
   sbs: Columns2,
   direct: MessageCircle,
+  torneo: Trophy,
 };
 
 /* ── Selector de modelo con buscador (estilo lmarena) ── */
@@ -121,8 +124,9 @@ function ModeDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const Icon = MODE_ICONS[arena.mode];
+  const torneoUsed = useUsed("modo-torneo");
 
-  const modes: ArenaMode[] = ["battle", "agent", "sbs", "direct"];
+  const modes: ArenaMode[] = ["battle", "agent", "sbs", "direct", "torneo"];
 
   return (
     <div ref={ref} className="relative">
@@ -156,7 +160,10 @@ function ModeDropdown() {
               >
                 <MIcon className="mt-0.5 h-[18px] w-[18px] shrink-0" />
                 <span>
-                  <span className="block text-[14px] font-medium">{MODE_META[m].label}</span>
+                  <span className="flex items-center gap-1.5 text-[14px] font-medium">
+                    {MODE_META[m].label}
+                    {m === "torneo" && !torneoUsed && <NewBadge k="modo-torneo" />}
+                  </span>
                   <span className="block text-[12.5px] text-muted-foreground">
                     {MODE_META[m].sub}
                   </span>

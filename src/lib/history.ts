@@ -14,13 +14,16 @@ export interface SavedTurn {
     url?: string;
     prompt?: string;
     model?: string;
+    recipe?: string;
   };
+  thinking?: string;
+  sources?: { title: string; url: string; host: string }[];
 }
 
 export interface SavedChat {
   id: string;
   title: string;
-  mode: "battle" | "agent" | "sbs" | "direct";
+  mode: "battle" | "agent" | "sbs" | "direct" | "torneo";
   ts: number;
   category: string;
   turnsA: SavedTurn[];

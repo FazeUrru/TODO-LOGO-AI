@@ -51,6 +51,7 @@ const MODE_ICONS: Record<ArenaMode, typeof Swords> = {
   agent: Bot,
   sbs: Columns2,
   direct: MessageCircle,
+  torneo: Trophy,
 };
 
 const EMPTY_CHATS: SavedChat[] = [];

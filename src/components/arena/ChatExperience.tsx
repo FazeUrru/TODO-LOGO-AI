@@ -60,7 +60,9 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import Markdown from "./Markdown";
 import ProviderLogo from "./ProviderLogo";
-import { detectModel3D, MODEL_3D_PRESETS, type Model3DId } from "./Viewer3D";
+import TournamentView from "./TournamentView";
+import { detectModel3D, ALL_3D_IDS } from "@/lib/models-3d";
+import { ExternalLink, Brain } from "lucide-react";
 
 const Viewer3D = dynamic(() => import("./Viewer3D"), {
   ssr: false,
@@ -78,12 +80,21 @@ interface TurnMedia {
   url?: string;
   prompt?: string;
   model?: string;
+  recipe?: string;
+}
+
+interface WebSource {
+  title: string;
+  url: string;
+  host: string;
 }
 
 interface Turn {
   role: "user" | "assistant";
   content: string;
   media?: TurnMedia;
+  thinking?: string;
+  sources?: WebSource[];
 }
 
 interface Attachment {
@@ -118,7 +129,7 @@ interface AgentPlan {
   totalEstimate: string;
 }
 
-type ComposerMode = "texto" | "codigo" | "imagen" | "video" | "modelos3d";
+type ComposerMode = "texto" | "codigo" | "imagen" | "video" | "modelos3d" | "web" | "profundo";
 
 const CATEGORIES = BATTLE_CATEGORIES;
 
@@ -216,6 +227,8 @@ interface Skill {
 }
 
 const SKILLS: Skill[] = [
+  { id: "web", icon: Globe, name: "/web", desc: "Busca en internet y cita fuentes", mode: "web" },
+  { id: "profundo", icon: Brain, name: "/profundo", desc: "Razona a fondo antes de responder", mode: "profundo" },
   { id: "imagen", icon: ImageIcon, name: "/imagen", desc: "Genera una ilustración con IA", mode: "imagen" },
   { id: "video", icon: Clapperboard, name: "/video", desc: "Escribe un guion de vídeo (beta)", mode: "video" },
   { id: "modelo3d", icon: Box, name: "/modelo3d", desc: "Crea un modelo 3D interactivo", mode: "modelos3d" },
@@ -292,6 +305,8 @@ export default function ChatExperience() {
   const usedCodigo = useUsed("modo-codigo");
   const usedSkills = useUsed("skills");
   const usedArchivos = useUsed("archivos");
+  const usedWeb = useUsed("modo-web");
+  const usedProfundo = useUsed("modo-profundo");
 
   // Agente
   const [agentMission, setAgentMission] = useState("");
@@ -488,7 +503,7 @@ export default function ChatExperience() {
 
   function toggleMode(next: ComposerMode) {
     if (mode === "agent") {
-      toast({ title: "El Modo Agente planifica misiones", description: "Usa imagen, vídeo, 3D o código en Batalla, Lado a Lado o Directo." });
+      toast({ title: "El Modo Agente planifica misiones", description: "Usa imagen, vídeo, 3D, web o código en Batalla, Lado a Lado o Directo." });
       return;
     }
     if (next === "imagen" || next === "video" || next === "modelos3d") {
@@ -498,6 +513,8 @@ export default function ChatExperience() {
     if (next === "imagen") markUsed("modo-imagen");
     if (next === "video") markUsed("modo-video");
     if (next === "modelos3d") markUsed("modo-3d");
+    if (next === "web") markUsed("modo-web");
+    if (next === "profundo") markUsed("modo-profundo");
     setCMode((cur) => (cur === next ? "texto" : next));
   }
 
@@ -510,7 +527,9 @@ export default function ChatExperience() {
         setPrompt("");
         return;
       }
-      if (s.mode !== "codigo") ensureDirect(s.id === "modelos3d" ? "El 3D" : `El modo ${s.mode}`);
+      if (s.mode === "imagen" || s.mode === "video" || s.mode === "modelos3d") {
+        ensureDirect(s.mode === "modelos3d" ? "El 3D" : `El modo ${s.mode}`);
+      }
       markUsed(`modo-${s.mode === "modelos3d" ? "3d" : s.mode}`);
       setCMode(s.mode);
       setPrompt("");
@@ -542,6 +561,19 @@ export default function ChatExperience() {
       return;
     }
     await runChat(content, activeMode, raw);
+  }
+
+  /** Separa el razonamiento visible (blockquote inicial) de la respuesta final en modo profundo. */
+  function splitThinking(text: string, activeMode: ComposerMode): { content: string; thinking?: string } {
+    if (activeMode !== "profundo") return { content: text };
+    const m = /^((?:\s*>[^\n]*\n)+)/.exec(text);
+    if (!m) return { content: text };
+    const thinking = m[1]
+      .split("\n")
+      .map((l) => l.replace(/^\s*>\s?/, "").trim())
+      .filter(Boolean)
+      .join("\n");
+    return { content: text.slice(m[1].length).replace(/^\s*-{3,}\s*/, "").trim(), thinking };
   }
 
   async function runChat(content: string, activeMode: ComposerMode = "texto", displayText?: string) {
@@ -593,8 +625,27 @@ export default function ChatExperience() {
           revealed: false,
         });
       }
-      setTurnsA((t) => [...t, { role: "assistant", content: data.a, ...(activeMode === "modelos3d" ? mediaFor3D(data.a as string) : {}), ...(activeMode === "video" ? { media: { type: "video" } as TurnMedia } : {}) }]);
-      if (!isDirect) setTurnsB((t) => [...t, { role: "assistant", content: data.b, ...(activeMode === "video" ? { media: { type: "video" } as TurnMedia } : {}) }]);
+      const splitA = splitThinking(data.a as string, activeMode);
+      const splitB = splitThinking((data.b as string) ?? "", activeMode);
+      setTurnsA((t) => [
+        ...t,
+        {
+          role: "assistant",
+          ...(activeMode === "video" ? { content: data.a as string, media: { type: "video" } as TurnMedia } : mediaFor3D(splitA.content, activeMode)),
+          thinking: splitA.thinking ?? (data.thinkingA as string | undefined) ?? undefined,
+          sources: (data.sources as WebSource[] | undefined) ?? undefined,
+        },
+      ]);
+      if (!isDirect)
+        setTurnsB((t) => [
+          ...t,
+          {
+            role: "assistant",
+            ...(activeMode === "video" ? { content: data.b as string, media: { type: "video" } as TurnMedia } : mediaFor3D(splitB.content, activeMode)),
+            thinking: splitB.thinking ?? (data.thinkingB as string | undefined) ?? undefined,
+            sources: (data.sources as WebSource[] | undefined) ?? undefined,
+          },
+        ]);
       if (settings.soundOnDone) playDoneChime();
     } catch (e) {
       toast({
@@ -609,10 +660,21 @@ export default function ChatExperience() {
     }
   }
 
-  function mediaFor3D(text: string): { content: string; media: TurnMedia } {
+  /** Convierte la respuesta en turno con medio: receta3d personalizada o MODEL:<id> del catálogo. */
+  function mediaFor3D(text: string, activeMode: ComposerMode): { content: string; media?: TurnMedia } {
+    if (activeMode !== "modelos3d") return { content: text };
+    // 1) Receta personalizada creada por la IA
+    const fence = /```receta3d\s*([\s\S]*?)```/i.exec(text);
+    if (fence) {
+      return {
+        content: text.replace(/```receta3d[\s\S]*?```/i, "").trim(),
+        media: { type: "3d", recipe: fence[1].trim() },
+      };
+    }
+    // 2) Id del catálogo (133 modelos)
     const match = /MODEL:\s*([a-záéíóúñ]+)/i.exec(text);
     let model = (match?.[1] ?? "").toLowerCase();
-    if (!MODEL_3D_PRESETS.some((p) => p.id === model)) {
+    if (!ALL_3D_IDS.includes(model)) {
       model = detectModel3D(text);
     }
     return {
@@ -825,7 +887,7 @@ export default function ChatExperience() {
           if (e.key === "Escape" && skillOpen) setSkillOpen(false);
         }}
         rows={variant === "hero" ? 3 : 2}
-        placeholder={
+            placeholder={
           mode === "agent"
             ? "Describe tu misión: un juego AAA, una app, una web completa…"
             : slashQuery !== null
@@ -835,10 +897,14 @@ export default function ChatExperience() {
                 : cMode === "video"
                   ? "¿Qué vídeo quieres? Te escribo el guion…"
                   : cMode === "modelos3d"
-                    ? "¿Qué modelo 3D quieres girar? (cohete, robot, ciudad…)"
+                    ? "¿Qué modelo 3D quieres girar? (133 listos o uno a tu medida)"
                     : cMode === "codigo"
                       ? "Pide código: funciones, componentes, consultas…"
-                      : "Pregunta lo que quieras… usa / para skills"
+                      : cMode === "web"
+                        ? "Pregunta algo actual: buscaré en internet y citaré fuentes…"
+                        : cMode === "profundo"
+                          ? "Hazme una pregunta difícil: razonaré a fondo…"
+                          : "Pregunta lo que quieras… usa / para skills"
         }
         className="w-full resize-none bg-transparent px-4 pt-3.5 text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground/80 scrollbar-thin"
       />
@@ -963,6 +1029,10 @@ export default function ChatExperience() {
           {modeToggle("video", Video, usedVideo, "Modo vídeo (beta): guion de vídeo profesional")}
           {/* Modo 3D */}
           {modeToggle("modelos3d", Box, used3d, "Modelos 3D reales: gira y acerca")}
+          {/* Búsqueda web real */}
+          {modeToggle("web", Globe, usedWeb, "Búsqueda web real: responde con datos frescos y cita fuentes")}
+          {/* Pensamiento profundo */}
+          {modeToggle("profundo", Brain, usedProfundo, "Pensamiento profundo: razona paso a paso antes de responder")}
           {/* Skills con / */}
           <div ref={slashRef} className="relative shrink-0">
             <button
@@ -1023,15 +1093,7 @@ export default function ChatExperience() {
             </div>
           </FloatingPanel>
 
-          {/* Búsqueda web (anuncio) */}
-          <button
-            type="button"
-            title="Búsqueda web: próximamente"
-            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-accent sm:flex"
-            onClick={() => toast({ title: "Búsqueda web", description: "Llegará muy pronto a todólogo.ai." })}
-          >
-            <Globe className="h-4 w-4" />
-          </button>
+          {/* Búsqueda web ya es un modo real (botón Globe) */}
 
           {mode === "battle" && phase === "chat" && !battle?.revealed && cMode !== "imagen" && cMode !== "video" && cMode !== "modelos3d" && (
             <select
@@ -1075,14 +1137,23 @@ export default function ChatExperience() {
       : cMode === "video"
         ? "El modo vídeo escribe tu guion completo; la generación de vídeo llega muy pronto (beta)."
         : cMode === "modelos3d"
-          ? "El modo 3D construye un modelo interactivo: gíralo arrastrando y acerca con la rueda."
-          : cMode === "codigo"
-            ? "El modo código responde con bloques completos, con cabecera y botón de copiar."
-            : mode === "battle"
-              ? "Los modelos compiten de forma anónima. Tu voto revela sus identidades y ajusta el ELO."
-              : mode === "agent"
-                ? "El escuadrón de agentes planifica y ejecuta sin excusas: juegos AAA, apps, webs y más."
-                : "Las respuestas son generadas por IA y pueden contener errores.";
+          ? "El modo 3D construye un modelo interactivo: 133 ya hechos, personalizados con IA o tu propio .glb."
+          : cMode === "web"
+            ? "El modo web busca en internet en tiempo real y responde citando sus fuentes."
+            : cMode === "profundo"
+              ? "El pensamiento profundo razona paso a paso antes de responder: tarda un poco más y gana precisión."
+              : cMode === "codigo"
+                ? "El modo código responde con bloques completos, con cabecera y botón de copiar."
+                : mode === "battle"
+                  ? "Los modelos compiten de forma anónima. Tu voto revela sus identidades y ajusta el ELO."
+                  : mode === "agent"
+                    ? "El escuadrón de agentes planifica y ejecuta sin excusas: juegos AAA, apps, webs y más."
+                    : "Las respuestas son generadas por IA y pueden contener errores.";
+
+  /* ── Copa Todólogo (Modo Torneo): vista propia y completa ── */
+  if (mode === "torneo") {
+    return <TournamentView />;
+  }
 
   /* ── Portada (estado inicial) ── */
   if (phase === "home") {
@@ -1478,6 +1549,56 @@ function VideoCard() {
   );
 }
 
+/** Bloque plegable del razonamiento del pensamiento profundo. */
+function ThinkingBlock({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-2 overflow-hidden rounded-xl border border-border bg-secondary/50">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] font-medium text-muted-foreground hover:bg-accent"
+      >
+        <Brain className="h-3.5 w-3.5 shrink-0" />
+        Pensamiento profundo
+        <span className="ml-auto text-[11px] font-normal">{open ? "Ocultar" : "Ver razonamiento"}</span>
+      </button>
+      {open && (
+        <p className="whitespace-pre-wrap border-t border-border px-3 py-2.5 text-[12.5px] leading-relaxed text-muted-foreground">
+          {text}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Fuentes web citadas por la búsqueda en tiempo real. */
+function SourcesRow({ sources }: { sources: WebSource[] }) {
+  return (
+    <div className="mt-2 rounded-xl border border-border bg-secondary/50 px-3 py-2">
+      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+        <Globe className="h-3 w-3" />
+        Fuentes consultadas en internet
+      </p>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {sources.map((s, i) => (
+          <a
+            key={`${s.url}-${i}`}
+            href={s.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={s.title}
+            className="flex max-w-[230px] items-center gap-1 rounded-full border border-border bg-card px-2 py-1 text-[11.5px] font-medium hover:bg-accent"
+          >
+            <span className="text-muted-foreground">[{i + 1}]</span>
+            <span className="truncate">{s.host}</span>
+            <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ChatPanel({
   side,
   title,
@@ -1539,6 +1660,7 @@ function ChatPanel({
             </div>
           ) : (
             <div key={i} className="fade-up">
+              {t.thinking && <ThinkingBlock text={t.thinking} />}
               <div className={fontClass}>
                 <Markdown>{t.content}</Markdown>
               </div>
@@ -1547,10 +1669,15 @@ function ChatPanel({
               )}
               {t.media?.type === "3d" && (
                 <div className="mt-2">
-                  <Viewer3D model={(t.media.model ?? "cohete") as Model3DId} />
+                  <Viewer3D
+                    key={`${t.media.model ?? ""}|${(t.media.recipe ?? "").slice(0, 24)}`}
+                    model={t.media.model ?? "cohete"}
+                    recipe={t.media.recipe}
+                  />
                 </div>
               )}
               {t.media?.type === "video" && <VideoCard />}
+              {t.sources && t.sources.length > 0 && <SourcesRow sources={t.sources} />}
               <div className="mt-1.5 flex items-center gap-3">
                 {settings.quickCopy && (
                   <button

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { History, Rocket, Sparkles, Bug, Shield, Layers } from "lucide-react";
+import { History, Rocket, Sparkles, Bug, Shield, Layers, Trophy } from "lucide-react";
 import { markUsed, NewBadge } from "@/lib/badges";
 import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
 
@@ -41,6 +41,42 @@ export default function ChangelogPage() {
         </p>
 
         <div className="relative mt-8 space-y-8 border-l border-border pl-6">
+          {/* ── v1.5.0 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-highlight ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-foreground px-2.5 py-1 font-mono text-[13px] font-semibold text-background">
+                v1.5.0
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">8 sept 2026 · La Copa Todólogo</span>
+              <NewBadge k="changelog" />
+            </div>
+
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Trophy className="h-4 w-4" /> Copa Todólogo: el modo torneo que no existe en ningún otro arena
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Nuevo Modo Torneo (Copa Todólogo): sortea 4 modelos anónimos del top del ranking y compiten en un bracket de eliminación directa con tu misma consigna.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Semifinales generadas en paralelo, votas a los 2 ganadores, la gran final se genera al vuelo y eliges al campeón con la revelación final de identidades.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> ELO real y persistente: cada duelo de la copa registra votos en el ranking global, con swing ELO por duelo mostrado en el bracket.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Celebración de campeón con confeti, corona, revelación de las 4 identidades y botón de nueva copa.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> API /api/tournament con sesiones de copa en servidor, votos idempotentes y protección anti-carreras.</li>
+                  <li className="flex gap-2"><Tag kind="mejora" /> El dropdown de modos incluye ahora la Copa Todólogo con insignia ¡NUEVO! que desaparece al usarla.</li>
+                </ul>
+              </div>
+              <div>
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+                  <Layers className="h-4 w-4" /> Proyecto abierto en GitHub
+                </h2>
+                <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                  <li className="flex gap-2"><Tag kind="nuevo" /> todólogo.ai se publica en GitHub como TODO-LOGO-AI: README completo, roadmap, changelog, arquitectura documentada, guía de contribución, referencia de API y demostraciones animadas.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {/* ── v1.4.0 ── */}
           <div className="relative">
             <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-highlight ring-4 ring-background" />
@@ -63,7 +99,10 @@ export default function ChangelogPage() {
                   <li className="flex gap-2"><Tag kind="nuevo" /> Modo imagen con generación real de IA: describe y descarga tu ilustración en segundos.</li>
                   <li className="flex gap-2"><Tag kind="nuevo" /> Modo vídeo (beta): el modelo escribe tu guion con escenas, planos y música; la generación de vídeo llega pronto.</li>
                   <li className="flex gap-2"><Tag kind="nuevo" /> Modelos 3D reales en el chat: cohete, robot, casa, coche, planeta, árbol, ciudad y terreno, girables y con zoom (WebGL).</li>
-                  <li className="flex gap-2"><Tag kind="nuevo" /> Skills con «/»: 12 habilidades (/imagen, /video, /codigo, /resume, /traduce, /sql…) que configuran el chat por ti.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Skills con «/»: 14 habilidades (/web, /profundo, /imagen, /video, /codigo, /resume, /traduce, /sql…) que configuran el chat por ti.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Búsqueda web real y funcional: el chat consulta internet en tiempo real y cita sus fuentes con enlaces.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Pensamiento profundo real: los modelos razonan paso a paso antes de responder y puedes ver su razonamiento.</li>
+                  <li className="flex gap-2"><Tag kind="nuevo" /> Modelos 3D a tope: galería de 133 modelos ya hechos, modelos personalizados creados por la IA al vuelo y soporte para subir tus propios archivos .glb/.gltf.</li>
                 </ul>
               </div>
               <div>

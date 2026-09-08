@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 
-export type ArenaMode = "battle" | "agent" | "sbs" | "direct";
+export type ArenaMode = "battle" | "agent" | "sbs" | "direct" | "torneo";
 
 export interface ArenaState {
   mode: ArenaMode;
@@ -49,5 +49,9 @@ export const MODE_META: Record<
   direct: {
     label: "Directo",
     sub: "Chatea con 1 modelo a la vez",
+  },
+  torneo: {
+    label: "Copa Torneo",
+    sub: "4 modelos, bracket y un campeón con ELO real",
   },
 };

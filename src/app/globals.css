@@ -208,3 +208,40 @@
 /* ── Tema oscuro: ajustes de superficies ── */
 .dark .bg-highlight { color: #2E2B29; }
 .dark img[alt*="Logotipo"] { background: hsl(0 0% 100% / 0.92); border-radius: 4px; }
+
+/* ── Copa Todólogo (Modo Torneo) ── */
+@keyframes copa-pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  70% { transform: scale(1.06); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.copa-pop { animation: copa-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.25) both; }
+
+@keyframes copa-confetti {
+  0% { transform: translateY(-8vh) rotate(0deg); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(80vh) rotate(560deg); opacity: 0; }
+}
+.copa-confetti-piece {
+  position: absolute;
+  top: -5vh;
+  border-radius: 2px;
+  animation: copa-confetti 3s ease-in infinite;
+}
+
+@keyframes copa-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.copa-pulse { animation: copa-pulse 1.3s ease-in-out infinite; }
+
+@keyframes copa-sweep {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+.copa-sweep { animation: copa-sweep 2.1s ease-in-out infinite; }
+
+[data-motion="reducida"] .copa-pop,
+[data-motion="reducida"] .copa-pulse,
+[data-motion="reducida"] .copa-sweep { animation: none !important; }
+[data-motion="reducida"] .copa-confetti-piece { display: none !important; }
