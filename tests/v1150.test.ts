@@ -5,14 +5,14 @@ import { VERSIONS, enlaceTraza } from "../src/lib/changelog-meta";
 import { MODELS } from "../src/lib/models-data";
 
 describe("v1.15.0 — versión y trazabilidad", () => {
-  it("la app va por la 1.15.0", () => {
-    expect(APP_VERSION).toBe("1.15.0");
+  it("la app va por la 1.16.0 (la cadena sigue viva)", () => {
+    expect(APP_VERSION).toBe("1.16.0");
   });
 
-  it("la entrada 1.15.0 encabeza el changelog y enlaza a su diff", () => {
-    expect(VERSIONS[0].version).toBe("1.15.0");
-    expect(VERSIONS[0].diffDesde).toBe("1.14.0");
-    expect(enlaceTraza(VERSIONS[0]).href).toContain("compare/v1.14.0...v1.15.0");
+  it("la entrada 1.16.0 encabeza el changelog y enlaza a su diff", () => {
+    expect(VERSIONS[0].version).toBe("1.16.0");
+    expect(VERSIONS[0].diffDesde).toBe("1.15.0");
+    expect(enlaceTraza(VERSIONS[0]).href).toContain("compare/v1.15.0...v1.16.0");
   });
 
   it("la cadena de versiones sigue descendente y sin duplicados", () => {

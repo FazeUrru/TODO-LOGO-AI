@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  Atom,
   History,
   Rocket,
   Sparkles,
@@ -84,6 +85,23 @@ function Tldr({ children }: { children: React.ReactNode }) {
 
 /* ── Cuerpos ricos por versión (el detalle completo de cada release) ── */
 const CUERPOS: Record<string, React.ReactNode> = {
+  "1.16.0": (
+    <div className="space-y-4">
+      <div>
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+          <Atom className="h-4 w-4" /> Superpoderes con permiso y una app que se audita sola
+        </h2>
+        <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+          <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Opciones cuánticas</strong> (<code>/cuanticas</code>): «<strong>Manejar ordenador</strong>» comparte tu pantalla <strong>siempre con tu permiso</strong> (y se corta al instante), más notificaciones del sistema, portapapeles bajo demanda, pantalla completa, dictado por voz y pulso háptico. Nada se activa sin consentimiento.</li>
+          <li className="flex gap-2"><Tag kind="nuevo" /> <strong>75 servidores MCP</strong> (<code>/mcps</code>): catálogo honesto del ecosistema Model Context Protocol — oficiales, búsqueda web, desarrollo, datos/cloud, productividad, comunicación y medios — con búsqueda, categorías y comando copiable; donde no hay instalación estable se dice «configúralo en tu cliente» sin inventar nada.</li>
+          <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Pruebas en tiempo real</strong> (<code>/pruebas</code>): diagnóstico vivo con latencias — versión local↔servidor, motores de batalla/vídeo/voz, catálogos cargados, WebGL (con tu GPU) y voces del navegador.</li>
+          <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Vídeo oficial «10 casos de uso»</strong> 🎬: 17:37 exactos y <strong>narrados en español</strong>, con más duración por caso (94,8 s), incrustado bajo la calculadora con <strong>badge animado «NUEVO»</strong> y póster.</li>
+          <li className="flex gap-2"><Tag kind="mejora" /> <strong>Texturas PBR procedurales</strong> en el visor 3D: relieve y rugosidad generados por canvas + heurística de material por color (grises fríos = metal reflectante, marrones = madera mate) sobre el ACES + sombras suaves de la 1.15.</li>
+          <li className="flex gap-2"><Tag kind="correccion" /> <strong>La vista previa ya no se adelanta</strong>: durante el streaming los bloques HTML/SVG se muestran como código y la vista previa automática espera al final. Además, botón <strong>«Copiar»</strong> con confirmación verde y nuevo botón <strong>«Editar»</strong> para retocar el código y relanzar la vista previa.</li>
+        </ul>
+      </div>
+    </div>
+  ),
   "1.15.0": (
     <div className="space-y-4">
       <div>

@@ -11,7 +11,7 @@
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.16.0
+### Planeado para v1.17.0
 - Compartir duelos y copas por URL permanente con replay de las respuestas y del veredicto.
 - Arena de imágenes con voto y ranking ELO separado del de texto — el flag experimental ya está abierto en Todólogo Labs (`arena-imagenes`, cohorte Explorer).
 - Modo espectador de torneos: observa una copa en directo y predice quién pasará la ronda (ligado al flag `streaming-ws` de Labs).
@@ -20,6 +20,23 @@
 - Internacionalización es/en/pt (next-intl, con la comunidad traduciendo).
 - Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
 - Primera graduación de features de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
+
+## [1.16.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.15.0...v1.16.0) · 9 sept 2026, 20:05 — *Opciones cuánticas, 75 MCPs y pruebas en tiempo real*
+
+> 💡 **En una frase:** el laboratorio gana superpoderes que siempre piden permiso (manejar ordenador incluido), llegan 75 conectores MCP reales, la app se audita en vivo, el visor 3D estrena PBR procedural y el vídeo oficial narrado de los 10 casos de uso se estrena bajo la calculadora.
+
+### Añadido
+- **Opciones cuánticas** (`/cuanticas`) ⚛️: capacidades experimentales que **siempre piden permiso** — «Manejar ordenador» comparte tu pantalla solo si aceptas el aviso del navegador (con botón «Dejar de compartir» al instante y la señal sin salir del navegador), más notificaciones del sistema, portapapeles bajo demanda, pantalla completa, dictado por voz y pulso háptico. Cada tarjeta muestra su estado real: esperando permiso, activo, denegado o no disponible.
+- **75 servidores MCP** (`/mcps`) 🔌: catálogo del ecosistema Model Context Protocol — oficiales (filesystem, git, postgres, puppeteer…), búsqueda web (Tavily, Exa, Firecrawl…), desarrollo (Context7, Playwright, Sentry…), datos/cloud (Supabase, Redis, Cloudflare…), productividad (Notion, Linear, Gmail…), comunicación y medios (Figma, Blender, Spotify…) — con búsqueda, chips por categoría y comando de instalación copiable. Política de honestidad: solo servidores reales; sin comando estable, se muestra «configúralo en tu cliente MCP».
+- **Pruebas en tiempo real** (`/pruebas`) 📊: diagnóstico vivo con latencia por prueba — versión local↔servidor (`/api/version`), motores de batalla/vídeo/voz activos, catálogo de modelos y de 75 MCPs, WebGL (muestra tu GPU) y `speechSynthesis` del navegador. Reejecutable con un clic.
+- **Vídeo oficial «10 casos de uso»** 🎬: 17:37 exactos y **narrados en español** (voz «tongtong» del estudio TTS), con **más duración por caso** (94,8 s frente a los 89 s de la línea anterior), banda de título por caso, fundidos y Ken Burns; incrustado en `/calculadora` debajo de la calculadora con **badge animado «NUEVO»** (ping ámbar), póster y copia web ligera en `/video/`.
+
+### Mejorado
+- **Realismo 3D, segunda capa PBR** 🧊: texturas procedurales de relieve y rugosidad generadas por canvas (cero descargas) aplicadas a los 133 modelos, con heurística de material por color — los grises fríos reflejan como metal (metalness 0,85), los marrones lucen madera mate — completando el stack ACES + entorno RoomEnvironment + sombras PCFSoft de la 1.15.
+
+### Corregido
+- **La vista previa ya no se adelanta al código** 🛠️: durante el streaming, los bloques HTML/SVG se muestran como código con la vista previa deshabilitada («espera a que termine»), y al finalizar la respuesta la vista previa se abre sola con el HTML completo — adiós a las webs a medias.
+- **Copiar y editar código**: el botón «Copiar» confirma en verde («¡Copiado!») y llega el nuevo botón «Editar»: textarea con Guardar/Cancelar que aplica tu versión al código y relanza la vista previa.
 
 ## [1.15.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.14.0...v1.15.0) · 9 sept 2026, 13:32 — *Los generativos entran al chat: vídeo, voz e imagen, todo interno*
 

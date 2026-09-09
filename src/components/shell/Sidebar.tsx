@@ -5,6 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   Landmark,
+  Atom,
+  Activity,
+  Server,
   PanelLeft,
   SquarePen,
   Trophy,
@@ -437,6 +440,9 @@ export default function Sidebar() {
           {navItem(pathname === "/conectores", "/conectores", "Conectores", Plug, "conectores")}
           {navItem(pathname === "/empresas", "/empresas", "Empresas", Building2)}
           {navItem(pathname === "/calculadora", "/calculadora", "Calculadora", Calculator)}
+          {navItem(pathname === "/cuanticas", "/cuanticas", "Cuánticas", Atom)}
+          {navItem(pathname === "/mcps", "/mcps", "MCPs", Server)}
+          {navItem(pathname === "/pruebas", "/pruebas", "Pruebas", Activity)}
         </nav>
 
         {/* Promo + sesión + pie */}

@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.16.0",
+    fecha: "9 sept 2026",
+    hora: "20:05",
+    titulo: "Opciones cuánticas, 75 MCPs y pruebas en tiempo real",
+    tldr:
+      "Superpoderes con permiso (manejar ordenador incluido), 75 conectores MCP reales, diagnóstico vivo, texturas PBR procedurales en el 3D y el vídeo narrado de los 10 casos de uso bajo la calculadora.",
+    diffDesde: "1.15.0",
+    hash: null,
+    kinds: ["nuevo", "mejora", "correccion"],
+  },
+  {
     version: "1.15.0",
     fecha: "9 sept 2026",
     hora: "13:32",

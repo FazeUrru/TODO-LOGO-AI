@@ -1764,6 +1764,7 @@ export default function ChatExperience() {
                 }
                 turns={turnsA}
                 thinking={thinking}
+                streaming={streaming.A}
               />
               {twoPanels && (
                 <ChatPanel
@@ -1791,6 +1792,7 @@ export default function ChatExperience() {
                   }
                   turns={turnsB}
                   thinking={thinking}
+                  streaming={streaming.B}
                 />
               )}
             </div>
@@ -2028,6 +2030,7 @@ function ChatPanel({
   logoProvider,
   turns,
   thinking,
+  streaming,
 }: {
   side: "A" | "B";
   title: string;
@@ -2035,6 +2038,7 @@ function ChatPanel({
   logoProvider?: string;
   turns: Turn[];
   thinking: boolean;
+  streaming?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const { settings } = useSettings();
@@ -2085,7 +2089,7 @@ function ChatPanel({
               {t.thinking && <ThinkingBlock text={t.thinking} />}
               <div className={fontClass}>
                 <ErrorBoundary label="la respuesta">
-                  <Markdown>{t.content}</Markdown>
+                  <Markdown streaming={streaming}>{t.content}</Markdown>
                 </ErrorBoundary>
               </div>
               {t.media?.type === "image" && t.media.url && (

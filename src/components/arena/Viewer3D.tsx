@@ -43,8 +43,56 @@ const PALETTE = {
   teal: 0x4fa3a5,
 };
 
+/* ── Texturas PBR procedurales (ruido sutil de relieve y rugosidad) ──
+   Se generan una sola vez en un canvas y se comparten entre materiales:
+   dan grano microscópico a superficies planas y hacen el realismo visible
+   sin descargar ni un solo archivo externo. */
+let PBR: { bump: THREE.Texture; rough: THREE.Texture } | null = null;
+function texturasPBR(): { bump: THREE.Texture; rough: THREE.Texture } {
+  if (PBR) return PBR;
+  const crear = (contraste: number, rep: number) => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 256;
+    const ctx = c.getContext("2d")!;
+    const img = ctx.createImageData(256, 256);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = 128 + Math.round((Math.random() * 2 - 1) * contraste);
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = Math.max(0, Math.min(255, v));
+      img.data[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(rep, rep);
+    return t;
+  };
+  PBR = { bump: crear(46, 2), rough: crear(60, 3) };
+  return PBR;
+}
+
+/** Heurística de material por color: metal frío, madera cálida o plástico mate. */
+function materialPBR(color: number): THREE.MeshStandardMaterial {
+  const r = (color >> 16) & 255;
+  const g = (color >> 8) & 255;
+  const b = color & 255;
+  const sat = Math.max(r, g, b) - Math.min(r, g, b);
+  const lum = (r + g + b) / 3;
+  const metal = sat < 44 && lum > 92; // grises fríos → metal reflectante
+  const madera = r > 96 && r > b + 28 && g < r && sat > 26; // marrones → madera
+  const { bump, rough } = texturasPBR();
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: metal ? 0.32 : madera ? 0.74 : 0.58,
+    metalness: metal ? 0.85 : madera ? 0.04 : 0.16,
+    bumpMap: bump,
+    bumpScale: 0.32,
+    roughnessMap: rough,
+    envMapIntensity: metal ? 1.15 : 0.6,
+  });
+}
+
 function mat(color: number, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) {
-  return new THREE.MeshStandardMaterial({ color, roughness: 0.58, metalness: 0.16, ...opts });
+  return Object.assign(materialPBR(color), opts);
 }
 
 /* ── Modelos clásicos (animados) ── */
@@ -246,7 +294,7 @@ function buildFromParts(parts: Part3D[]): THREE.Group {
     else if (shape === "cy") geo = new THREE.CylinderGeometry(Math.max(0.01, a), Math.max(0.01, b), Math.max(0.01, c), 28);
     else if (shape === "co") geo = new THREE.ConeGeometry(Math.max(0.01, a), Math.max(0.01, b), 28);
     else geo = new THREE.TorusGeometry(Math.max(0.02, a), Math.max(0.01, b), 16, 48);
-    const mesh = new THREE.Mesh(geo, mat(color.getHex(), { roughness: 0.62 }));
+    const mesh = new THREE.Mesh(geo, mat(color.getHex()));
     mesh.position.set(x, y, z);
     mesh.rotation.set(rx, ry, rz);
     g.add(mesh);

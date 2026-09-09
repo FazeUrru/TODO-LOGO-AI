@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Check, Copy, Code2, Eye } from "lucide-react";
+import { Check, Copy, Code2, Eye, Pencil, X } from "lucide-react";
 
 // ─── Lenguajes registrados para el resaltado (PrismLight, bundle ligero) ────
 import tsx from "react-syntax-highlighter/dist/esm/languages/prism/tsx";
@@ -122,11 +122,33 @@ function resolveLang(rawLang: string, code: string) {
   return { lang, previewable };
 }
 
-/** Bloque de código con cabecera (lenguaje + copiar) y vista previa automática. */
-function CodeBlock({ rawLang, code }: { rawLang: string; code: string }) {
+/**
+ * Bloque de código con cabecera (lenguaje + copiar + editar) y vista previa.
+ * v1.16.0: durante el streaming NO se abre la vista previa automáticamente —
+ * el HTML a medias asustaba; se muestra el código y la vista previa se abre
+ * sola cuando la respuesta termina. Nuevo botón «Editar» con textarea.
+ */
+function CodeBlock({
+  rawLang,
+  code,
+  autoPreview,
+}: {
+  rawLang: string;
+  code: string;
+  autoPreview: boolean;
+}) {
   const { lang, previewable } = resolveLang(rawLang, code);
   const [copied, setCopied] = useState(false);
-  const [showPreview, setShowPreview] = useState(previewable); // automática como arena.ai
+  const [showPreview, setShowPreview] = useState(previewable && autoPreview);
+  const [editing, setEditing] = useState(false);
+  const [borrador, setBorrador] = useState("");
+  const [override, setOverride] = useState<string | null>(null);
+  const mostrado = override ?? code;
+
+  // Al terminar el streaming, la vista previa de HTML/SVG se abre sola.
+  useEffect(() => {
+    if (previewable) setShowPreview(autoPreview);
+  }, [autoPreview, previewable]);
 
   return (
     <div className="my-3 overflow-hidden rounded-xl border border-border bg-[#282C34] shadow-sm">
@@ -139,21 +161,18 @@ function CodeBlock({ rawLang, code }: { rawLang: string; code: string }) {
             <div className="flex items-center rounded-md border border-white/10 bg-black/20 p-0.5">
               <button
                 onClick={() => setShowPreview(true)}
-                className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] transition-colors ${
-                  showPreview
-                    ? "bg-white/15 text-white"
-                    : "text-zinc-400 hover:text-white"
+                disabled={!autoPreview}
+                className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] transition-colors disabled:opacity-40 ${
+                  showPreview ? "bg-white/15 text-white" : "text-zinc-400 hover:text-white"
                 }`}
-                title="Vista previa del resultado"
+                title={autoPreview ? "Vista previa del resultado" : "Espera a que termine de escribir el código"}
               >
                 <Eye className="h-3 w-3" /> Vista previa
               </button>
               <button
                 onClick={() => setShowPreview(false)}
                 className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] transition-colors ${
-                  !showPreview
-                    ? "bg-white/15 text-white"
-                    : "text-zinc-400 hover:text-white"
+                  !showPreview ? "bg-white/15 text-white" : "text-zinc-400 hover:text-white"
                 }`}
                 title="Ver el código fuente"
               >
@@ -162,24 +181,63 @@ function CodeBlock({ rawLang, code }: { rawLang: string; code: string }) {
             </div>
           )}
           <button
+            onClick={() => setEditing((v) => !v)}
+            className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] transition-colors ${
+              editing ? "bg-white/15 text-white" : "text-zinc-400 hover:bg-white/10 hover:text-white"
+            }`}
+            title="Editar el código"
+          >
+            {editing ? <X className="h-3 w-3" /> : <Pencil className="h-3 w-3" />}
+            {editing ? "Cerrar" : "Editar"}
+          </button>
+          <button
             onClick={() => {
-              navigator.clipboard.writeText(code);
+              navigator.clipboard.writeText(mostrado);
               setCopied(true);
               setTimeout(() => setCopied(false), 1400);
             }}
-            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
+            className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] transition-colors ${
+              copied ? "text-green-400" : "text-zinc-300 hover:bg-white/10 hover:text-white"
+            }`}
+            title="Copiar código"
           >
             {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-            {copied ? "Copiado" : "Copiar"}
+            {copied ? "¡Copiado!" : "Copiar"}
           </button>
         </div>
       </div>
 
-      {showPreview ? (
+      {editing ? (
+        <div>
+          <textarea
+            value={borrador}
+            onChange={(e) => setBorrador(e.target.value)}
+            spellCheck={false}
+            className="block h-[340px] w-full resize-y bg-[#282C34] p-4 font-mono text-[12.5px] leading-relaxed text-zinc-100 outline-none"
+          />
+          <div className="flex items-center justify-end gap-2 border-t border-white/10 bg-white/[0.04] px-3 py-2">
+            <button
+              onClick={() => setEditing(false)}
+              className="rounded-md border border-white/10 px-2.5 py-1 text-[11.5px] text-zinc-300 hover:bg-white/10"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                setOverride(borrador);
+                setEditing(false);
+              }}
+              className="rounded-md bg-emerald-600 px-2.5 py-1 text-[11.5px] font-medium text-white hover:bg-emerald-500"
+            >
+              Guardar y ver resultado
+            </button>
+          </div>
+        </div>
+      ) : showPreview ? (
         <iframe
           title="Vista previa del código"
           sandbox="allow-scripts allow-popups"
-          srcDoc={code}
+          srcDoc={mostrado}
           className="block h-[340px] w-full border-0 bg-white"
         />
       ) : lang ? (
@@ -202,18 +260,25 @@ function CodeBlock({ rawLang, code }: { rawLang: string; code: string }) {
             },
           }}
         >
-          {code}
+          {mostrado}
         </SyntaxHighlighter>
       ) : (
         <pre className="!m-0 !rounded-none !border-0 !bg-transparent text-zinc-100">
-          <code>{code}</code>
+          <code>{mostrado}</code>
         </pre>
       )}
     </div>
   );
 }
 
-export default function Markdown({ children }: { children: string }) {
+export default function Markdown({
+  children,
+  streaming,
+}: {
+  children: string;
+  /** true mientras la respuesta se está escribiendo: la vista previa espera al final. */
+  streaming?: boolean;
+}) {
   return (
     <div className="arena-prose">
       <ReactMarkdown
@@ -233,7 +298,7 @@ export default function Markdown({ children }: { children: string }) {
             // Blindaje: si el <pre> no trae un <code> como elemento (p. ej. texto
             // pelado durante el streaming), nunca devolvemos un bloque vacío.
             if (!code) code = textOf(children);
-            return <CodeBlock rawLang={rawLang} code={code} />;
+            return <CodeBlock rawLang={rawLang} code={code} autoPreview={!streaming} />;
           },
           table: ({ children }) => (
             <div className="arena-table-wrap">

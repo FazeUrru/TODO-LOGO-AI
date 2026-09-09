@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Calculator as CalcIcon, Plus, X } from "lucide-react";
+import { Calculator as CalcIcon, Plus, X, Sparkles, PlayCircle } from "lucide-react";
 import { MODELS, PROVIDERS, getModel, formatContext, esGenerativo } from "@/lib/models-data";
 import { cn } from "@/lib/utils";
 
@@ -202,6 +202,41 @@ export default function CalculadoraPage() {
           Precios de lista publicados por cada proveedor; los contratos empresariales
           suelen negociar descuentos del 15-40% sobre estas cifras.
         </p>
+
+        {/* ── v1.16.0: vídeo oficial «10 casos de uso» con badge animado ── */}
+        <div className="mt-10 border-t border-border pt-8">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="relative inline-flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1 text-[11.5px] font-semibold text-background">
+              <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F4C406] opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#F4C406]" />
+              </span>
+              <Sparkles className="h-3 w-3" />
+              NUEVO
+            </span>
+            <h2 className="font-display text-[22px] font-light tracking-tight">
+              Los 10 casos de uso, en vídeo —{" "}
+              <span className="italic">17:37 min narrados</span>
+            </h2>
+          </div>
+          <p className="mt-1.5 max-w-[600px] text-[13.5px] leading-relaxed text-muted-foreground">
+            Un recorrido completo por toda la aplicación: batallas, código, imagen,
+            vídeo, voz, 3D, agente, copa, búsqueda web y juegos. Con narración en español.
+          </p>
+          <div className="mt-3 overflow-hidden rounded-xl border border-border bg-black shadow-sm">
+            <video
+              controls
+              preload="metadata"
+              poster="/video/portada-casos.jpg"
+              src="/video/casos-de-uso-17m37.mp4"
+              className="block aspect-video w-full"
+            />
+          </div>
+          <p className="mt-2 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            <PlayCircle className="h-3.5 w-3.5" />
+            Narrado con la voz «tongtong» del estudio de audio de todólogo.
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -204,9 +204,15 @@ export default function TopBar() {
                     ? "Conectores"
                     : pathname === "/iniciar-sesion"
                       ? "Iniciar sesión"
-                      : pathname === "/registro"
-                        ? "Crear cuenta"
-                        : null;
+                        : pathname === "/registro"
+                          ? "Crear cuenta"
+                          : pathname === "/cuanticas"
+                            ? "Cuánticas"
+                            : pathname === "/mcps"
+                              ? "MCPs"
+                              : pathname === "/pruebas"
+                                ? "Pruebas"
+                                : null;
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background/95 px-3 backdrop-blur">
