@@ -58,10 +58,13 @@ worklog.md
 /download/
 /scripts/*
 !/scripts/build-pages.mjs
+!/scripts/check-mermaid.mjs
+!/scripts/prepare-db.mjs
+!/scripts/vercel-build.mjs
 !/scripts/watchdog.sh
 /tool-results/
 /tests/*
-!/tests/elo.test.ts
+!/tests/*.test.ts
 /db/
 /public/generated/
 /agent-ctx/
