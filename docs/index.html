@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TODO-LOGO-AI | La IA que replica arena.ai</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent: #06b6d4;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Background Animation */
+        .bg-orbs {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s infinite ease-in-out;
+        }
+        .orb-1 { width: 400px; height: 400px; background: var(--primary); top: -100px; left: -100px; animation-delay: 0s; }
+        .orb-2 { width: 300px; height: 300px; background: var(--accent); bottom: -50px; right: -50px; animation-delay: -5s; }
+        .orb-3 { width: 200px; height: 200px; background: #8b5cf6; top: 40%; left: 60%; animation-delay: -10s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(30px, -50px); }
+            66% { transform: translate(-20px, 20px); }
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            position: relative;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--text-main);
+        }
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 6rem 5% 4rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .hero-badge {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 50px;
+            padding: 0.5rem 1.5rem;
+            font-size: 0.9rem;
+            color: var(--accent);
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInDown 0.8s ease-out 0.2s backwards;
+        }
+        .hero p {
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            animation: fadeInDown 0.8s ease-out 0.4s backwards;
+        }
+        .hero-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInDown 0.8s ease-out 0.6s backwards;
+        }
+        .btn {
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--text-muted);
+        }
+
+        /* Stats */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 4rem auto;
+            padding: 0 5%;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            animation: fadeInUp 1s ease-out backwards;
+        }
+        .stat-card:nth-child(1) { animation-delay: 0.2s; }
+        .stat-card:nth-child(2) { animation-delay: 0.4s; }
+        .stat-card:nth-child(3) { animation-delay: 0.6s; }
+        .stat-card:nth-child(4) { animation-delay: 0.8s; }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Features */
+        .features {
+            max-width: 1200px;
+            margin: 6rem auto;
+            padding: 0 5%;
+        }
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 4rem;
+            font-size: 1.1rem;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+        .feature-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s, border-color 0.3s;
+            animation: fadeInUp 0.8s ease-out backwards;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+        .feature-card:nth-child(1) { animation-delay: 0.1s; }
+        .feature-card:nth-child(2) { animation-delay: 0.2s; }
+        .feature-card:nth-child(3) { animation-delay: 0.3s; }
+        .feature-card:nth-child(4) { animation-delay: 0.4s; }
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: rgba(99, 102, 241, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+        .feature-desc {
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* Demo Section */
+        .demo-section {
+            max-width: 1200px;
+            margin: 6rem auto;
+            padding: 0 5%;
+        }
+        .demo-container {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            animation: fadeInUp 1s ease-out;
+        }
+        .demo-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: rgba(15, 23, 42, 0.8);
+            border-bottom: 1px solid var(--border);
+        }
+        .demo-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .demo-dot.red { background: #ef4444; }
+        .demo-dot.yellow { background: #f59e0b; }
+        .demo-dot.green { background: #10b981; }
+        .demo-content {
+            padding: 3rem;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .demo-animation {
+            text-align: center;
+        }
+        .pulse-ring {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.2);
+            position: relative;
+            margin: 0 auto 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+        .pulse-ring::before, .pulse-ring::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            animation: ripple 2s infinite;
+        }
+        .pulse-ring::after {
+            animation-delay: 0.5s;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes ripple {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .demo-icon {
+            font-size: 4rem;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 5%;
+            border-top: 1px solid var(--border);
+            margin-top: 6rem;
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+        .copyright {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 2.5rem; }
+            .hero p { font-size: 1.1rem; }
+            .features-grid { grid-template-columns: 1fr; }
+            .stats-container { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <nav>
+        <a href="https://todo-logo-ai.vercel.app/" class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            TODO-LOGO-AI
+        </a>
+        <div class="nav-links">
+            <a href="https://todo-logo-ai.vercel.app/" class="active">Inicio</a>
+            <a href="https://todo-logo-ai.vercel.app/changelog">Changelog</a>
+            <a href="https://todo-logo-ai.vercel.app/ajustes/">Ajustes</a>
+            <a href="https://github.com/FazeUrru/Tod-logo-AI" target="_blank">GitHub</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-badge">🚀 Versión 1.0.0 Disponible</div>
+        <h1>La IA que replica fielmente arena.ai</h1>
+        <p>TODO-LOGO-AI es la solución definitiva que combina la interfaz intuitiva de arena.ai con inteligencia artificial avanzada y herramientas de última generación.</p>
+        <div class="hero-buttons">
+            <a href="https://todo-logo-ai.vercel.app/" class="btn btn-primary">
+                Empezar Gratis
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+            <a href="https://github.com/FazeUrru/Tod-logo-AI" target="_blank" class="btn btn-secondary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.435-2.385 1.155-3.225-.12-.285-.51-1.44.105-3 .63 0 1.215.225 1.665.63 1.44-.24 3.015-.36 4.515-.36s3.075.12 4.515.36c.45-.405 1.035-.63 1.665-.63.615 1.56.225 2.715.105 3 .72.84 1.155 1.905 1.155 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+                Ver en GitHub
+            </a>
+        </div>
+    </section>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-number">1.0.0</div>
+            <div class="stat-label">Versión Actual</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">150+</div>
+            <div class="stat-label">Funciones IA</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">99.9%</div>
+            <div class="stat-label">Uptime</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Soporte</div>
+        </div>
+    </div>
+
+    <section class="features">
+        <h2 class="section-title">Características Principales</h2>
+        <p class="section-subtitle">Descubre todo lo que TODO-LOGO-AI puede hacer por ti</p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3 class="feature-title">Interfaz Réplica arena.ai</h3>
+                <p class="feature-desc">Experimenta la misma interfaz intuitiva y poderosa de arena.ai, diseñada para maximizar tu productividad con una curva de aprendizaje mínima.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3 class="feature-title">IA Avanzada Integrada</h3>
+                <p class="feature-desc">Motor de inteligencia artificial de última generación que entiende contexto, genera contenido creativo y resuelve problemas complejos al instante.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">Procesamiento en Tiempo Real</h3>
+                <p class="feature-desc">Respuestas ultrarrápidas con latencia mínima. Tu flujo de trabajo nunca se detiene con nuestra infraestructura optimizada.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3 class="feature-title">Privacidad Garantizada</h3>
+                <p class="feature-desc">Tus datos están protegidos con encriptación de extremo a extremo. Cumplimos con los estándares más altos de seguridad.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="demo-section">
+        <h2 class="section-title">Demo Interactiva</h2>
+        <p class="section-subtitle">Prueba TODO-LOGO-AI en acción</p>
+        <div class="demo-container">
+            <div class="demo-header">
+                <div class="demo-dot red"></div>
+                <div class="demo-dot yellow"></div>
+                <div class="demo-dot green"></div>
+            </div>
+            <div class="demo-content">
+                <div class="demo-animation">
+                    <div class="pulse-ring">
+                        <div class="demo-icon">🤖</div>
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">IA Lista para Ayudarte</h3>
+                    <p style="color: var(--text-muted);">Haz una pregunta y obtén respuestas instantáneas</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-links">
+            <a href="https://todo-logo-ai.vercel.app/changelog">Changelog</a>
+            <a href="https://todo-logo-ai.vercel.app/ajustes/">Ajustes</a>
+            <a href="https://todo-logo-ai.vercel.app/docs">Documentación</a>
+            <a href="https://todo-logo-ai.vercel.app/privacy">Privacidad</a>
+            <a href="https://todo-logo-ai.vercel.app/terms">Términos</a>
+            <a href="https://github.com/FazeUrru/Tod-logo-AI" target="_blank">GitHub</a>
+        </div>
+        <p class="copyright">&copy; 2026 TODO-LOGO-AI. Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+        // Smooth reveal on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = 1;
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.feature-card, .stat-card').forEach(card => {
+            card.style.opacity = 0;
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
