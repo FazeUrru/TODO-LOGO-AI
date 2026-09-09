@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.12.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.13.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
   <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI"><img alt="cobertura" src="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI/graph/badge.svg"></a>
@@ -187,8 +187,8 @@ flowchart LR
 - **Anonato verificable, no decorativo.** La serialización pública de la copa elimina los `modelId` hasta la revelación; ni inspeccionando la red se puede saber quién compite antes del final.
 - **Votos idempotentes.** Votar dos veces el mismo duelo no duplica el voto ni corrompe el ELO (la segunda llamada devuelve el estado actual).
 - **Anti-carreras.** La final se crea con un marcador sincrónico en el servidor antes de generar, así que dos votos casi simultáneos nunca disparan dos finales.
-- **Sesiones de copa** en memoria del proceso con expiración y limpieza automática (se conservan las 120 más recientes).
-- **Salón de la Fama (v1.12.0)**: cada campeón coronado queda registrado en la base de datos (o en tu navegador en la demo) y aparece en la tarjeta del Modo Torneo.
+- **Sesiones de copa persistidas (v1.13.0)**: write-through en memoria + BD (tabla `CopaSesion`) — las copas sobreviven reinicios y despliegues; la memoria conserva las 160 más recientes y el cron purga la BD a los 7 días.
+- **Salón de la Fama (v1.12.0)**: cada campeón coronado queda registrado en la base de datos (o en tu navegador en la demo) y aparece en la tarjeta del Modo Torneo. Desde la v1.13.0 tiene **página pública** (`/salon-de-la-fama`) con estadísticas: modelo más coronado, copa más grande y copas XL.
 
 ## Superpoderes del chat
 
@@ -525,8 +525,8 @@ TODO-LOGO-AI/
 
 ## Roadmap y changelog
 
-- 🗺️ [`ROADMAP.md`](ROADMAP.md) — hacia dónde va el proyecto: torneos de 8 y 16, Postgres gestionado, perfiles con historial en la nube, arena de imágenes, API pública…
-- 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN y, desde la v1.11.0, **enlaces a su commit exacto y a su diff completo** (etiquetas git `v1.4.0` → `v1.12.0`): un changelog navegable, no un texto estático.
+- 🗺️ [`ROADMAP.md`](ROADMAP.md) — hacia dónde va el proyecto: copas persistentes y compartir duelos, arena de imágenes, modo espectador, i18n, API pública…
+- 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN y, desde la v1.11.0, **enlaces a su commit exacto y a su diff completo** (etiquetas git `v1.4.0` → `v1.13.0`): un changelog navegable, no un texto estático.
 
 ## Contribuir
 

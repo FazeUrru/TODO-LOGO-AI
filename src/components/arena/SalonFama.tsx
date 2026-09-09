@@ -64,6 +64,12 @@ export default function SalonFama({ destacadoId }: { destacadoId?: string | null
               : `Los últimos campeones de la Copa Todólogo (${total} en el registro)`}
           </p>
         </div>
+        <a
+          href="/salon-de-la-fama"
+          className="ml-auto shrink-0 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          Ver completo
+        </a>
       </div>
 
       {filas !== null && total > 0 && (

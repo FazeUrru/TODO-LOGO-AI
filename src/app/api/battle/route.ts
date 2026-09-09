@@ -4,6 +4,7 @@ import { getModel, MODELS } from "@/lib/models-data";
 import { ALL_3D_IDS } from "@/lib/models-3d";
 import { personaFor } from "@/lib/personas";
 import { chatExterno, vozExternaPara, type VozExterna } from "@/lib/voices-externas";
+import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
 
@@ -350,6 +351,14 @@ function newBattleId(): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate-limit (v1.13.0): una batalla genera dos respuestas completas
+  const ip = ipDeHeader(req.headers.get("x-forwarded-for"));
+  if (!acumular(`batalla:${ip}`, GEN_LIMITE, Date.now())) {
+    return NextResponse.json(
+      { error: "Demasiadas batallas desde tu IP. Espera unos minutos e inténtalo de nuevo." },
+      { status: 429, headers: { "Retry-After": String(segundosRestantes(GEN_LIMITE)) } }
+    );
+  }
   let body: BattleRequest;
   try {
     body = await req.json();

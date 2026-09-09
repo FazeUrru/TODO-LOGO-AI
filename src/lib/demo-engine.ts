@@ -14,6 +14,7 @@
 import { MODELS, PROVIDERS, getModel, type AIModel } from "./models-data";
 import { categoryElo, eloDeltaFromVotes, expectedScore, type LeaderRow, type Winner } from "./elo";
 import { RECIPES_3D } from "./models-3d";
+import { estadisticasSalon } from "./salon-utils";
 
 /* ───────────────────────── Utilidades ───────────────────────── */
 
@@ -1242,7 +1243,12 @@ export async function handleDemoFetch(rawPath: string, init?: RequestInit): Prom
     if (path === "/api/tournament" && method === "POST") return await handleTournament(init);
     if (path === "/api/hall-of-fame") {
       const lista = lsGet<CampeonSalon[]>(K_SALON, []);
-      return jsonRes({ ok: true, total: lista.length, campeones: lista.slice(0, 12) });
+      return jsonRes({
+        ok: true,
+        total: lista.length,
+        campeones: lista.slice(0, 12),
+        stats: estadisticasSalon(lista), // v1.13.0: mismas estadísticas que producción
+      });
     }
     if (path === "/api/profile/historial") {
       // En la demo el perfil vive en tu navegador: historial en la nube no aplica

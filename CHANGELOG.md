@@ -3,19 +3,33 @@
 > Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [Versionado Semántico](https://semver.org/lang/es/).
 > La versión actual y su fecha se muestran también dentro de la app (sidebar → Ajustes).
 >
-> 🔗 **Changelog navegable**: desde la v1.11.0 cada versión enlaza a su **commit exacto** y a su **diff completo** mediante etiquetas git (`v1.4.0` → `v1.12.0`). En la app, la página Changelog reproduce los mismos enlaces.
+> 🔗 **Changelog navegable**: desde la v1.11.0 cada versión enlaza a su **commit exacto** y a su **diff completo** mediante etiquetas git (`v1.4.0` → `v1.13.0`). En la app, la página Changelog reproduce los mismos enlaces.
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.13.0
-- Sesiones de copa persistidas en BD (multi-instancia y copas que sobreviven reinicios).
-- Rate-limiting por IP en las rutas de generación.
-- Página pública del Salón de la Fama con estadísticas por modelo coronado.
+### Planeado para v1.14.0
+- Compartir duelos y copas por URL permanente con replay de las respuestas y del veredicto.
+- Arena de imágenes con voto y ranking ELO de generación separado del de texto.
+- Modo espectador de torneos: observa una copa en directo y predice quién pasará la ronda.
 
 ### Explorando
-- Arena de imágenes con voto y ranking separado.
-- Internacionalización es/en/pt.
-- Compartir duelos y copas por URL con replay del veredicto.
+- Internacionalización es/en/pt (next-intl, con la comunidad traduciendo).
+- Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
+
+## [1.13.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.12.0...v1.13.0) · 9 sept 2026 — *Copas eternas, arena blindado y Salón público*
+
+### Añadido
+- **Sesiones de copa persistidas en BD** 🏛️: nueva tabla `CopaSesion` con write-through en cada mutación (inicio, generación de ronda, voto, revelación) y read-through al ausentarse de memoria — hasta la v1.12.0 un reinicio o una instancia serverless distinta mataba el cuadro en curso y el voto devolvía «la copa ha expirado». Ahora las copas sobreviven despliegues y funcionan en multi-instancia. Serialización canónica y blindada en `src/lib/copas-persistir.ts`: un payload corrupto nunca revive basura en memoria.
+- **Salón de la Fama público** 👑: nueva página `/salon-de-la-fama` (menú del logo y tarjeta del Modo Torneo → «Ver completo») con estadísticas agregadas — modelo más coronado, copa más grande ganada, copas XL coronadas y último campeón — más el registro completo con consigna, subcampeón, tamaño del cuadro y fecha. `GET /api/hall-of-fame` devuelve ahora `stats` con el mismo cálculo compartido (`salon-utils.ts`) que la demo estática: un solo criterio en producción y en demo.
+- **Rate-limiting por IP en las rutas de generación** 🛡️: ventana fija en memoria por `IP + ruta` (`src/lib/rate-limit.ts`) con `Retry-After` en el 429. Cubre batalla (12/5 min), copa: inicio (12/5 min) y voto (60/5 min), imagen (12/5 min), agente (12/5 min) y voto del arena (60/5 min) — generoso para humanos, hostil a scripts.
+
+### Mejorado
+- **Purga de copas de dos niveles**: el cron `purga-copas` sigue limpiando la memoria (3 h las terminadas) y ahora también la tabla `CopaSesion` (7 días), mientras el Salón de la Fama conserva a todos los campeones.
+- La tarjeta del Salón de la Fama del Modo Torneo enlaza a la página pública completa.
+
+### Técnico
+- Esquema gemelo (SQLite/Postgres) con la séptima tabla y `db-init` consciente de dialecto que la crea al arrancar en entornos efímeros.
+- Suite ampliada a **72 tests**: ida y vuelta de serialización de copas (conserva winner, swing, campeón; rechaza JSON corrupto o incompleto sin lanzar), rate-limit (ventana, bloqueo, expiración, aislamiento por IP, parseo de `x-forwarded-for`) y estadísticas del Salón (agregación, desempate determinista, tolerancia a basura).
 
 ## [1.12.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.11.1...v1.12.0) · 9 sept 2026 — *Postgres global, voces reales y memoria de campeones*
 

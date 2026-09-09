@@ -608,6 +608,57 @@
         <h2 class="section-title">Historial de Versiones</h2>
         
         <div class="timeline">
+            <!-- v1.13.0 -->
+            <div class="timeline-item fade-in">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <span class="version-badge">v1.13.0</span>
+                    <div class="version-date">9 de Septiembre, 2026</div>
+                    <h3 class="version-title">🏆 Copas eternas, arena blindado y Salón público</h3>
+                    <p class="version-description">
+                        La versión actual: las copas ya viven en la base de datos, el arena
+                        está blindado frente al abuso y el Salón de la Fama se abre al público.
+                    </p>
+                    
+                    <ul class="feature-list">
+                        <li>
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#4facfe" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                            </svg>
+                            <div>
+                                <span class="feature-tag tag-new">NUEVO</span>
+                                <strong>Sesiones de copa persistidas en BD</strong>
+                                <br>
+                                <span style="color: #a0a0b0;">Write-through en cada mutación y read-through al ausentarse de memoria: las copas sobreviven reinicios y despliegues — adiós al «la copa ha expirado».</span>
+                            </div>
+                        </li>
+                        <li>
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+                                <circle cx="12" cy="8" r="6"/>
+                                <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+                            </svg>
+                            <div>
+                                <span class="feature-tag tag-new">NUEVO</span>
+                                <strong>Salón de la Fama público</strong>
+                                <br>
+                                <span style="color: #a0a0b0;">Nueva página /salon-de-la-fama: modelo más coronado, copa más grande ganada, copas XL (8 y 16) y el registro completo de campeones con su consigna y subcampeón.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#764ba2" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            <div>
+                                <span class="feature-tag tag-new">NUEVO</span>
+                                <strong>Rate-limiting por IP</strong>
+                                <br>
+                                <span style="color: #a0a0b0;">Ventana fija por IP en las rutas de generación (batalla, copa, imagen, agente y voto) con cabecera Retry-After: generoso para humanos, hostil a scripts.</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
             <!-- v1.0.0 -->
             <div class="timeline-item fade-in">
                 <div class="timeline-dot"></div>
@@ -673,16 +724,16 @@
                 </div>
             </div>
 
-            <!-- v0.9.0 Beta -->
+            <!-- v1.14.0 Próximamente -->
             <div class="timeline-item fade-in">
                 <div class="timeline-dot"></div>
                 <div class="timeline-content">
-                    <span class="version-badge" style="background: linear-gradient(135deg, #ff9f43 0%, #f5576c 100%);">v0.9.0 Beta</span>
+                    <span class="version-badge" style="background: linear-gradient(135deg, #ff9f43 0%, #f5576c 100%);">v1.14.0</span>
                     <div class="version-date">Próximamente</div>
-                    <h3 class="version-title">🔮 Próximamente</h3>
+                    <h3 class="version-title">🔮 El duelo viaja</h3>
                     <p class="version-description">
-                        Estamos trabajando en la próxima versión beta que incluirá mejoras significativas 
-                        en velocidad, personalización y nuevas funcionalidades experimentales.
+                        Lo siguiente en el roadmap: compartir cualquier duelo o copa por URL,
+                        el arena de imágenes con voto y el modo espectador de torneos.
                     </p>
                     
                     <ul class="feature-list">
@@ -692,21 +743,22 @@
                             </svg>
                             <div>
                                 <span class="feature-tag tag-beta">BETA</span>
-                                <strong>Respuestas 50% Más Rápidas</strong>
+                                <strong>Compartir duelos</strong>
                                 <br>
-                                <span style="color: #a0a0b0;">Nueva arquitectura de procesamiento que reduce drásticamente los tiempos de espera.</span>
+                                <span style="color: #a0a0b0;">URL permanente de cualquier batalla o copa con replay de las respuestas y del veredicto.</span>
                             </div>
                         </li>
                         <li>
                             <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#f5576c" stroke-width="2">
-                                <circle cx="12" cy="12" r="3"/>
-                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
                             </svg>
                             <div>
                                 <span class="feature-tag tag-beta">BETA</span>
-                                <strong>Configuración Personalizable</strong>
+                                <strong>Arena de imágenes con voto</strong>
                                 <br>
-                                <span style="color: #a0a0b0;">Panel de configuración avanzado para personalizar temas, atajos de teclado y comportamiento de la IA.</span>
+                                <span style="color: #a0a0b0;">Dos ilustraciones generadas, tú eliges la mejor: ranking ELO de generación de imágenes separado del de texto.</span>
                             </div>
                         </li>
                     </ul>

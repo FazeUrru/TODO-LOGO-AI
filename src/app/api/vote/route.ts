@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getModel } from "@/lib/models-data";
 import { eloDeltaFromVotes, expectedScore, type Winner } from "@/lib/elo";
 import { applyEloDuel } from "@/lib/elo-global";
+import { ipDeHeader, acumular, VOTO_LIMITE, segundosRestantes } from "@/lib/rate-limit";
 
 interface VoteRequest {
   battleId?: string;
@@ -18,6 +19,15 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  // Rate-limit (v1.13.0): generoso para humanos, hostil a scripts
+  const ip = ipDeHeader(req.headers.get("x-forwarded-for"));
+  if (!acumular(`voto:${ip}`, VOTO_LIMITE, Date.now())) {
+    return NextResponse.json(
+      { error: "Demasiados votos desde tu IP. Espera unos minutos e inténtalo de nuevo." },
+      { status: 429, headers: { "Retry-After": String(segundosRestantes(VOTO_LIMITE)) } }
+    );
   }
 
   const { modelAId, modelBId, winner, category = "global" } = body;

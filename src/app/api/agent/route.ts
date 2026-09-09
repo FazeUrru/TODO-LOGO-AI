@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { db } from "@/lib/db";
+import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
 
 export const maxDuration = 90;
 
@@ -154,6 +155,15 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  // Rate-limit (v1.13.0): el Modo Agente encadena múltiples llamadas al modelo
+  const ip = ipDeHeader(req.headers.get("x-forwarded-for"));
+  if (!acumular(`agente:${ip}`, GEN_LIMITE, Date.now())) {
+    return NextResponse.json(
+      { error: "Demasiadas misiones desde tu IP. Espera unos minutos e inténtalo de nuevo." },
+      { status: 429, headers: { "Retry-After": String(segundosRestantes(GEN_LIMITE)) } }
+    );
   }
 
   const description = (body.description ?? "").trim();

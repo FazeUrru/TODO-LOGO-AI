@@ -14,7 +14,7 @@ import { logger } from "@/lib/logger";
  * seis tablas del esquema, incluidas EloState (ELO global), CopaCampeon
  * (Salón de la Fama) y ProfileEvent (historial del perfil), más las columnas
  * de perfil de User añadidas en v1.9.2 para bases creadas antes de esa
- * versión.
+ * versión. v1.13.0: añade CopaSesion (copas persistentes entre reinicios).
  *
  * Se ejecuta UNA vez por proceso (bandera en globalThis).
  */
@@ -146,6 +146,20 @@ async function createSchema(): Promise<void> {
     );
     await db.$executeRawUnsafe(
       `CREATE INDEX IF NOT EXISTS "ProfileEvent_userId_at_idx" ON "ProfileEvent"("userId", "at");`
+    );
+
+    await crearTabla(
+      "CopaSesion",
+      `CREATE TABLE IF NOT EXISTS "CopaSesion" (
+        "id"        TEXT PRIMARY KEY,
+        "size"      INTEGER NOT NULL DEFAULT 4,
+        "datos"     TEXT NOT NULL,
+        "createdAt" ${TS},
+        "updatedAt" ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "CopaSesion_updatedAt_idx" ON "CopaSesion"("updatedAt");`
     );
 
     // Columnas de perfil (v1.9.2) para bases creadas antes de esa versión

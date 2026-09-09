@@ -111,3 +111,16 @@ model ProfileEvent {
 
   @@index([userId, at])
 }
+
+// Sesión persistente de una Copa Todólogo (v1.13.0): el cuadro completo en
+// JSON, con write-through en cada mutación y read-through al ausentarse de
+// memoria — las copas sobreviven reinicios e instancias serverless.
+model CopaSesion {
+  id        String   @id // id de la copa (copa_xxx)
+  size      Int      @default(4)
+  datos     String // JSON canónico de la copa (src/lib/copas-persistir.ts)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
+}

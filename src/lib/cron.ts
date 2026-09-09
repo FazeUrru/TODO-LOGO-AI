@@ -59,22 +59,34 @@ const TASKS: CronTask[] = [
     id: "purga-copas",
     nombre: "Purga de sesiones de Copa",
     descripcion:
-      "Elimina de memoria las copas terminadas hace más de 3 h (la limpieza por tamaño solo actúa al superar 160).",
+      "Elimina de memoria las copas terminadas hace más de 3 h (la limpieza por tamaño solo actúa al superar 160) y de la BD las sesiones con más de 7 días (v1.13.0).",
     intervalMs: 10 * 60 * 1000,
     timeoutMs: 10_000,
     handler: async () => {
       const g = globalThis as unknown as { __todologoCopas?: Map<string, { createdAt: number; championModelId?: string }> };
       const store = g.__todologoCopas;
-      if (!store) return "sin sesiones en memoria";
       const corte = Date.now() - 3 * HOUR;
       let purgadas = 0;
-      for (const [id, copa] of store) {
-        if (copa.createdAt < corte && copa.championModelId) {
-          store.delete(id);
-          purgadas++;
+      if (store) {
+        for (const [id, copa] of store) {
+          if (copa.createdAt < corte && copa.championModelId) {
+            store.delete(id);
+            purgadas++;
+          }
         }
       }
-      return `${purgadas} sesiones purgadas · ${store.size} en memoria`;
+      // v1.13.0: las sesiones viven en BD (write-through); se purgan las
+      // de más de 7 días — el Salón de la Fama conserva los campeones.
+      let borradasBD = 0;
+      try {
+        const res = await db.copaSesion.deleteMany({
+          where: { updatedAt: { lt: new Date(Date.now() - 7 * HOUR * 24) } },
+        });
+        borradasBD = res.count;
+      } catch {
+        /* sin BD (demo estática) no hay nada que purgar */
+      }
+      return `${purgadas} purgadas en memoria · ${store?.size ?? 0} en memoria · ${borradasBD} sesiones viejas borradas de BD`;
     },
   },
   {

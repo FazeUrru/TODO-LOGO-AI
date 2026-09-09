@@ -3,6 +3,7 @@ import ZAI from "z-ai-web-dev-sdk";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
 
@@ -17,6 +18,14 @@ const SUPPORTED_SIZES = new Set([
 ]);
 
 export async function POST(req: NextRequest) {
+  // Rate-limit (v1.13.0): la generación de imágenes es la ruta más cara
+  const ip = ipDeHeader(req.headers.get("x-forwarded-for"));
+  if (!acumular(`imagen:${ip}`, GEN_LIMITE, Date.now())) {
+    return NextResponse.json(
+      { error: "Demasiadas imágenes desde tu IP. Espera unos minutos e inténtalo de nuevo." },
+      { status: 429, headers: { "Retry-After": String(segundosRestantes(GEN_LIMITE)) } }
+    );
+  }
   try {
     const body = (await req.json()) as { prompt?: string; size?: string };
     const prompt = (body.prompt ?? "").trim();

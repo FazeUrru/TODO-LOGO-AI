@@ -68,6 +68,29 @@ export default function ChangelogPage() {
         </p>
 
         <div className="relative mt-8 space-y-8 border-l border-border pl-6">
+          {/* ── v1.13.0 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-highlight ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-foreground px-2.5 py-1 font-mono text-[13px] font-semibold text-background">
+                v1.13.0
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">9 sept 2026 · Copas eternas, arena blindado y Salón público</span>
+              <NewBadge k="changelog" />
+              <CodeLink href={`${REPO}/compare/v1.12.0...v1.13.0`}>diff v1.12.0…v1.13.0</CodeLink>
+            </div>
+
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <ul className="space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Sesiones de copa persistidas en BD</strong>: write-through en cada mutación y read-through al ausentarse de memoria (tabla <code>CopaSesion</code>) — las copas sobreviven reinicios y despliegues; adiós al «la copa ha expirado» tras un deploy.</li>
+                <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Salón de la Fama público</strong> en <code>/salon-de-la-fama</code>: modelo más coronado, copa más grande ganada, copas XL y el registro completo con consigna, subcampeón y fecha. Mismo cálculo (<code>salon-utils</code>) en producción y en la demo.</li>
+                <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Rate-limiting por IP</strong> en las rutas de generación (batalla, copa, imagen, agente, voto) con ventana fija y <code>Retry-After</code> — generoso para humanos, hostil a scripts.</li>
+                <li className="flex gap-2"><Tag kind="mejora" /> Purga de copas de dos niveles: memoria (3 h) + BD (7 días) en el cron <code>purga-copas</code>; el Salón conserva a todos los campeones.</li>
+                <li className="flex gap-2"><Tag kind="mejora" /> La tarjeta del Salón del Modo Torneo enlaza a la página pública completa.</li>
+              </ul>
+            </div>
+          </div>
+
           {/* ── v1.12.0 ── */}
           <div className="relative">
             <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-highlight ring-4 ring-background" />

@@ -226,6 +226,14 @@ export default function Sidebar() {
       >
         <History className="h-4 w-4" /> Changelog
       </Link>
+      <Link
+        href="/salon-de-la-fama"
+        onClick={() => setLogoMenu(false)}
+        className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] hover:bg-accent"
+      >
+        <Trophy className="h-4 w-4" /> Salón de la Fama{" "}
+        <NewBadge k="salon-de-la-fama" className="ml-auto" />
+      </Link>
       <a
         href={GITHUB_REPO_URL}
         target="_blank"

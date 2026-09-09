@@ -68,24 +68,33 @@
 - **Changelog navegable**: cada versión enlaza a su commit y a su diff (etiquetas git v1.4.0 → v1.11.0); Docker como opción nº 1 del inicio rápido.
 - Detalles en el [CHANGELOG v1.11.0](CHANGELOG.md).
 
+### v1.12.0 · 9 sept 2026 — *Postgres global, voces reales y memoria de campeones*
+- **Postgres gestionado para el ELO global**: esquema gemelo, conmutador `DB_PROVIDER=postgres`, build de Vercel auto-sincronizado y guía paso a paso.
+- **Voces de proveedores reales**: con claves API propias, los contendientes responden vía su API real (Anthropic, OpenAI, Google…) con reserva transparente al motor propio.
+- **Salón de la Fama de la Copa** e **historial del perfil en la nube** (`ProfileEvent` + tarjeta «Actividad del perfil»).
+- Corregido el **bug de la revelación prematura de la copa** (v1.9.0) y blindados los diagramas Mermaid con validación en CI.
+- Detalles en el [CHANGELOG v1.12.0](CHANGELOG.md).
+
+### v1.13.0 · 9 sept 2026 — *Copas eternas, arena blindado y Salón público*
+- **Sesiones de copa persistidas en BD** (tabla `CopaSesion`, write-through/read-through): sobreviven reinicios y despliegues; adiós al «la copa ha expirado».
+- **Salón de la Fama público** (`/salon-de-la-fama`): modelo más coronado, copa más grande, copas XL y registro completo — mismo cálculo en producción y demo.
+- **Rate-limiting por IP** en las rutas de generación (batalla, copa, imagen, agente, voto) con `Retry-After`.
+- Detalles en el [CHANGELOG v1.13.0](CHANGELOG.md).
+
 ---
 
-## 🔨 En curso — v1.12.0 «Perfiles en la nube» *(objetivo: oct 2026)*
+## 🔨 En curso — v1.14.0 «El duelo viaja» *(objetivo: oct-nov 2026)*
 
 | # | Función | Estado | Detalle |
 |---|---|:---:|---|
-| 1 | **Postgres gestionado** | diseño | Migrar `DATABASE_URL` a Postgres para persistencia de ELO global en serverless sin caveats de `/tmp` (el esquema ya es Postgres-ready) |
-| 2 | **Voces de proveedores reales** | diseño | Conectar APIs de proveedores (Anthropic, OpenAI, Google…) junto al motor propio, activables por claves |
-| 3 | **Historial del perfil en la nube** | idea | Tus copas, votos y conversaciones sincronizados entre dispositivos (el perfil ya se sincroniza desde v1.10.0) |
-| 4 | **Hall of Fame de copas** | idea | Página con las últimas copas jugadas: consigna, campeón y margen de la final |
-| 5 | **Estadísticas de la copa** | idea | % de victorias por modelo en torneos, upset más grande, racha de campeonatos |
+| 1 | **Compartir duelos** | diseño | URL permanente de cualquier batalla o copa con replay de las respuestas y del veredicto (la infraestructura de `CopaSesion` de la v1.13.0 ya guarda el cuadro completo) |
+| 2 | **Arena de imágenes con voto** | idea | Dos ilustraciones generadas, tú eliges la mejor; ranking ELO de generación de imágenes separado del de texto |
+| 3 | **Modo espectador de torneos** | idea | Observa una copa en directo y predice quién pasará la ronda |
 
-## 🔭 Próximo — v1.13.0 «El arena se abre» *(objetivo: dic 2026)*
+## 🔭 Próximo — v1.15.0 «Una sola voz» *(objetivo: dic 2026)*
 
-- **Arena de imágenes con voto**: dos ilustraciones generadas, tú eliges la mejor; ranking ELO de generación de imágenes separado del de texto.
 - **Internacionalización (i18n)**: es/en/pt con `next-intl`, la comunidad puede traducir la interfaz.
-- **Compartir duelos**: URL permanente de cualquier batalla o copa con replay de las respuestas y del veredicto.
-- **Modo espectador de torneos**: observa una copa en directo y predice quién pasará la ronda.
+- **Límite de tasa multi-instancia en el edge**: el rate-limit de la v1.13.0 vive en memoria por proceso; el edge middleware lo hará global.
 
 ## 🚀 Futuro — v2.0 «Todólogo sin límites» *(2027)*
 

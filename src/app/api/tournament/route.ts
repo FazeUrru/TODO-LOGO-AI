@@ -7,6 +7,8 @@ import { applyEloDuel } from "@/lib/elo-global";
 import { personaFor } from "@/lib/personas";
 import { chatExterno, vozExternaPara } from "@/lib/voices-externas";
 import { esGranFinal, totalRondas } from "@/lib/copa-utils";
+import { serializarCopa, deserializarCopa } from "@/lib/copas-persistir";
+import { ipDeHeader, acumular, GEN_LIMITE, VOTO_LIMITE, segundosRestantes } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
 
@@ -47,18 +49,57 @@ interface TournamentRequest {
   winner?: "a" | "b";
 }
 
-/* ─────────────── Sesiones en memoria (proceso único) ─────────────── */
+/* ───────── Sesiones: memoria + BD (v1.13.0, write-through) ───────── */
 
 const store: Map<string, Copa> = ((globalThis as unknown as {
   __todologoCopas?: Map<string, Copa>;
 }).__todologoCopas ??= new Map());
 
-function persist(copa: Copa) {
+/** Memoria con limpieza por tamaño: conserva las 160 copas más recientes. */
+function persistEnMemoria(copa: Copa) {
   store.set(copa.id, copa);
-  // Limpieza: conserva las 160 copas más recientes
   if (store.size > 160) {
     const oldest = [...store.values()].sort((x, y) => x.createdAt - y.createdAt);
     for (const old of oldest.slice(0, store.size - 160)) store.delete(old.id);
+  }
+}
+
+/**
+ * Write-through (v1.13.0): memoria + tabla CopaSesion. Hasta la v1.12.0 un
+ * reinicio o una instancia serverless distinta perdía el cuadro en curso;
+ * ahora cada mutación queda registrada en BD y la copa sobrevive. Si la BD
+ * no responde, la copa continúa en memoria como hasta ahora.
+ */
+async function persist(copa: Copa): Promise<void> {
+  persistEnMemoria(copa);
+  try {
+    await db.copaSesion.upsert({
+      where: { id: copa.id },
+      create: { id: copa.id, size: copa.size, datos: serializarCopa(copa) },
+      update: { size: copa.size, datos: serializarCopa(copa) },
+    });
+  } catch {
+    /* la copa continúa aunque la BD no responda */
+  }
+}
+
+/**
+ * Read-through (v1.13.0): si la copa no está en la memoria de esta
+ * instancia (reinicio, LRU, servidor distinto), se reconstruye desde la
+ * BD. Un payload corrupto devuelve null y responde 404: nunca se revive
+ * basura en memoria.
+ */
+async function cargarCopa(id: string): Promise<Copa | null> {
+  const enMemoria = store.get(id);
+  if (enMemoria) return enMemoria;
+  try {
+    const fila = await db.copaSesion.findUnique({ where: { id } });
+    if (!fila) return null;
+    const copa = deserializarCopa(fila.datos);
+    if (copa) persistEnMemoria(copa);
+    return copa;
+  } catch {
+    return null;
   }
 }
 
@@ -170,7 +211,7 @@ async function generateRound(copa: Copa, roundIdx: number) {
       ]);
     })
   );
-  persist(copa);
+  await persist(copa);
 }
 
 /** Cuando una ronda queda decidida, empareja ganadores y genera la siguiente. */
@@ -189,7 +230,7 @@ async function advance(copa: Copa, finishedRound: number) {
     });
   }
   copa.rounds[finishedRound + 1] = next; // marcador sincrónico contra votos rápidos
-  persist(copa);
+  await persist(copa);
   await generateRound(copa, finishedRound + 1);
 }
 
@@ -281,6 +322,14 @@ export async function POST(req: NextRequest) {
 
   /* ── Acción: iniciar una copa nueva ── */
   if (body.action === "start") {
+    // Rate-limit (v1.13.0): lanzar una copa genera N×2 respuestas — cara
+    const ip = ipDeHeader(req.headers.get("x-forwarded-for"));
+    if (!acumular(`copa-start:${ip}`, GEN_LIMITE, Date.now())) {
+      return NextResponse.json(
+        { error: "Demasiadas copas lanzadas desde tu IP. Espera unos minutos e inténtalo de nuevo." },
+        { status: 429, headers: { "Retry-After": String(segundosRestantes(GEN_LIMITE)) } }
+      );
+    }
     const prompt = (body.prompt ?? "").trim();
     if (prompt.length < 2) {
       return NextResponse.json(
@@ -317,13 +366,21 @@ export async function POST(req: NextRequest) {
       rounds: [first],
       revealed: false,
     };
-    persist(copa);
+    await persist(copa);
     await generateRound(copa, 0);
     return NextResponse.json({ ok: true, copa: publicState(copa) });
   }
 
   /* ── Acción: votar un duelo ── */
   if (body.action === "vote") {
+    // Rate-limit (v1.13.0): generoso para humanos, hostil a scripts
+    const ip = ipDeHeader(req.headers.get("x-forwarded-for"));
+    if (!acumular(`copa-voto:${ip}`, VOTO_LIMITE, Date.now())) {
+      return NextResponse.json(
+        { error: "Demasiados votos desde tu IP. Espera unos minutos e inténtalo de nuevo." },
+        { status: 429, headers: { "Retry-After": String(segundosRestantes(VOTO_LIMITE)) } }
+      );
+    }
     const { id, duel: duelKey, winner } = body;
     if (!id || !duelKey || !winner || !["a", "b"].includes(winner)) {
       return NextResponse.json(
@@ -331,7 +388,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const copa = store.get(id);
+    // Read-through (v1.13.0): si esta instancia no la tiene, se recupera de BD
+    const copa = await cargarCopa(id);
     if (!copa) {
       return NextResponse.json(
         { error: "La copa ha expirado. Inicia una nueva desde el Modo Torneo." },
@@ -352,7 +410,7 @@ export async function POST(req: NextRequest) {
     if (!duel.winner) {
       duel.winner = winner;
       duel.swing = await recordDuel(copa, duel, winner);
-      persist(copa);
+      await persist(copa);
       // Ronda completa → se genera la siguiente con los ganadores
       await advance(copa, rIdx);
       // Gran final votada → revelación y campeón. La condición depende del
@@ -362,7 +420,7 @@ export async function POST(req: NextRequest) {
       if (esGranFinal(copa.size, rIdx)) {
         copa.revealed = true;
         copa.championModelId = winner === "a" ? duel.a.modelId : duel.b.modelId;
-        persist(copa);
+        await persist(copa);
         // Salón de la Fama (v1.12.0): el campeón queda registrado en la BD
         const subcampeon = winner === "a" ? duel.b : duel.a;
         try {
