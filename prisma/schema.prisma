@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Voto de una batalla del arena: actualiza el ELO en vivo
+model Vote {
+  id        String   @id @default(cuid())
+  battleId  String
+  modelAId  String
+  modelBId  String
+  winner    String // 'A' | 'B' | 'tie' | 'bad'
+  category  String   @default("global")
+  createdAt DateTime @default(now())
+
+  @@index([modelAId])
+  @@index([modelBId])
+  @@index([createdAt])
+}
+
+// ELO global persistente (v1.9.0) — sobrevive reinicios.
+// Postgres-ready: para migrar, cambia provider a "postgresql" y DATABASE_URL.
+model EloState {
+  modelId   String   @id
+  elo       Float    @default(1000)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  ties      Int      @default(0)
+  battles   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([elo])
+}
+
+// Ejecución guardada del Modo Agente
+model AgentRun {
+  id          String   @id @default(cuid())
+  description String
+  projectType String
+  autonomy    String
+  budget      String
+  status      String   @default("planificado")
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// Cuenta de usuario (correo o proveedor social)
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String? // null cuando la cuenta entra por proveedor social
+  provider     String   @default("email") // email | google | github | microsoft | x
+  createdAt    DateTime @default(now())
+
+  // Perfil (v1.9.2) — 15 ajustes en 4 categorías, con autoguardado
+  displayName    String? // Identidad
+  username       String?
+  bio            String?
+  avatar         String? // emoji elegido
+  accent         String? // id de la paleta
+  pronouns       String? // Presencia
+  location       String?
+  website        String?
+  focus          String? // área de IA favorita
+  publicProfile  Boolean? // Privacidad
+  showStats      Boolean?
+  showTrophies   Boolean?
+  weeklyDigest   Boolean? // Notificaciones
+  newModelsAlert Boolean?
+  arenaInvites   Boolean?
+  profileAt      DateTime? // última escritura del perfil (resolución de conflictos)
+}

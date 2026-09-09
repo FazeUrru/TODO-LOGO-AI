@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-label="Animación del ranking ELO: barras animadas y un modelo remontando posiciones">
+  <style>
+    .row { animation: rowIn 8s ease infinite; }
+    @keyframes rowIn { 0%,4% { opacity:0; transform: translateY(8px) } 10%,86% { opacity:1; transform:none } 94%,100% { opacity:0 } }
+    .bar1 { animation: grow1 8s cubic-bezier(.2,.9,.3,1) infinite; transform-origin: left; }
+    @keyframes grow1 { 0%,6% { transform: scaleX(0) } 22%,86% { transform: scaleX(1) } 94%,100% { transform: scaleX(0) } }
+    .rise { animation: riseUp 8s cubic-bezier(.4,0,.2,1) infinite; }
+    @keyframes riseUp { 0%,26% { transform: translateY(0) } 40%,86% { transform: translateY(-46px) } 94%,100% { transform: translateY(0) } }
+    .fall { animation: fallDown 8s cubic-bezier(.4,0,.2,1) infinite; }
+    @keyframes fallDown { 0%,26% { transform: translateY(0) } 40%,86% { transform: translateY(46px) } 94%,100% { transform: translateY(0) } }
+    .delta { opacity:0; animation: dIn 8s ease infinite; }
+    @keyframes dIn { 0%,40% { opacity:0 } 46%,86% { opacity:1 } 94%,100% { opacity:0 } }
+    .lbl { font-family: 'Cascadia Code', Consolas, monospace; }
+  </style>
+
+  <rect width="900" height="460" rx="18" fill="#FCFAF8"/>
+  <rect x="0.5" y="0.5" width="899" height="459" rx="18" fill="none" stroke="#EEEDEC"/>
+
+  <text x="36" y="50" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="600" fill="#2E2B29">Leaderboard ELO <tspan font-style="italic" fill="#6B6660">— se mueve con cada voto real</tspan></text>
+
+  <!-- Cabecera tabla -->
+  <g class="lbl" font-size="11" fill="#6B6660">
+    <text x="52" y="86">RANGO</text>
+    <text x="120" y="86">MODELO</text>
+    <text x="420" y="86">PUNTUACIÓN</text>
+    <text x="700" y="86">VOTOS</text>
+  </g>
+  <line x1="36" y1="96" x2="864" y2="96" stroke="#EEEDEC"/>
+
+  <!-- Fila 1 -->
+  <g class="row">
+    <rect x="36" y="104" width="828" height="42" rx="10" fill="#FFFFFF" stroke="#EEEDEC"/>
+    <text x="52" y="130" class="lbl" font-size="13" font-weight="700" fill="#2E2B29">1</text>
+    <text x="120" y="130" class="lbl" font-size="13" fill="#2E2B29">Claude Opus 5</text>
+    <rect class="bar1" x="420" y="118" width="250" height="12" rx="6" fill="#15803D"/>
+    <text x="686" y="130" class="lbl" font-size="12.5" fill="#2E2B29">1502</text>
+    <text x="700" y="130" class="lbl" font-size="12.5" fill="#6B6660">1.842</text>
+  </g>
+
+  <!-- Fila 2 (remonta) -->
+  <g class="row rise">
+    <rect x="36" y="150" width="828" height="42" rx="10" fill="#FFFFFF" stroke="#F4C406" stroke-width="2"/>
+    <text x="52" y="176" class="lbl" font-size="13" font-weight="700" fill="#2E2B29">2</text>
+    <text x="120" y="176" class="lbl" font-size="13" fill="#2E2B29">GPT-6 Astra</text>
+    <rect class="bar1" x="420" y="164" width="236" height="12" rx="6" fill="#15803D" style="animation-delay:.15s"/>
+    <text x="686" y="176" class="lbl" font-size="12.5" fill="#2E2B29">1491</text>
+    <text x="700" y="176" class="lbl" font-size="12.5" fill="#6B6660">2.114</text>
+    <g class="delta">
+      <rect x="778" y="158" width="70" height="22" rx="11" fill="#DCFCE7"/>
+      <text x="813" y="173" text-anchor="middle" class="lbl" font-size="11.5" font-weight="700" fill="#15803D">+10 ↗</text>
+    </g>
+  </g>
+
+  <!-- Fila 3 (baja) -->
+  <g class="row fall">
+    <rect x="36" y="196" width="828" height="42" rx="10" fill="#FFFFFF" stroke="#EEEDEC"/>
+    <text x="52" y="222" class="lbl" font-size="13" font-weight="700" fill="#2E2B29">3</text>
+    <text x="120" y="222" class="lbl" font-size="13" fill="#2E2B29">Gemini 3.8 Pro</text>
+    <rect class="bar1" x="420" y="210" width="228" height="12" rx="6" fill="#15803D" style="animation-delay:.3s"/>
+    <text x="686" y="222" class="lbl" font-size="12.5" fill="#2E2B29">1487</text>
+    <text x="700" y="222" class="lbl" font-size="12.5" fill="#6B6660">1.690</text>
+  </g>
+
+  <!-- Fila 4 -->
+  <g class="row" style="animation-delay:.1s">
+    <rect x="36" y="242" width="828" height="42" rx="10" fill="#FFFFFF" stroke="#EEEDEC"/>
+    <text x="52" y="268" class="lbl" font-size="13" font-weight="700" fill="#2E2B29">4</text>
+    <text x="120" y="268" class="lbl" font-size="13" fill="#2E2B29">Grok 4.6</text>
+    <rect class="bar1" x="420" y="256" width="212" height="12" rx="6" fill="#15803D" style="animation-delay:.45s"/>
+    <text x="686" y="268" class="lbl" font-size="12.5" fill="#2E2B29">1471</text>
+    <text x="700" y="268" class="lbl" font-size="12.5" fill="#6B6660">1.204</text>
+  </g>
+
+  <!-- Fila 5 -->
+  <g class="row" style="animation-delay:.2s">
+    <rect x="36" y="288" width="828" height="42" rx="10" fill="#FFFFFF" stroke="#EEEDEC"/>
+    <text x="52" y="314" class="lbl" font-size="13" font-weight="700" fill="#2E2B29">5</text>
+    <text x="120" y="314" class="lbl" font-size="13" fill="#2E2B29">Fable 5.1</text>
+    <rect class="bar1" x="420" y="302" width="204" height="12" rx="6" fill="#15803D" style="animation-delay:.6s"/>
+    <text x="686" y="314" class="lbl" font-size="12.5" fill="#2E2B29">1466</text>
+    <text x="700" y="314" class="lbl" font-size="12.5" fill="#6B6660">987</text>
+  </g>
+
+  <!-- Nota -->
+  <g>
+    <rect x="36" y="352" width="828" height="72" rx="12" fill="#F2EEE9"/>
+    <text x="56" y="382" font-family="system-ui, 'Segoe UI', sans-serif" font-size="13.5" fill="#2E2B29">El delta se recalcula a partir de los votos reales almacenados: cada batalla y cada duelo de la Copa</text>
+    <text x="56" y="404" font-family="system-ui, 'Segoe UI', sans-serif" font-size="13.5" fill="#2E2B29">escriben en la base de datos. Incluye 10 categorías — 5 exclusivas de todólogo.ai.</text>
+  </g>
+
+  <text x="36" y="446" font-family="system-ui, 'Segoe UI', sans-serif" font-size="13" fill="#6B6660">Vista Pareto de eficiencia ELO/precio · IC 95% · Labs por organización · 56 modelos</text>
+</svg>
