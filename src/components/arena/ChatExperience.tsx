@@ -68,6 +68,7 @@ import TournamentView from "./TournamentView";
 import LaboratorioGenerativo from "./LaboratorioGenerativo";
 import { detectModel3D, ALL_3D_IDS } from "@/lib/models-3d";
 import { ExternalLink, Brain } from "lucide-react";
+import ErrorBoundary from "./ErrorBoundary";
 
 const Viewer3D = dynamic(() => import("./Viewer3D"), {
   ssr: false,
@@ -2083,18 +2084,22 @@ function ChatPanel({
             <div key={i} className="fade-up">
               {t.thinking && <ThinkingBlock text={t.thinking} />}
               <div className={fontClass}>
-                <Markdown>{t.content}</Markdown>
+                <ErrorBoundary label="la respuesta">
+                  <Markdown>{t.content}</Markdown>
+                </ErrorBoundary>
               </div>
               {t.media?.type === "image" && t.media.url && (
                 <ImageCard url={t.media.url} prompt={t.media.prompt ?? ""} />
               )}
               {t.media?.type === "3d" && (
                 <div className="mt-2">
-                  <Viewer3D
-                    key={`${t.media.model ?? ""}|${(t.media.recipe ?? "").slice(0, 24)}`}
-                    model={t.media.model ?? "cohete"}
-                    recipe={t.media.recipe}
-                  />
+                  <ErrorBoundary label="el visor 3D">
+                    <Viewer3D
+                      key={`${t.media.model ?? ""}|${(t.media.recipe ?? "").slice(0, 24)}`}
+                      model={t.media.model ?? "cohete"}
+                      recipe={t.media.recipe}
+                    />
+                  </ErrorBoundary>
                 </div>
               )}
               {t.media?.type === "video" && (

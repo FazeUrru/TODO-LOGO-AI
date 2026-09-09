@@ -224,12 +224,15 @@ export default function Markdown({ children }: { children: string }) {
             const child = Array.isArray(children) ? children[0] : children;
             let rawLang = "";
             let code = "";
-            if (typeof child === "object" && child !== null && "props" in child) {
+            if (child && typeof child === "object" && "props" in (child as { props?: unknown })) {
               const props = (child as { props?: { className?: string; children?: ReactNode } })
                 .props;
               rawLang = /language-([\w#+-]+)/.exec(props?.className ?? "")?.[1] ?? "";
               code = textOf(props?.children);
             }
+            // Blindaje: si el <pre> no trae un <code> como elemento (p. ej. texto
+            // pelado durante el streaming), nunca devolvemos un bloque vacío.
+            if (!code) code = textOf(children);
             return <CodeBlock rawLang={rawLang} code={code} />;
           },
           table: ({ children }) => (

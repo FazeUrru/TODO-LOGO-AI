@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RotateCw, Move3d, ZoomIn, LibraryBig, Search, Upload, X, Box } from "lucide-react";
 import FloatingPanel from "@/components/shell/FloatingPanel";
 import { cn } from "@/lib/utils";
@@ -43,7 +44,7 @@ const PALETTE = {
 };
 
 function mat(color: number, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) {
-  return new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.08, ...opts });
+  return new THREE.MeshStandardMaterial({ color, roughness: 0.58, metalness: 0.16, ...opts });
 }
 
 /* ── Modelos clásicos (animados) ── */
@@ -241,10 +242,10 @@ function buildFromParts(parts: Part3D[]): THREE.Group {
     const [rx, ry, rz] = [p[8] ?? 0, p[9] ?? 0, p[10] ?? 0];
     let geo: THREE.BufferGeometry;
     if (shape === "bx") geo = new THREE.BoxGeometry(a, b, c);
-    else if (shape === "sp") geo = new THREE.SphereGeometry(Math.max(0.01, a), 22, 16);
-    else if (shape === "cy") geo = new THREE.CylinderGeometry(Math.max(0.01, a), Math.max(0.01, b), Math.max(0.01, c), 20);
-    else if (shape === "co") geo = new THREE.ConeGeometry(Math.max(0.01, a), Math.max(0.01, b), 18);
-    else geo = new THREE.TorusGeometry(Math.max(0.02, a), Math.max(0.01, b), 10, 36);
+    else if (shape === "sp") geo = new THREE.SphereGeometry(Math.max(0.01, a), 32, 24);
+    else if (shape === "cy") geo = new THREE.CylinderGeometry(Math.max(0.01, a), Math.max(0.01, b), Math.max(0.01, c), 28);
+    else if (shape === "co") geo = new THREE.ConeGeometry(Math.max(0.01, a), Math.max(0.01, b), 28);
+    else geo = new THREE.TorusGeometry(Math.max(0.02, a), Math.max(0.01, b), 16, 48);
     const mesh = new THREE.Mesh(geo, mat(color.getHex(), { roughness: 0.62 }));
     mesh.position.set(x, y, z);
     mesh.rotation.set(rx, ry, rz);
@@ -302,6 +303,7 @@ export default function Viewer3D({
   const [galQuery, setGalQuery] = useState("");
   const [galCat, setGalCat] = useState("Todas");
   const glbInputRef = useRef<HTMLInputElement>(null);
+  const [webglError, setWebglError] = useState(false);
 
   useEffect(() => {
     spinRef.current = spin;
@@ -317,28 +319,55 @@ export default function Viewer3D({
     scene.fog = new THREE.Fog(PALETTE.bg, 18, 34);
 
     const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    let renderer: THREE.WebGLRenderer;
+    let envTex: THREE.Texture | null = null;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    } catch {
+      setWebglError(true);
+      return;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Realismo: tone mapping cinematográfico + espacio de color correcto + sombras suaves.
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.06;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     host.appendChild(renderer.domElement);
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b0a4, 1.05));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.35);
+    // Entorno PBR (reflejos realistas en metales y superficies brillantes).
+    try {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      pmrem.dispose();
+      scene.environment = envTex;
+      scene.environmentIntensity = 0.5;
+    } catch {
+      envTex = null;
+    }
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b0a4, 0.55));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.7);
     dir.position.set(5, 8, 6);
+    dir.castShadow = true;
+    dir.shadow.mapSize.set(2048, 2048);
+    dir.shadow.camera.left = -8;
+    dir.shadow.camera.right = 8;
+    dir.shadow.camera.top = 8;
+    dir.shadow.camera.bottom = -8;
+    dir.shadow.camera.near = 0.5;
+    dir.shadow.camera.far = 40;
+    dir.shadow.normalBias = 0.03;
     scene.add(dir);
-    const fill = new THREE.DirectionalLight(0xfff2dd, 0.45);
+    const fill = new THREE.DirectionalLight(0xfff2dd, 0.35);
     fill.position.set(-6, 4, -5);
     scene.add(fill);
 
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(30, 48), mat(PALETTE.ground, { roughness: 1 }));
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(30, 64), mat(PALETTE.ground, { roughness: 0.95, metalness: 0 }));
     ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
     scene.add(ground);
-    const shadow = new THREE.Mesh(
-      new THREE.CircleGeometry(1.9, 32),
-      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.07 })
-    );
-    shadow.rotation.x = -Math.PI / 2;
-    shadow.position.y = 0.005;
-    scene.add(shadow);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -367,6 +396,12 @@ export default function Viewer3D({
       if (group) scene.remove(group);
       disposeGroup(group);
       group = next;
+      group.traverse((o) => {
+        if (o instanceof THREE.Mesh) {
+          o.castShadow = true;
+          o.receiveShadow = true;
+        }
+      });
       scene.add(group);
       camera.position.set(flat ? 7.5 : 6.2, flat ? 5.5 : 3.4, flat ? 7.5 : 6.2);
       controls.target.set(0, flat ? 0.8 : 1.25, 0);
@@ -402,7 +437,10 @@ export default function Viewer3D({
             root.position.y += (size.y * scale) / 2;
             root.scale.setScalar(scale);
             root.traverse((o) => {
-              if (o instanceof THREE.Mesh) o.castShadow = false;
+              if (o instanceof THREE.Mesh) {
+                o.castShadow = true;
+                o.receiveShadow = true;
+              }
             });
             setGlbName(file.name);
             swap(root as unknown as THREE.Group, false);
@@ -444,8 +482,7 @@ export default function Viewer3D({
       disposeGroup(group);
       ground.geometry.dispose();
       (ground.material as THREE.Material).dispose();
-      shadow.geometry.dispose();
-      (shadow.material as THREE.Material).dispose();
+      envTex?.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
@@ -495,7 +532,18 @@ export default function Viewer3D({
       }}
       className={cn("relative h-[300px] w-full overflow-hidden rounded-xl border border-border bg-card sm:h-[340px]", className)}
     >
-      <div ref={canvasHostRef} className="absolute inset-0 [&>canvas]:!block [&>canvas]:h-full [&>canvas]:w-full" />
+      {webglError ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center">
+          <Box className="h-5 w-5 text-muted-foreground" />
+          <p className="text-[12.5px] font-semibold">El visor 3D necesita WebGL</p>
+          <p className="max-w-[280px] text-[11.5px] leading-relaxed text-muted-foreground">
+            Tu navegador no pudo iniciar el motor 3D. Prueba con Chrome, Edge o Firefox
+            actualizados y con la aceleración gráfica activada.
+          </p>
+        </div>
+      ) : (
+        <div ref={canvasHostRef} className="absolute inset-0 [&>canvas]:!block [&>canvas]:h-full [&>canvas]:w-full" />
+      )}
 
       {/* Galería + cargar archivo propio */}
       <div className="absolute right-2 top-2 flex gap-1">
