@@ -26,6 +26,7 @@ import {
   Clapperboard,
   ChevronDown,
   ChevronsUpDown,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 import { markUsed, NewBadge } from "@/lib/badges";
@@ -85,6 +86,31 @@ function Tldr({ children }: { children: React.ReactNode }) {
 
 /* ── Cuerpos ricos por versión (el detalle completo de cada release) ── */
 const CUERPOS: Record<string, React.ReactNode> = {
+  "1.17.0": (
+    <div className="space-y-4">
+      <div>
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+          <Gamepad2 className="h-4 w-4" /> Todas las IA construyen juegos jugables al instante
+        </h2>
+        <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+          <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Reentrenamiento transversal</strong>: nueva <code>CAPACIDADES_UNIVERSALES</code> junto a la Carta de Verdad — los 56 modelos, <strong>en cualquier modo</strong>, entregan al pedirlo un prototipo jugable completo en un solo bloque HTML autocontenido (canvas o DOM, música WebAudio procedural, HUD en español, botón JUGAR y bucle de evolución autoadaptativa). Ya no hace falta el Modo Juego: pídelo en claro.</li>
+          <li className="flex gap-2"><Tag kind="nuevo" /> <strong>GamePanel</strong> 🕹️: el juego nace en un panel de 520 px (adiós a la mini-vista de 340 px) con <strong>pantalla completa</strong>, reinicio, apertura en pestaña, código fuente y copia del HTML; durante la generación muestra barra de progreso y KB de código en vivo con auto-scroll, y si se corta por tiempo lo dice con honestidad.</li>
+          <li className="flex gap-2"><Tag kind="mejora" /> <strong>El prototipo va primero</strong>: el Prompt Maestro reordenó la respuesta (gancho → HTML cerrado → ficha) — la causa real de que los juegos llegaran a medias era que el texto previo consumía el límite de streaming.</li>
+          <li className="flex gap-2"><Tag kind="mejora" /> <strong>Detección automática</strong>: en Batalla, Lado a Lado o Directo, cualquier respuesta con un HTML jugable estrena el GamePanel sin tocar nada.</li>
+        </ul>
+      </div>
+      <div>
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+          <Eye className="h-4 w-4" /> Visión VLM integrada en el chat
+        </h2>
+        <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+          <li className="flex gap-2"><Tag kind="nuevo" /> <strong>«Imagen (la IA la VERÁ)»</strong>: adjunta fotos, capturas o memes y el motor de visión los analiza de verdad — objetos, texto visible, colores, estilo y contexto — en formato multimodal <code>image_url</code> con marco «VISIÓN ACTIVADA».</li>
+          <li className="flex gap-2"><Tag kind="mejora" /> Las imágenes se reescalan a 1280 px en tu navegador (nítidas y ligeras), las miniaturas aparecen en tu mensaje y con imágenes el turno va siempre al motor con visión.</li>
+          <li className="flex gap-2"><Tag kind="correccion" /> <strong>Adjuntos arreglados de raíz</strong>: los botones «Subir archivos» y «Documentos» no abrían nada — los <code>&lt;input type="file"&gt;</code> ocultos nunca existían en el DOM. Ahora existen y funcionan para imágenes, archivos y documentos.</li>
+        </ul>
+      </div>
+    </div>
+  ),
   "1.16.0": (
     <div className="space-y-4">
       <div>

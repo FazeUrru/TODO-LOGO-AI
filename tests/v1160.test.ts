@@ -60,7 +60,8 @@ describe("v1.16.0 — vídeo narrado y opciones cuánticas", () => {
     expect(src).toContain("permiso");
   });
 
-  it("la versión activa es la 1.16.0", () => {
-    expect(APP_VERSION).toBe("1.16.0");
+  it("la versión activa es posterior a la 1.16.0", () => {
+    const [mayor, menor] = APP_VERSION.split(".").map((n) => parseInt(n, 10));
+    expect(mayor > 1 || (mayor === 1 && menor >= 16)).toBe(true);
   });
 });

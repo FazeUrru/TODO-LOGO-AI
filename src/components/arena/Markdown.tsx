@@ -236,7 +236,7 @@ function CodeBlock({
       ) : showPreview ? (
         <iframe
           title="Vista previa del código"
-          sandbox="allow-scripts allow-popups"
+          sandbox="allow-scripts allow-popups allow-pointer-lock"
           srcDoc={mostrado}
           className="block h-[340px] w-full border-0 bg-white"
         />

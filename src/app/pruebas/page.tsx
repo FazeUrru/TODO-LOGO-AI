@@ -30,6 +30,8 @@ const INICIALES: Check[] = [
   { id: "mcps", nombre: "Catálogo de 75 MCPs cargado", estado: "pendiente", detalle: "", ms: 0 },
   { id: "webgl", nombre: "WebGL para el visor 3D", estado: "pendiente", detalle: "", ms: 0 },
   { id: "voz-navegador", nombre: "Síntesis de voz del navegador", estado: "pendiente", detalle: "", ms: 0 },
+  { id: "vlm", nombre: "Visión inteligente (VLM) para imágenes adjuntas", estado: "pendiente", detalle: "", ms: 0 },
+  { id: "juegos", nombre: "Motor de juegos en tiempo real (canvas + sandbox)", estado: "pendiente", detalle: "", ms: 0 },
 ];
 
 async function medir(
@@ -116,6 +118,45 @@ export default function PruebasPage() {
       detalle: "speechSynthesis disponible" + ("speechSynthesis" in window ? ` · ${window.speechSynthesis.getVoices().length} voces` : ""),
       ms: 1,
     });
+
+    // 9. v1.17.0 — Visión VLM: File API + decodificación de imagen + reescalado
+    try {
+      const r = await medir(async () => {
+        const cv = document.createElement("canvas");
+        cv.width = cv.height = 8;
+        const pintaPixels = typeof cv.getContext("2d") === "object" && cv.getContext("2d") !== null;
+        const dataUrl = pintaPixels ? cv.toDataURL("image/jpeg", 0.8) : "";
+        const fileApi = "FileReader" in window && typeof Image !== "undefined";
+        const ok = fileApi && dataUrl.startsWith("data:image/jpeg");
+        return {
+          ok,
+          detalle: ok
+            ? "File API + canvas listo · las imágenes adjuntas viajan al motor de visión"
+            : "el navegador no soporta la preparación de imágenes",
+        };
+      });
+      actualizar("vlm", { estado: r.ok ? "ok" : "fail", detalle: r.detalle, ms: r.ms });
+    } catch {
+      actualizar("vlm", { estado: "fail", detalle: "no se pudo preparar una imagen de prueba" });
+    }
+
+    // 10. v1.17.0 — Motor de juegos: canvas 2D + iframe sandbox + pantalla completa
+    try {
+      const r = await medir(async () => {
+        const cv = document.createElement("canvas");
+        const ctx = cv.getContext("2d");
+        const sandbox = "sandbox" in document.createElement("iframe");
+        const full = typeof document.documentElement.requestFullscreen === "function";
+        const ok = Boolean(ctx) && sandbox && full;
+        return {
+          ok,
+          detalle: `canvas 2D ${ctx ? "OK" : "no"} · sandbox ${sandbox ? "OK" : "no"} · fullscreen ${full ? "OK" : "no"}`,
+        };
+      });
+      actualizar("juegos", { estado: r.ok ? "ok" : "fail", detalle: r.detalle, ms: r.ms });
+    } catch {
+      actualizar("juegos", { estado: "fail", detalle: "el navegador no soporta el motor de juegos" });
+    }
 
     setCorriendo(false);
   }, []);

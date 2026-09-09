@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.17.0",
+    fecha: "9 sept 2026",
+    hora: "22:25",
+    titulo: "Juegos en tiempo real con todas las IA y visión VLM integrada",
+    tldr:
+      "Cualquiera de las 56 IA ya programa juegos jugables mientras escribe —panel grande con pantalla completa en cualquier modo— y ahora ve y analiza de verdad las imágenes que adjuntas (VLM).",
+    diffDesde: "1.16.0",
+    hash: null,
+    kinds: ["nuevo", "mejora", "correccion"],
+  },
+  {
     version: "1.16.0",
     fecha: "9 sept 2026",
     hora: "20:05",

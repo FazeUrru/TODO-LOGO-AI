@@ -39,6 +39,7 @@ import {
   Plug,
   SlashSquare,
   Download,
+  Eye,
   Clapperboard,
   Box,
   Slash,
@@ -79,6 +80,16 @@ const Viewer3D = dynamic(() => import("./Viewer3D"), {
   ),
 });
 
+// v1.17.0 — marco jugable para los juegos que las IA construyen en el chat
+const GamePanel = dynamic(() => import("./GamePanel"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[200px] w-full items-center justify-center rounded-xl border border-border bg-card text-[13px] text-muted-foreground">
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando el juego…
+    </div>
+  ),
+});
+
 /* ───────────────────────── Tipos ───────────────────────── */
 
 interface TurnMedia {
@@ -107,15 +118,21 @@ interface Turn {
   media?: TurnMedia;
   thinking?: string;
   sources?: WebSource[];
+  /** v1.17.0 — imágenes adjuntas por el usuario en este turno (miniaturas). */
+  images?: string[];
+  /** v1.17.0 — turno con juego jugable generado por la IA (GamePanel). */
+  kind?: "juego";
 }
 
 interface Attachment {
   id: string;
-  kind: "file" | "doc" | "link" | "video";
+  kind: "file" | "doc" | "link" | "video" | "imagen";
   name: string;
   size?: number;
   text?: string;
   url?: string;
+  /** v1.17.0 — imagen adjunta como data URL para el motor de visión (VLM). */
+  dataUrl?: string;
 }
 
 interface BattleInfo {
@@ -274,16 +291,72 @@ const SKILLS: Skill[] = [
 
 const TEXT_EXT = /\.(txt|md|markdown|csv|tsv|json|log|ya?ml|xml|html?|css|jsx?|tsx?|py|sql|sh|rb|go|rs|java|c|cpp|php|toml|ini)$/i;
 const DOC_EXT = /\.(pdf|docx?|xlsx?|pptx?|odt|rtf)$/i;
+const IMG_EXT = /\.(png|jpe?g|gif|webp|bmp|avif)$/i;
 
 function buildContent(prompt: string, atts: Attachment[]): string {
   if (!atts.length) return prompt;
   const parts = atts.map((a) => {
     if (a.kind === "link") return `[Enlace añadido por el usuario: ${a.url}]`;
     if (a.kind === "video") return `[Vídeo añadido por el usuario: ${a.url}]`;
+    if (a.kind === "imagen") return `[Imagen adjunta: ${a.name}]`;
     if (a.text) return `[Archivo adjunto: ${a.name}]\n"""\n${a.text}\n"""`;
     return `[Archivo adjunto: ${a.name}${a.size ? ` (${Math.max(1, Math.round(a.size / 1024))} KB)` : ""}]`;
   });
   return `${prompt}\n\n${parts.join("\n\n")}`;
+}
+
+/**
+ * v1.17.0 — imagen → data URL para el motor de visión. Las fotos grandes se
+ * reescalan a máx. 1280 px y se comprimen a JPEG 0,85: el VLM recibe una
+ * imagen nítida y la petición no pesa una barbaridad.
+ */
+async function imagenADataUrl(f: File): Promise<string> {
+  const dataUrl = await new Promise<string>((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = () => rej(new Error("lectura"));
+    r.readAsDataURL(f);
+  });
+  if (f.type === "image/gif" || f.size < 400_000) return dataUrl;
+  const img = await new Promise<HTMLImageElement>((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = () => rej(new Error("decodificación"));
+    i.src = dataUrl;
+  });
+  const max = 1280;
+  const escala = Math.min(1, max / Math.max(img.width, img.height));
+  if (escala === 1) return dataUrl;
+  const cv = document.createElement("canvas");
+  cv.width = Math.round(img.width * escala);
+  cv.height = Math.round(img.height * escala);
+  const ctx = cv.getContext("2d");
+  if (!ctx) return dataUrl;
+  ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  return cv.toDataURL("image/jpeg", 0.85);
+}
+
+/* ── v1.17.0 — detección de juegos jugables en la respuesta ──
+   Extrae el primer bloque ```html (completo o en construcción) y decide si
+   el turno es un juego: lo es en Modo Juego, o en cualquier modo si el HTML
+   trae canvas/documento completo y tiene enjundia (>1500 caracteres). */
+const RE_FENCE_ABIERTO = /```html[ \t]*\r?\n([\s\S]*?)(?:```|$)/i;
+const RE_FENCE_CERRADO = /```html[ \t]*\r?\n[\s\S]*?```/i;
+
+function extraerJuego(txt: string): { code: string; completo: boolean } | null {
+  const m = RE_FENCE_ABIERTO.exec(txt);
+  if (!m) return null;
+  const code = m[1].trim();
+  if (code.length < 60) return null;
+  return { code, completo: RE_FENCE_CERRADO.test(txt) };
+}
+
+function esJugable(code: string): boolean {
+  return code.length > 1500 && /<canvas[\s>]|<!doctype\s+html|<html[\s>]/i.test(code);
+}
+
+function quitarBloqueHtml(txt: string): string {
+  return txt.replace(RE_FENCE_ABIERTO, "").trim();
 }
 
 /* ───────────────────────── Componente ───────────────────────── */
@@ -329,6 +402,7 @@ export default function ChatExperience() {
   const slashRef = useRef<HTMLDivElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
   const docsRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLInputElement>(null);
   const usedImagen = useUsed("modo-imagen");
   const usedVideo = useUsed("modo-video");
   const used3d = useUsed("modo-3d");
@@ -469,10 +543,19 @@ export default function ChatExperience() {
     const jobs = arr.map(async (f) => {
       const att: Attachment = {
         id: `att_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
-        kind: DOC_EXT.test(f.name) ? "doc" : "file",
+        kind: DOC_EXT.test(f.name) ? "doc" : IMG_EXT.test(f.type || f.name) ? "imagen" : "file",
         name: f.name,
         size: f.size,
       };
+      // v1.17.0 — las imágenes viajan como data URL: el motor de visión (VLM)
+      // las VERÁ de verdad, no solo su nombre.
+      if (att.kind === "imagen" && f.size < 8_000_000) {
+        try {
+          att.dataUrl = await imagenADataUrl(f);
+        } catch {
+          /* lectura fallida: se adjunta solo como referencia */
+        }
+      }
       if (TEXT_EXT.test(f.name) && f.size < 400_000) {
         try {
           att.text = (await f.text()).slice(0, 6000);
@@ -486,15 +569,19 @@ export default function ChatExperience() {
       setAtts((prev) => [...prev, ...next].slice(0, 8));
       markUsed("archivos");
       setAttachOpen(false);
+      const conImagen = next.some((a) => a.dataUrl);
       toast({
-        title: next.length === 1 ? "Archivo añadido" : `${next.length} archivos añadidos`,
-        description: next.some((a) => a.text)
-          ? "El contenido legible se enviará al modelo junto a tu mensaje."
-          : "Se adjuntará como referencia junto a tu mensaje.",
+        title: next.length === 1 ? "Adjunto añadido" : `${next.length} adjuntos añadidos`,
+        description: conImagen
+          ? "La IA verá la(s) imagen(es) con el motor de visión (VLM)."
+          : next.some((a) => a.text)
+            ? "El contenido legible se enviará al modelo junto a tu mensaje."
+            : "Se adjuntará como referencia junto a tu mensaje.",
       });
     });
     if (filesRef.current) filesRef.current.value = "";
     if (docsRef.current) docsRef.current.value = "";
+    if (imgRef.current) imgRef.current.value = "";
   }
 
   function addUrl(kind: "link" | "video") {
@@ -585,6 +672,8 @@ export default function ChatExperience() {
     const raw = (text ?? prompt).trim();
     if (!raw || thinking || streaming.A || streaming.B) return;
     const content = buildContent(raw, atts);
+    // v1.17.0 — imágenes adjuntas → motor de visión (VLM)
+    const imgs = atts.filter((a) => a.dataUrl).map((a) => a.dataUrl as string);
     setPrompt("");
     setAtts([]);
     setAttachInput(null);
@@ -609,7 +698,7 @@ export default function ChatExperience() {
       await runVideo(raw);
       return;
     }
-    await runChat(content, activeMode, raw);
+    await runChat(content, activeMode, raw, imgs);
   }
 
   /** Separa el razonamiento visible (blockquote inicial) de la respuesta final en modo profundo. */
@@ -625,8 +714,12 @@ export default function ChatExperience() {
     return { content: text.slice(m[1].length).replace(/^\s*-{3,}\s*/, "").trim(), thinking };
   }
 
-  async function runChat(content: string, activeMode: ComposerMode = "texto", displayText?: string) {
-    const userTurn: Turn = { role: "user", content: displayText ?? content };
+  async function runChat(content: string, activeMode: ComposerMode = "texto", displayText?: string, images: string[] = []) {
+    const userTurn: Turn = {
+      role: "user",
+      content: displayText ?? content,
+      ...(images.length > 0 ? { images } : {}),
+    };
     const nextA = [...turnsA, userTurn];
     const nextB = [...turnsB, userTurn];
     setTurnsA(nextA);
@@ -642,6 +735,7 @@ export default function ChatExperience() {
       composerMode: activeMode,
       stream: true,
     };
+    if (images.length > 0) body.images = images;
     if (mode === "battle") {
       body.category = activeMode === "codigo" ? "codigo" : category;
       body.modelAId = battle?.aId;
@@ -665,6 +759,12 @@ export default function ChatExperience() {
     let aborted = false;
 
     /** Convierte los acumuladores en el turno final (post-proceso como siempre). */
+    const kindDe = (txt: string): "juego" | undefined => {
+      if (activeMode === "video") return undefined;
+      const j = extraerJuego(txt);
+      if (!j) return undefined;
+      return activeMode === "juego" || esJugable(j.code) ? "juego" : undefined;
+    };
     const finalizeTurns = () => {
       const splitA = splitThinking(accA, activeMode);
       const splitB = splitThinking(accB, activeMode);
@@ -677,6 +777,7 @@ export default function ChatExperience() {
             : mediaFor3D(splitA.content, activeMode)),
           thinking: splitA.thinking ?? thinkA,
           sources: finalSources,
+          kind: kindDe(accA),
         },
       ]);
       if (!isDirect)
@@ -689,6 +790,7 @@ export default function ChatExperience() {
               : mediaFor3D(splitB.content, activeMode)),
             thinking: splitB.thinking ?? thinkB,
             sources: finalSources,
+            kind: kindDe(accB),
           },
         ]);
     };
@@ -756,11 +858,14 @@ export default function ChatExperience() {
       const flush = () => {
         flushTimer = null;
         const paint = (acc: string) => `${acc}\u258D`;
+        // v1.17.0 — si ya se está escribiendo un juego, el panel aparece en vivo
+        const kindA = kindDe(accA);
+        const kindB = kindDe(accB);
         setTurnsA((t) => {
           const n = [...t];
           const last = n.length > 0 ? n[n.length - 1] : undefined;
           if (last?.role === "assistant") {
-            n[n.length - 1] = { ...last, content: paint(accA), thinking: thinkA, sources: finalSources };
+            n[n.length - 1] = { ...last, content: paint(accA), thinking: thinkA, sources: finalSources, kind: kindA };
           }
           return n;
         });
@@ -769,7 +874,7 @@ export default function ChatExperience() {
             const n = [...t];
             const last = n.length > 0 ? n[n.length - 1] : undefined;
             if (last?.role === "assistant") {
-              n[n.length - 1] = { ...last, content: paint(accB), thinking: thinkB, sources: finalSources };
+              n[n.length - 1] = { ...last, content: paint(accB), thinking: thinkB, sources: finalSources, kind: kindB };
             }
             return n;
           });
@@ -1171,7 +1276,12 @@ export default function ChatExperience() {
               key={a.id}
               className="flex max-w-[220px] items-center gap-1.5 rounded-full border border-border bg-secondary/70 py-1 pl-2 pr-1 text-[12px]"
             >
-              {a.kind === "link" ? (
+              {a.kind === "imagen" && a.dataUrl ? (
+                // v1.17.0 — miniatura: la imagen que la IA VERÁ con el VLM
+                <img src={a.dataUrl} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
+              ) : a.kind === "imagen" ? (
+                <ImageIcon className="h-3 w-3 shrink-0 text-muted-foreground" />
+              ) : a.kind === "link" ? (
                 <Link2 className="h-3 w-3 shrink-0 text-muted-foreground" />
               ) : a.kind === "video" ? (
                 <Video className="h-3 w-3 shrink-0 text-muted-foreground" />
@@ -1224,7 +1334,9 @@ export default function ChatExperience() {
                     ? "¿Qué modelo 3D quieres girar? (133 listos o uno a tu medida)"
                     : cMode === "codigo"
                       ? "Pide código: funciones, componentes, consultas…"
-                      : cMode === "web"
+                      : cMode === "juego"
+                        ? "Describe tu juego: lo construyo jugable mientras escribo (canvas, música y evolución)…"
+                        : cMode === "web"
                         ? "Pregunta algo actual: buscaré en internet y citaré fuentes…"
                         : cMode === "profundo"
                           ? "Hazme una pregunta difícil: razonaré a fondo…"
@@ -1297,6 +1409,18 @@ export default function ChatExperience() {
               <p className="px-2.5 pb-1 pt-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 Añadir al chat
               </p>
+              <button
+                onClick={() => imgRef.current?.click()}
+                className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-accent"
+              >
+                <Eye className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  <span className="block text-[13.5px] font-medium">
+                    Imagen (la IA la VERÁ) <NewBadge k="vision" />
+                  </span>
+                  <span className="block text-[12px] text-muted-foreground">Fotos, capturas, memes… con visión VLM</span>
+                </span>
+              </button>
               <button
                 onClick={() => filesRef.current?.click()}
                 className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-accent"
@@ -1373,6 +1497,32 @@ export default function ChatExperience() {
               </button>
             </div>
           </FloatingPanel>
+
+          {/* v1.17.0 — inputs ocultos de adjuntos (arreglado: antes no existían
+              y «Subir archivos» no abría nada). */}
+          <input
+            ref={imgRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif"
+            multiple
+            hidden
+            onChange={(e) => addFiles(e.target.files)}
+          />
+          <input
+            ref={filesRef}
+            type="file"
+            multiple
+            hidden
+            onChange={(e) => addFiles(e.target.files)}
+          />
+          <input
+            ref={docsRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.rtf"
+            multiple
+            hidden
+            onChange={(e) => addFiles(e.target.files)}
+          />
 
           {/* Modo código */}
           {modeToggle("codigo", SquareTerminal, usedCodigo, "Modo código: respuestas con bloques listos")}
@@ -1494,7 +1644,9 @@ export default function ChatExperience() {
   );
 
   const dockHint =
-    cMode === "imagen"
+    cMode === "juego"
+      ? "El Modo Juego AAA construye un juego jugable y autoevolutivo mientras escribe: lo ves nacer en el panel y se ejecuta solo al terminar."
+      : cMode === "imagen"
       ? "El modo imagen crea una ilustración con IA a partir de tu descripción."
       : cMode === "video"
         ? "El modo vídeo rueda un clip REAL (mp4 con audio) con el motor interno de Todólogo: 1-4 min de revelado, directo en la conversación."
@@ -2083,13 +2235,40 @@ function ChatPanel({
               )}
             >
               {t.content}
+              {t.images && t.images.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap justify-end gap-1.5">
+                  {t.images.map((u, k) => (
+                    <img
+                      key={k}
+                      src={u}
+                      alt={`Imagen adjunta ${k + 1}`}
+                      className="h-14 w-14 rounded-lg border border-border object-cover"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div key={i} className="fade-up">
               {t.thinking && <ThinkingBlock text={t.thinking} />}
+              {/* v1.17.0 — el juego jugable va delante del texto: nace en vivo
+                  y al terminar queda grande, con pantalla completa. */}
+              {t.kind === "juego" && extraerJuego(t.content) && (
+                <ErrorBoundary label="el juego">
+                  <GamePanel
+                    code={extraerJuego(t.content)!.code}
+                    completo={extraerJuego(t.content)!.completo}
+                    streaming={streaming}
+                  />
+                </ErrorBoundary>
+              )}
               <div className={fontClass}>
                 <ErrorBoundary label="la respuesta">
-                  <Markdown streaming={streaming}>{t.content}</Markdown>
+                  <Markdown streaming={streaming}>
+                    {t.kind === "juego" && extraerJuego(t.content)
+                      ? quitarBloqueHtml(t.content)
+                      : t.content}
+                  </Markdown>
                 </ErrorBoundary>
               </div>
               {t.media?.type === "image" && t.media.url && (

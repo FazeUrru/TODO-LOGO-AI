@@ -1,7 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { ExternalLink, Gamepad2, Share2, Sparkles, Dna, Music } from "lucide-react";
+import { ExternalLink, Gamepad2, Share2, Sparkles, Dna, Music, MessageCircle, Zap } from "lucide-react";
+import { APP_VERSION } from "@/lib/version";
 import { cn } from "@/lib/utils";
 
 const GAMES = [
@@ -55,12 +56,44 @@ export default function GamesPage() {
       <div className="mx-auto max-w-[900px] pb-12">
         <div className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
           <Gamepad2 className="h-4 w-4" />
-          Arcade todólogo · v1.9.0
+          Arcade todólogo · v{APP_VERSION}
         </div>
         <h1 className="mt-3 font-display text-[34px] font-light tracking-tight">
           Juegos{" "}
           <span className="bg-highlight inline-block px-1.5 font-medium italic">autoevolutivos</span>
         </h1>
+        {/* v1.17.0 — juegos en tiempo real desde el chat */}
+        <div className="mt-5 overflow-hidden rounded-2xl border border-highlight/40 bg-gradient-to-r from-[#F4C406]/15 via-card to-card p-4 sm:p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-highlight px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-[#262624]">
+              ¡Nuevo v1.17.0!
+            </span>
+            <h2 className="font-display text-[19px] font-semibold">
+              Juegos creados por la IA <span className="italic">en tiempo real</span>, dentro del chat
+            </h2>
+          </div>
+          <p className="mt-2 max-w-[640px] text-[13.5px] leading-relaxed text-foreground/85">
+            No hace falta descargar nada de esta página: pide cualquier juego al chat (con el
+            <b> Modo Juego AAA</b> del composer o simplemente pidiéndolo en claro) y <b>todas las IA</b> del
+            arena lo construyen jugable mientras escriben — con panel grande, música procedural,
+            evolución autoadaptativa, pantalla completa y hasta visión VLM para crear juegos a partir de
+            una imagen que adjuntes.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <a
+              href="/"
+              className="flex items-center gap-1.5 rounded-xl bg-foreground px-4 py-2 text-[13px] font-medium text-background hover:opacity-90"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Abrir el chat y pedir un juego
+            </a>
+            <span className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-[12px] text-muted-foreground">
+              <Zap className="h-3.5 w-3.5 text-highlight" />
+              Skill <code className="font-mono">/juego</code> · Modo Juego AAA · cualquier modelo
+            </span>
+          </div>
+        </div>
+
         <p className="mt-2 max-w-[640px] text-[14px] leading-relaxed text-foreground/85">
           Tres juegos completos y jugables directamente en el navegador, nacidos del Prompt
           Maestro del Modo Juego AAA. Cada uno incluye música procedural, botón para compartir

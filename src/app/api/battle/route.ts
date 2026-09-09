@@ -5,7 +5,7 @@ import { ALL_3D_IDS } from "@/lib/models-3d";
 import { personaFor } from "@/lib/personas";
 import { chatExterno, vozExternaPara, type VozExterna } from "@/lib/voices-externas";
 import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
-import { CARTA_VERDAD } from "@/lib/ai-conducta";
+import { CARTA_VERDAD, CAPACIDADES_UNIVERSALES } from "@/lib/ai-conducta";
 
 export const maxDuration = 60;
 
@@ -25,6 +25,8 @@ interface BattleRequest {
   composerMode?: "texto" | "codigo" | "imagen" | "video" | "modelos3d" | "web" | "profundo" | "juego";
   /** Si es true, responde con un flujo SSE (Server-Sent Events) en lugar de JSON. */
   stream?: boolean;
+  /** v1.17.0 — imágenes adjuntas (data URLs) que el motor de visión analiza. */
+  images?: string[];
 }
 
 interface WebSource {
@@ -67,12 +69,18 @@ function fallbackResponse(label: string, prompt: string): string {
   return `**${label}** (respuesta de reserva — el proveedor no respondió a tiempo)\n\nHe recibido tu consulta: _"${prompt.slice(0, 140)}${prompt.length > 140 ? "…" : ""}"_. En condiciones normales, aquí verías la respuesta completa generada por este modelo. El arena registrará tu voto igualmente para no sesgar el ELO.`;
 }
 
+/** v1.17.0 — parte de mensaje multimodal: texto o imagen (formato visión OpenAI-compatible). */
+type ContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
 function buildMessages(
   systemPrompt: string,
   prompt: string,
-  history: HistoryTurn[]
-): { role: string; content: string }[] {
-  const msgs: { role: string; content: string }[] = [
+  history: HistoryTurn[],
+  images: string[] = []
+): { role: string; content: string | ContentPart[] }[] {
+  const msgs: { role: string; content: string | ContentPart[] }[] = [
     { role: "assistant", content: systemPrompt },
   ];
   for (const t of history.slice(-8)) {
@@ -80,7 +88,19 @@ function buildMessages(
       msgs.push({ role: t.role, content: t.content.slice(0, 4000) });
     }
   }
-  msgs.push({ role: "user", content: prompt });
+  // v1.17.0 — con imágenes, el último mensaje pasa a formato multimodal de
+  // visión: el motor VLM describe objetos, texto, colores y contexto reales.
+  msgs.push(
+    images.length > 0
+      ? {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            ...images.map((url) => ({ type: "image_url" as const, image_url: { url } })),
+          ],
+        }
+      : { role: "user", content: prompt }
+  );
   return msgs;
 }
 
@@ -109,13 +129,18 @@ async function generateSide(
   temperature: number,
   history: HistoryTurn[],
   think = false,
-  voz: VozExterna | null = null
+  voz: VozExterna | null = null,
+  images: string[] = []
 ): Promise<GeneratedSide> {
-  const msgs = buildMessages(systemPrompt, prompt, history);
+  const msgs = buildMessages(systemPrompt, prompt, history, images);
   // v1.12.0 — voz de proveedor real si hay clave (el razonamiento profundo
-  // se queda en el motor propio, que devuelve reasoning estructurado)
-  if (voz && !think) {
-    const r = await chatExterno(voz, msgs, temperature);
+  // se queda en el motor propio, que devuelve reasoning estructurado).
+  // v1.17.0 — con imágenes el turno SIEMPRE va al motor interno: es el que
+  // tiene visión (VLM) y entiende las imágenes de verdad.
+  if (voz && !think && images.length === 0) {
+    // Sin imágenes todo el contenido es string: la cast es segura y las voces
+    // externas (solo texto) jamás reciben el formato de visión.
+    const r = await chatExterno(voz, msgs as { role: string; content: string }[], temperature);
     if (r) return { text: r.text, thinking: null, voz: voz.proveedor };
   }
   try {
@@ -227,7 +252,8 @@ async function streamSide(
   history: HistoryTurn[],
   think: boolean,
   send: (ev: Record<string, unknown>) => void,
-  voz: VozExterna | null = null
+  voz: VozExterna | null = null,
+  images: string[] = []
 ): Promise<StreamSideResult> {
   const deltaKey = side === "A" ? "dA" : "dB";
   const thinkKey = side === "A" ? "tA" : "tB";
@@ -239,9 +265,16 @@ async function streamSide(
   };
 
   // v1.12.0 — voz de proveedor real si hay clave: respuesta de una pieza
-  // (el razonamiento profundo se queda en el motor propio)
-  if (voz && !think) {
-    const r = await chatExterno(voz, buildMessages(systemPrompt, prompt, history), temperature);
+  // (el razonamiento profundo se queda en el motor propio). Con imágenes
+  // (v1.17.0) el turno va SIEMPRE al motor interno con visión.
+  if (voz && !think && images.length === 0) {
+    // Sin imágenes todo el contenido es string: la cast es segura y las voces
+    // externas (solo texto) jamás reciben el formato de visión.
+    const r = await chatExterno(
+      voz,
+      buildMessages(systemPrompt, prompt, history) as { role: string; content: string }[],
+      temperature
+    );
     if (r) {
       push(deltaKey, r.text);
       return { text: r.text, thinking: "", empty: false, voz: voz.proveedor };
@@ -251,7 +284,7 @@ async function streamSide(
   try {
     const started = await Promise.race([
       zai.chat.completions.create({
-        messages: buildMessages(systemPrompt, prompt, history) as never,
+        messages: buildMessages(systemPrompt, prompt, history, images) as never,
         temperature,
         thinking: { type: think ? "enabled" : "disabled" },
         stream: true,
@@ -404,7 +437,7 @@ export async function POST(req: NextRequest) {
       "MODO CÓDIGO: entrega código COMPLETO y ejecutable en bloques ``` etiquetados con el lenguaje, con imports, comentarios breves y una explicación mínima antes y después. Nada de '…' ni código truncado: listo para pegar y funcionar (estándares 2026). El límite de palabras no aplica al código.";
   } else if (body.composerMode === "juego") {
     composerFraming =
-      `MODO JUEGO AAA · PROMPT MAESTRO (destilado de 3 juegos reales publicados: GTA VI · Costa Vice, Isla Maldita: Evolución e Imperios: Némesis Adaptativa). Actúa como DIRECTOR DE JUEGOS de élite (ambición Rockstar: GTA VI, Red Dead Redemption 2). Estructura la respuesta así: (1) **Ficha del juego** — nombre épico, género, pilar de diseño y gancho único en 2-3 líneas. (2) **Sistemas autoevolutivos** — cómo el juego evoluciona SOLO: dificultad adaptativa que aprende del jugador, generación procedural, NPCs tipo Némesis que recuerdan (lobos que flanquean, IA que construye contra tu ejército) y mundo que muta por niveles. (3) **Stack AAA** — motor y pipeline realistas de 2026 en 1-2 líneas. (4) **PROTOTIPO JUGABLE** — un juego COMPLETO en UN solo bloque \`\`\`html autocontenido (cero dependencias externas o three.js por CDN si es 3D): pantalla de inicio con JUGAR, controles listados, HUD en español, audio procedural WebAudio (nada de archivos), partículas y feedback jugoso, guardado localStorage en try/catch (iframes), y AL MENOS un bucle de evolución visible (cada N partidas/noches/oleadas: más enemigos, nuevos tipos, IA que contra-tu estrategia) con registro en pantalla y récord persistente. Rendimiento: pixelRatio limitado, pooling, un solo bucle requestAnimationFrame. El bloque HTML no cuenta en el límite de palabras. Cierra con la sección «¿Siguiente paso?» (¿añado modo 2 jugadores?, ¿lo convierto en metroidvania?, ¿exporto a Steam?).`;
+      `MODO JUEGO AAA · PROMPT MAESTRO (destilado de 3 juegos reales publicados: GTA VI · Costa Vice, Isla Maldita: Evolución e Imperios: Némesis Adaptativa). Actúa como DIRECTOR DE JUEGOS de élite (ambición Rockstar). Respuesta EXACTAMENTE en este orden: (1) UNA línea de gancho con el nombre épico del juego y su gancho único. (2) INMEDIATAMENTE después, el PROTOTIPO JUGABLE COMPLETO en UN solo bloque \`\`\`html autocontenido — el juego va PRIMERO y debe quedar CERRADO y completo antes de cualquier texto posterior, jamás a medias: pantalla de inicio con título, controles listados y botón JUGAR (desbloquea el audio), HUD en español, audio procedural WebAudio (cero archivos), partículas y feedback jugoso, guardado localStorage en try/catch (vive en sandbox), y AL MENOS un bucle de evolución visible (cada N partidas/noches/oleadas: más enemigos, nuevos tipos, IA que contra-tu estrategia) con registro en pantalla y récord persistente. Canvas o DOM, sin dependencias externas (three.js por CDN solo si es 3D); rendimiento: pixelRatio limitado, pooling y un solo bucle requestAnimationFrame. (3) Tras el bloque, compacto y en máximo 120 palabras: ficha del juego, cómo funciona el sistema autoevolutivo y «¿Siguiente paso?» (¿modo 2 jugadores?, ¿metroidvania?, ¿exportar a Steam?). El bloque HTML no cuenta en el límite de palabras.`;
   } else if (body.composerMode === "video") {
     composerFraming =
       "MODO VÍDEO: actúa como director de cine. Convierte la petición en un guion de vídeo con 3 escenas numeradas (ESCENA 1, ESCENA 2, ESCENA 3): plano sugerido, acción, texto en pantalla y música. Lenguaje claro para todos los públicos, máximo 190 palabras. Al final añade una línea con ideas de transición.";
@@ -430,6 +463,18 @@ export async function POST(req: NextRequest) {
   }
 
   const think = body.composerMode === "profundo";
+
+  // v1.17.0 — imágenes para el motor de visión (VLM): solo data URLs de
+  // imagen razonables, máximo 4 y 3 MB cada una. Con imágenes, la petición
+  // siempre lleva el marco de visión activado.
+  const images = (Array.isArray(body.images) ? body.images : [])
+    .filter((u): u is string => typeof u === "string" && u.startsWith("data:image/") && u.length < 3_000_000)
+    .slice(0, 4);
+  const marcoVision =
+    images.length > 0
+      ? `VISIÓN ACTIVADA (VLM): el usuario adjunta ${images.length === 1 ? "una imagen" : `${images.length} imágenes`}. Analízalas de verdad —objetos, personas, texto visible, colores, estilo y contexto— y responde sobre lo que MUESTRAN; si algo no es legible, dilo con honestidad.`
+      : "";
+
   const finalPrompt = `${prompt}${webContext}`;
 
   // v1.12.0 — voces de proveedores reales si hay claves API en el entorno
@@ -437,9 +482,9 @@ export async function POST(req: NextRequest) {
   const vozB = modelB ? vozExternaPara(modelB.provider) : null;
 
   const sys = (name: string, extra = "") =>
-    `${CARTA_VERDAD}\n\nEres "${name}", un contendiente anónimo del arena de IA todólogo.ai. ${personaFor(
+    `${CARTA_VERDAD}\n\n${CAPACIDADES_UNIVERSALES}\n\nEres "${name}", un contendiente anónimo del arena de IA todólogo.ai. ${personaFor(
       name === modelA.name ? aId : (bId ?? "")
-    )} ${framing} ${composerFraming} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 230 palabras (el código no cuenta en el límite).${extra} Nunca reveles tu nombre ni el de tu proveedor: eres un contendiente anónimo y tu estilo debe hablar por ti.`;
+    )} ${framing} ${composerFraming} ${marcoVision} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 230 palabras (el código no cuenta en el límite).${extra} Nunca reveles tu nombre ni el de tu proveedor: eres un contendiente anónimo y tu estilo debe hablar por ti.`;
 
   /* ── Modo streaming (SSE) ─────────────────────────────────── */
   if (body.stream) {
@@ -466,7 +511,7 @@ export async function POST(req: NextRequest) {
           });
 
           const resA = streamSide(
-            zai, "A", sys(modelA.name), finalPrompt, 0.65, historyA, think, send, vozA
+            zai, "A", sys(modelA.name), finalPrompt, 0.65, historyA, think, send, vozA, images
           );
           const resB =
             !single && modelB
@@ -479,7 +524,8 @@ export async function POST(req: NextRequest) {
                   historyB,
                   think,
                   send,
-                  vozB
+                  vozB,
+                  images
                 )
               : null;
 
@@ -533,7 +579,8 @@ export async function POST(req: NextRequest) {
       0.65,
       historyA,
       think,
-      vozA
+      vozA,
+      images
     );
     const genB =
       modelB && historyB.length >= 0
@@ -544,7 +591,8 @@ export async function POST(req: NextRequest) {
             0.9,
             historyB,
             think,
-            vozB
+            vozB,
+            images
           )
         : Promise.resolve({ text: null, thinking: null, voz: null });
 

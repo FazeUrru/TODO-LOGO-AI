@@ -11,7 +11,7 @@
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.17.0
+### Planeado para v1.18.0
 - Compartir duelos y copas por URL permanente con replay de las respuestas y del veredicto.
 - Arena de imágenes con voto y ranking ELO separado del de texto — el flag experimental ya está abierto en Todólogo Labs (`arena-imagenes`, cohorte Explorer).
 - Modo espectador de torneos: observa una copa en directo y predice quién pasará la ronda (ligado al flag `streaming-ws` de Labs).
@@ -20,6 +20,28 @@
 - Internacionalización es/en/pt (next-intl, con la comunidad traduciendo).
 - Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
 - Primera graduación de features de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
+
+## [1.17.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.16.0...v1.17.0) · 9 sept 2026, 22:25 — *Juegos en tiempo real con todas las IA y visión VLM integrada*
+
+> 💡 **En una frase:** cualquiera de las 56 IA ya construye juegos jugables mientras escribe —en un panel grande con pantalla completa, en cualquier modo— y ahora entiende de verdad las imágenes que adjuntas gracias a la visión VLM integrada.
+
+### Añadido
+- **Juegos en tiempo real con TODAS las IA** 🎮: el «reentrenamiento» transversal (nueva `CAPACIDADES_UNIVERSALES` junto a la Carta de Verdad) activa en los 56 modelos, en cualquier modo, la capacidad de entregar al instante un prototipo jugable completo en un solo bloque HTML autocontenido — canvas o DOM, música WebAudio procedural, HUD en español, pantalla de inicio con JUGAR y al menos un bucle de evolución autoadaptativa. Ya no hace falta entrar en el Modo Juego: pide un juego en claro y cualquier contendiente lo programa.
+- **GamePanel, el marco jugable del chat** 🕹️: la mini-vista previa de 340 px no servía para jugar — ahora el juego nace en un panel dedicado de 520 px con **pantalla completa**, reinicio, apertura en pestaña nueva, código fuente a la vista y copia del HTML. Durante la generación muestra el **progreso de construcción en vivo** (barra + KB de código ya escritos, auto-scroll), y si la generación se corta por tiempo, avisa con honestidad en lugar de quedarse mudo.
+- **Visión VLM integrada** 👁️: el menú de adjuntos estrena «Imagen (la IA la VERÁ)» — las fotos, capturas y memes se reescalan a 1280 px en el navegador y viajan al motor de visión en formato multimodal (`image_url`), que analiza objetos, texto, colores y contexto de verdad. Con imágenes, el turno va siempre al motor con visión (las voces externas, solo texto, quedan fuera), las miniaturas aparecen en tu mensaje y el prompt lleva el marco «VISIÓN ACTIVADA».
+- **Pruebas en tiempo real ampliadas a 10** 📊: dos checks nuevos en `/pruebas` — «Visión inteligente (VLM)» (File API + canvas + reescalado) y «Motor de juegos en tiempo real» (canvas 2D + sandbox + pantalla completa), ambos con latencia y reejecución al clic.
+
+### Mejorado
+- **El prototipo va primero** 🏁: el Prompt Maestro del Modo Juego AAA reordena la respuesta — una línea de gancho y el bloque HTML completo inmediatamente después (cerrado antes de cualquier texto posterior). Antes, la ficha y los sistemas iban delante y el límite de streaming cortaba el juego a medias: era la causa real de «no puedo crear juegos en tiempo real».
+- **Detección automática de jugables** 🧠: en Batalla, Lado a Lado o Directo, cualquier respuesta que traiga un HTML jugable (canvas o documento completo con enjundia) estrena el GamePanel sin tocar nada; el texto de la respuesta sigue leyéndose debajo, sin duplicar el código.
+- **Adjuntos arreglados de raíz** 🛠️: los botones «Subir archivos» y «Documentos» no abrían nada — los `<input type="file">` ocultos nunca existían en el DOM. Ahora existen (imágenes, archivos y documentos por separado), el chip de imagen muestra su miniatura y el aviso confirma «La IA verá la imagen».
+- **Página /games conectada con el chat**: banner «¡Nuevo v1.17.0!» que lleva al composer con la skill `/juego`, chip de versión dinámico y explicación de que los tres juegos autoevolutivos nacen del mismo Prompt Maestro que ahora lleva cada IA.
+- **Sandbox del juego reforzado**: `allow-pointer-lock` añadido a la vista previa y al GamePanel (los juegos de puntero ya pueden capturar el ratón).
+
+### Técnico
+- `/api/battle` acepta `images[]` (data URLs, máx. 4 × 3 MB, validadas), `buildMessages` devuelve `ContentPart[]` multimodal en el último turno y `streamSide`/`generateSide` reservan el formato de visión para el motor interno.
+- `Turn` ampliado con `images` (miniaturas) y `kind: "juego"` (detección en vivo durante el streaming y al finalizar); `GamePanel` cargado por `next/dynamic` (ssr: false) con fallback propio.
+- Suite ampliada a **117 tests**: capacidades universales en el prompt, marco de juego con HTML primero, imágenes VLM validadas en la API, GamePanel con pantalla completa y los 2 checks nuevos de /pruebas.
 
 ## [1.16.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.15.0...v1.16.0) · 9 sept 2026, 20:05 — *Opciones cuánticas, 75 MCPs y pruebas en tiempo real*
 
