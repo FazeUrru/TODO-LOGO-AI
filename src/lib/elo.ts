@@ -18,7 +18,17 @@ export const BATTLE_CATEGORIES = [
 ] as const;
 
 /** Categorías nuevas frente al arena original (para insignias ¡NUEVO!). */
-export const NEW_CATEGORIES = ["matematicas", "datos", "traduccion", "educacion", "negocios"];
+export const NEW_CATEGORIES = [
+  "matematicas",
+  "datos",
+  "traduccion",
+  "educacion",
+  "negocios",
+  // Arenas generativas (v1.15.0)
+  "imagen",
+  "video",
+  "audio",
+];
 
 export function expectedScore(ra: number, rb: number): number {
   return 1 / (1 + Math.pow(10, (rb - ra) / 400));
@@ -57,6 +67,10 @@ const CAT_BOOST: Record<string, string[]> = {
   traduccion: ["texto"],
   educacion: ["texto"],
   negocios: ["agente", "texto"],
+  // Arenas generativas (v1.15.0): el impulso llega a quien pertenece
+  imagen: ["imagen"],
+  video: ["video"],
+  audio: ["audio"],
 };
 
 export function categoryElo(m: AIModel, category: string): number {

@@ -80,9 +80,9 @@ describe("categoryElo (ELO por categoría)", () => {
 });
 
 describe("catálogo de batallas", () => {
-  it("hay 10 categorías y 5 exclusivas de Todólogo", () => {
+  it("hay 10 categorías de batalla y 8 marcadas como nuevas (5 exclusivas + arenas generativas v1.15.0)", () => {
     expect(BATTLE_CATEGORIES).toHaveLength(10);
-    expect(NEW_CATEGORIES).toHaveLength(5);
+    expect(NEW_CATEGORIES).toHaveLength(8);
   });
 });
 

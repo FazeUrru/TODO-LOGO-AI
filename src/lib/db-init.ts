@@ -162,6 +162,37 @@ async function createSchema(): Promise<void> {
       `CREATE INDEX IF NOT EXISTS "CopaSesion_updatedAt_idx" ON "CopaSesion"("updatedAt");`
     );
 
+    // Canal Todólogo Labs (v1.14.0): espejo de features + telemetría
+    await crearTabla(
+      "LabsFeature",
+      `CREATE TABLE IF NOT EXISTS "LabsFeature" (
+        "id"        TEXT PRIMARY KEY,
+        "nombre"    TEXT NOT NULL,
+        "cohorte"   TEXT NOT NULL,
+        "estado"    TEXT NOT NULL DEFAULT 'en-pruebas',
+        "expira"    ${PG ? "TIMESTAMPTZ" : "DATETIME"},
+        "createdAt" ${TS}
+      );`
+    );
+    await crearTabla(
+      "LabsEvent",
+      `CREATE TABLE IF NOT EXISTS "LabsEvent" (
+        "id"        TEXT PRIMARY KEY,
+        "featureId" TEXT NOT NULL,
+        "userId"    TEXT NOT NULL DEFAULT 'anon',
+        "tipo"      TEXT NOT NULL,
+        "payload"   TEXT,
+        "createdAt" ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "LabsEvent_featureId_createdAt_idx" ON "LabsEvent"("featureId", "createdAt");`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "LabsEvent_tipo_idx" ON "LabsEvent"("tipo");`
+    );
+
+
     // Columnas de perfil (v1.9.2) para bases creadas antes de esa versión
     const B = PG ? "BOOLEAN" : "BOOLEAN";
     const perfilCols: [string, string][] = [

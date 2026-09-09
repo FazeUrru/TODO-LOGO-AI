@@ -66,7 +66,7 @@ export default function SearchDialog() {
               if (e.key === "Enter" && results[0] && !detail)
                 setSelected(results[0].id);
             }}
-            placeholder="Buscar entre 56 modelos: nombre, organización, especialidad…"
+            placeholder={`Buscar entre ${MODELS.length} modelos: nombre, organización, especialidad…`}
             className="w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
           />
           <button
@@ -111,13 +111,23 @@ export default function SearchDialog() {
                 </span>
               </div>
               <p className="mt-3 text-[13.5px] leading-relaxed">{detail.desc}</p>
+              {/* v1.15.0: los generativos muestran sus especificaciones reales
+                  (segundos, resoluciones, precio por unidad) en vez de tokens. */}
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {[
-                  ["Contexto", formatContext(detail.context)],
-                  ["Salida máx.", formatContext(detail.maxOutput)],
-                  ["Entrada", `$${detail.priceIn}/1M`],
-                  ["Salida", `$${detail.priceOut}/1M`],
-                ].map(([k, v]) => (
+                {(detail.especs
+                  ? ([
+                      ["Modalidad", detail.categories.includes("video") ? "Vídeo" : detail.categories.includes("imagen") ? "Imagen" : "Audio"],
+                      ["Especificaciones", detail.especs],
+                      ["Precio", detail.precioNota ?? "—"],
+                      ["Lanzamiento", detail.released],
+                    ] as const)
+                  : ([
+                      ["Contexto", formatContext(detail.context)],
+                      ["Salida máx.", formatContext(detail.maxOutput)],
+                      ["Entrada", `$${detail.priceIn}/1M`],
+                      ["Salida", `$${detail.priceOut}/1M`],
+                    ] as const)
+                ).map(([k, v]: readonly [string, string]) => (
                   <div key={k} className="rounded-lg border border-border px-3 py-2">
                     <p className="text-[10.5px] uppercase tracking-wide text-muted-foreground">
                       {k}

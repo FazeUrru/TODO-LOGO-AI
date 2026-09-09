@@ -1,0 +1,240 @@
+// ============================================================
+// todólogo.ai — Metadatos del changelog (v1.14.0)
+// Fuente única compartida por la página /changelog y el RSS
+// (/changelog/rss.xml). Solo datos planos: los cuerpos ricos
+// (JSX) viven en la página.
+// ============================================================
+//
+// POLÍTICA DE TRAZABILIDAD (desde v1.14.0):
+//
+// · Cada versión lleva la HORA real de su commit git (CEST) junto a
+//   la fecha — el proyecto documentó retrospectivamente varias semanas
+//   de trabajo y las horas son la única forma honesta de leer esa
+//   «jornada de fundación» del 8 de septiembre.
+// · La cadena de diffs está COMPLETA desde v1.0.0: las etiquetas
+//   v1.0.0 y v1.2.0 se crearon retroactivamente en v1.14.0 para que
+//   cada versión enlace a su diff exacto (compare vX…vY), sin huecos.
+// · No existen v1.1.x ni v1.3.x: eran iteraciones internas que se
+//   fusionaron dentro de v1.2.0 y v1.4.0 sin publicarse jamás. El
+//   salto es un hecho del historial, no documentación perdida.
+
+export const REPO_URL = "https://github.com/FazeUrru/TODO-LOGO-AI";
+export const APP_URL = "https://todo-logo-ai.vercel.app";
+
+export type Etiqueta = "nuevo" | "mejora" | "correccion";
+
+export interface VersionMeta {
+  version: string; // sin «v»: "1.14.0"
+  fecha: string; // "9 sept 2026" (fecha del commit, CEST)
+  hora: string | null; // "09:09" — hora real del commit git; null solo en v1.0.0
+  titulo: string; // titular corto
+  tldr: string; // «¿en qué me afecta a mí?» en una frase
+  diffDesde: string | null; // versión anterior etiquetada → enlace compare
+  hash: string | null; // commit exacto cuando no hay diff posible
+  kinds: Etiqueta[]; // tipos de cambio que contiene (para los filtros)
+}
+
+/** Orden estrictamente descendente: la más nueva primero. */
+export const VERSIONS: VersionMeta[] = [
+  {
+    version: "1.14.0",
+    fecha: "9 sept 2026",
+    hora: "13:14",
+    titulo: "Integridad del leaderboard, carta de verdad, canal Labs y changelog-interface",
+    tldr:
+      "Fuera los modelos inexistentes, toda la IA firma una carta de verdad, DeepSeek V4.1 Flash se estrena hoy con su ¡Nuevo!, entra el canal Labs, la app se actualiza sola y el changelog gana búsqueda, filtros y RSS.",
+    diffDesde: "1.13.0",
+    hash: null,
+    kinds: ["nuevo", "mejora", "correccion"],
+  },
+  {
+    version: "1.13.0",
+    fecha: "9 sept 2026",
+    hora: "09:09",
+    titulo: "Copas eternas, arena blindado y Salón público",
+    tldr:
+      "Tus copas sobreviven a los despliegues, el palmarés completo es público y los scripts abusivos reciben su 429.",
+    diffDesde: "1.12.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
+    version: "1.12.0",
+    fecha: "9 sept 2026",
+    hora: "07:51",
+    titulo: "Postgres global, voces reales y memoria de campeones",
+    tldr:
+      "Tu ELO pasa a ser global con Postgres, los modelos responden con su API real si aportas claves y cada campeón queda registrado para siempre.",
+    diffDesde: "1.11.1",
+    hash: null,
+    kinds: ["nuevo", "correccion"],
+  },
+  {
+    version: "1.11.1",
+    fecha: "9 sept 2026",
+    hora: "07:08",
+    titulo: "La instancia oficial, a un clic",
+    tldr: "La arena completa corre en producción: abre el enlace y compite sin instalar nada.",
+    diffDesde: "1.11.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
+    version: "1.11.0",
+    fecha: "8 sept 2026",
+    hora: "23:45",
+    titulo: "Streaming en vivo, Docker de primera y honestidad visual",
+    tldr:
+      "Adiós spinners: las respuestas aparecen palabra a palabra — también el razonamiento profundo.",
+    diffDesde: "1.10.0",
+    hash: null,
+    kinds: ["nuevo", "mejora", "correccion"],
+  },
+  {
+    version: "1.10.0",
+    fecha: "8 sept 2026",
+    hora: "23:14",
+    titulo: "Perfil con autoguardado + operación empresarial",
+    tldr:
+      "Tu perfil se guarda solo mientras escribes y el servidor se vigila y reinicia solo, como un servicio de verdad.",
+    diffDesde: "1.9.1",
+    hash: null,
+    kinds: ["nuevo"],
+  },
+  {
+    version: "1.9.1",
+    fecha: "8 sept 2026",
+    hora: "22:33",
+    titulo: "Favicon fiel al logo",
+    tldr: "La pestaña del navegador ya viste el mismo logo que la app.",
+    diffDesde: "1.9.0",
+    hash: null,
+    kinds: ["mejora", "nuevo"],
+  },
+  {
+    version: "1.9.0",
+    fecha: "8 sept 2026",
+    hora: "21:24",
+    titulo: "Arcade autoevolutivo + Copas XL + ELO global",
+    tldr:
+      "Tres juegos AAA jugables, copas de hasta 16 modelos y un ELO que sobrevive a los reinicios.",
+    diffDesde: "1.8.1",
+    hash: null,
+    kinds: ["nuevo"],
+  },
+  {
+    version: "1.8.1",
+    fecha: "8 sept 2026",
+    hora: "20:05",
+    titulo: "Modo Juego AAA autoevolutivo",
+    tldr: "Pides un juego y recibes un prototipo jugable completo dentro del chat.",
+    diffDesde: "1.8.0",
+    hash: null,
+    kinds: ["nuevo"],
+  },
+  {
+    version: "1.8.0",
+    fecha: "8 sept 2026",
+    hora: "19:44",
+    titulo: "Cerebros reentrenados + Markdown pro",
+    tldr:
+      "Cada casa de IA habla con su carácter real y las respuestas se ven tan bien como suenan.",
+    diffDesde: "1.7.0",
+    hash: null,
+    kinds: ["nuevo"],
+  },
+  {
+    version: "1.7.0",
+    fecha: "8 sept 2026",
+    hora: "16:10",
+    titulo: "Honestidad radical + producción",
+    tldr:
+      "Sabes exactamente qué es real: entra el login social, los tests con CI, Docker y /api/health.",
+    diffDesde: "1.6.0",
+    hash: null,
+    kinds: ["nuevo", "correccion"],
+  },
+  {
+    version: "1.6.0",
+    fecha: "8 sept 2026",
+    hora: "15:29",
+    titulo: "La demo vive en GitHub Pages",
+    tldr: "La demo completa vive en tu navegador: nada que instalar para probarlo todo.",
+    diffDesde: "1.5.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
+    version: "1.5.0",
+    fecha: "8 sept 2026",
+    hora: "14:51",
+    titulo: "La Copa Todólogo",
+    tldr:
+      "Nace el modo torneo: cuatro modelos anónimos, tu consigna como juez y una revelación final.",
+    diffDesde: "1.4.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
+    version: "1.4.0",
+    fecha: "8 sept 2026",
+    hora: "14:50",
+    titulo: "El chat gana superpoderes",
+    tldr:
+      "El chat suma imagen, 3D, búsqueda web real, razonamiento visible, archivos y tu propia cuenta.",
+    diffDesde: "1.2.0",
+    hash: null,
+    kinds: ["nuevo", "mejora", "correccion"],
+  },
+  {
+    version: "1.2.0",
+    fecha: "8 sept 2026",
+    hora: "13:52",
+    titulo: "Renovación total de la interfaz",
+    tldr:
+      "La interfaz se convierte en una réplica fiel del arena: cuatro modos, leaderboard con filtros y autoguardado.",
+    diffDesde: "1.0.0",
+    hash: null,
+    kinds: ["nuevo", "mejora", "correccion"],
+  },
+  {
+    version: "1.0.0",
+    fecha: "28 jul 2026",
+    hora: null,
+    titulo: "Lanzamiento inicial",
+    tldr: "Nace el arena en español: batallas con IA real y ELO persistente.",
+    diffDesde: null,
+    hash: "76695e7",
+    kinds: ["nuevo"],
+  },
+];
+
+/** Enlace de traza de una versión: diff completo (compare) o commit exacto. */
+export function enlaceTraza(v: VersionMeta): { href: string; texto: string } {
+  if (v.diffDesde) {
+    return {
+      href: `${REPO_URL}/compare/v${v.diffDesde}...v${v.version}`,
+      texto: `diff v${v.diffDesde}…v${v.version}`,
+    };
+  }
+  if (v.hash) {
+    return { href: `${REPO_URL}/commit/${v.hash}`, texto: `commit ${v.hash.slice(0, 7)}` };
+  }
+  return { href: REPO_URL, texto: "repositorio" };
+}
+
+/** Cabecera de fecha legible con hora: «9 sept 2026, 09:09». */
+export function fechaLarga(v: VersionMeta): string {
+  return v.hora ? `${v.fecha}, ${v.hora}` : v.fecha;
+}
+
+/** Agrupa las versiones por fecha, preservando el orden descendente. */
+export function gruposPorDia(): { fecha: string; versiones: VersionMeta[] }[] {
+  const grupos: { fecha: string; versiones: VersionMeta[] }[] = [];
+  for (const v of VERSIONS) {
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && ultimo.fecha === v.fecha) ultimo.versiones.push(v);
+    else grupos.push({ fecha: v.fecha, versiones: [v] });
+  }
+  return grupos;
+}

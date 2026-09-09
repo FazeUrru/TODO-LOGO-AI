@@ -25,6 +25,9 @@ import {
   Clock,
   FileText,
   BarChart3,
+  Clapperboard,
+  Image as ImageIcon,
+  AudioLines,
   type LucideIcon,
 } from "lucide-react";
 import { PROVIDERS } from "@/lib/models-data";
@@ -65,6 +68,10 @@ const TABS: { id: string; label: string; icon: LucideIcon }[] = [
   { id: "traduccion", label: "Traducción", icon: Languages },
   { id: "educacion", label: "Educación", icon: GraduationCap },
   { id: "negocios", label: "Negocios", icon: Briefcase },
+  // ── Arenas generativas (v1.15.0) ──
+  { id: "video", label: "Vídeo", icon: Clapperboard },
+  { id: "imagen", label: "Imagen", icon: ImageIcon },
+  { id: "audio", label: "Audio", icon: AudioLines },
 ];
 
 const CAT_DESC: Record<string, string> = {
@@ -88,6 +95,12 @@ const CAT_DESC: Record<string, string> = {
     "Arena exclusivo de todólogo.ai: pedagogía, tutoría paso a paso y adaptación al nivel del alumno, votada por docentes.",
   negocios:
     "Arena exclusivo de todólogo.ai: estrategia, finanzas, marketing y consultoría empresarial con criterio de directivos reales.",
+  video:
+    "Arena de vídeo: los generadores más recientes del mercado (Seedance 2.5, Veo 3.1, Sora 2, Kling 3.0 Turbo, Runway Gen-4.5, Wan 3.0, Grok Imagine) cara a cara. Evalúa realismo, movimiento de cámara y coherencia de audio.",
+  imagen:
+    "Arena de imagen: la nueva generación completa (GPT-Image-2.5 Sunburst/Flare/Instant, Nano Banana Pro, Seedream 5.0, Midjourney V8.2, FLUX.2). Evalúa fidelidad al prompt, tipografía y edición.",
+  audio:
+    "Arena de audio: música y voz generativa (Suno v5.5, ElevenLabs Music, Lyria 3 Pro, MiniMax Music 2.5, Sonauto V3). Evalúa voces naturales, mezcla y estructura musical.",
 };
 
 type ViewAs = "ranking" | "pareto";
@@ -169,6 +182,9 @@ export default function LeaderboardView() {
   const pareto = useMemo(
     () =>
       [...filtered]
+        // Los generativos cobran por segundo/imagen, no por 1M tokens:
+        // compararlos aquí sería manzanas contra naranjas.
+        .filter((r) => !r.categories.some((c) => ["imagen", "video", "audio"].includes(c)))
         .map((r) => ({ ...r, value: r.elo / Math.max(r.priceOut, 0.4) }))
         .sort((a, b) => b.value - a.value),
     [filtered]

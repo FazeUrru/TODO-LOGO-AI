@@ -23,6 +23,7 @@ import {
   FileText,
   Layers,
   Bot,
+  Waypoints,
   Check,
   Copy,
   RotateCcw,
@@ -47,6 +48,9 @@ import {
   Languages,
   ScrollText,
   HelpCircle,
+  Film,
+  AudioLines,
+  FlaskConical,
 } from "lucide-react";
 import { getModel, PROVIDERS } from "@/lib/models-data";
 import { BATTLE_CATEGORIES, NEW_CATEGORIES } from "@/lib/elo";
@@ -61,6 +65,7 @@ import { cn } from "@/lib/utils";
 import Markdown from "./Markdown";
 import ProviderLogo from "./ProviderLogo";
 import TournamentView from "./TournamentView";
+import LaboratorioGenerativo from "./LaboratorioGenerativo";
 import { detectModel3D, ALL_3D_IDS } from "@/lib/models-3d";
 import { ExternalLink, Brain } from "lucide-react";
 
@@ -185,7 +190,7 @@ const STARTERS = [
       "Dame el plan técnico completo de una app fullstack de recetas: stack, modelo de datos, endpoints y despliegue.",
   },
   {
-    icon: Bot,
+    icon: Waypoints,
     title: "Misión de agentes",
     sub: "Un proyecto complejo, sin excusas",
     agent: true,
@@ -296,6 +301,8 @@ export default function ChatExperience() {
   const [atts, setAtts] = useState<Attachment[]>([]);
   const [attachOpen, setAttachOpen] = useState(false);
   const [attachInput, setAttachInput] = useState<"link" | "video" | null>(null);
+  // v1.15.0 — Botones experimentales (Canal Labs): cine, estudio y audio.
+  const [labPanel, setLabPanel] = useState<null | "cine" | "estudio" | "audio">(null);
   const [attachUrl, setAttachUrl] = useState("");
   const [skillOpen, setSkillOpen] = useState(false);
   const attachRef = useRef<HTMLDivElement>(null);
@@ -311,6 +318,10 @@ export default function ChatExperience() {
   const usedArchivos = useUsed("archivos");
   const usedWeb = useUsed("modo-web");
   const usedProfundo = useUsed("modo-profundo");
+  // v1.15.0 — insignias del laboratorio generativo
+  const usedLabCine = useUsed("lab-cine");
+  const usedLabEstudio = useUsed("lab-estudio");
+  const usedLabAudio = useUsed("lab-audio");
 
   // Agente
   const [agentMission, setAgentMission] = useState("");
@@ -989,6 +1000,33 @@ export default function ChatExperience() {
     </button>
   );
 
+  /** Botón de los modos experimentales (Canal Labs): abre el laboratorio. */
+  const labBoton = (
+    id: "cine" | "estudio" | "audio",
+    Icon: typeof Video,
+    used: boolean,
+    title: string
+  ) => (
+    <button
+      type="button"
+      onClick={() => {
+        setLabPanel(id);
+        markUsed(`lab-${id}`);
+      }}
+      title={title}
+      className={cn(
+        "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/85 hover:bg-accent",
+        labPanel === id && "bg-secondary text-foreground"
+      )}
+    >
+      {!used && (
+        <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-card" />
+      )}
+      <Icon className="h-4 w-4" />
+      <FlaskConical className="absolute -right-px -top-px h-2.5 w-2.5 text-emerald-600" />
+    </button>
+  );
+
   const composer = (variant: "hero" | "dock") => (
     <div
       className={cn(
@@ -1190,6 +1228,11 @@ export default function ChatExperience() {
           {modeToggle("web", Globe, usedWeb, "Búsqueda web real: responde con datos frescos y cita fuentes")}
           {/* Pensamiento profundo */}
           {modeToggle("profundo", Brain, usedProfundo, "Pensamiento profundo: razona paso a paso antes de responder")}
+          {/* ── Laboratorio generativo (v1.15.0, Canal Labs) ── */}
+          <span className="mx-0.5 h-5 w-px shrink-0 bg-border" aria-hidden />
+          {labBoton("cine", Film, usedLabCine, "Labs · Modo Cine: vídeo real con motor rotativo de los últimos modelos")}
+          {labBoton("estudio", ImageIcon, usedLabEstudio, "Labs · Estudio de imagen: la misma escena con los últimos 4 modelos de imagen")}
+          {labBoton("audio", AudioLines, usedLabAudio, "Labs · Estudio de audio: locución real con guion de IA")}
           {/* Skills con / */}
           <div ref={slashRef} className="relative shrink-0">
             <button
@@ -1488,6 +1531,8 @@ export default function ChatExperience() {
           </div>
         </div>
         <HomeFooter />
+        {/* v1.15.0 — Laboratorio generativo (Cine / Estudio / Audio) */}
+        <LaboratorioGenerativo abierto={labPanel} onCerrar={() => setLabPanel(null)} />
       </div>
     );
   }
@@ -1667,6 +1712,8 @@ export default function ChatExperience() {
           <p className="mt-1.5 text-center text-[11.5px] text-muted-foreground">{dockHint}</p>
         </div>
       </div>
+      {/* v1.15.0 — Laboratorio generativo (Cine / Estudio / Audio) */}
+      <LaboratorioGenerativo abierto={labPanel} onCerrar={() => setLabPanel(null)} />
     </div>
   );
 }
@@ -1902,7 +1949,7 @@ function AgentPipeline({ step }: { step: number }) {
   return (
     <div className="fade-up rounded-xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center gap-2 text-[13.5px] font-medium">
-        <Bot className="h-4 w-4" />
+        <Waypoints className="h-4 w-4" />
         El escuadrón está trabajando…
       </div>
       <div className="space-y-2">

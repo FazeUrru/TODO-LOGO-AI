@@ -5,6 +5,7 @@ import { ALL_3D_IDS } from "@/lib/models-3d";
 import { personaFor } from "@/lib/personas";
 import { chatExterno, vozExternaPara, type VozExterna } from "@/lib/voices-externas";
 import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
+import { CARTA_VERDAD } from "@/lib/ai-conducta";
 
 export const maxDuration = 60;
 
@@ -436,7 +437,7 @@ export async function POST(req: NextRequest) {
   const vozB = modelB ? vozExternaPara(modelB.provider) : null;
 
   const sys = (name: string, extra = "") =>
-    `Eres "${name}", un contendiente anónimo del arena de IA todólogo.ai. ${personaFor(
+    `${CARTA_VERDAD}\n\nEres "${name}", un contendiente anónimo del arena de IA todólogo.ai. ${personaFor(
       name === modelA.name ? aId : (bId ?? "")
     )} ${framing} ${composerFraming} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 230 palabras (el código no cuenta en el límite).${extra} Nunca reveles tu nombre ni el de tu proveedor: eres un contendiente anónimo y tu estilo debe hablar por ti.`;
 

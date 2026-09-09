@@ -115,3 +115,31 @@ model CopaSesion {
 
   @@index([updatedAt])
 }
+
+// Canal Todólogo Labs (v1.14.0): features experimentales con ciclo de vida
+// finito (máx. 8 semanas → graduación o descarte) y telemetría estructurada.
+// El registro fuente de verdad vive en src/lib/labs.ts (viaja en el bundle);
+// la tabla espejo permite estadísticas y, en el futuro, apagado en caliente.
+model LabsFeature {
+  id        String      @id // id canónico del registro, p. ej. "copa-32-64"
+  nombre    String
+  cohorte   String // "explorer" | "builder" | "inner"
+  estado    String      @default("en-pruebas") // en-pruebas | graduado | descartado
+  expira    DateTime?
+  createdAt DateTime    @default(now())
+  events    LabsEvent[]
+}
+
+// Evento de telemetría de Labs: adopción, uso, abandono o crash por feature.
+model LabsEvent {
+  id        String      @id @default(cuid())
+  feature   LabsFeature @relation(fields: [featureId], references: [id])
+  featureId String
+  userId    String      @default("anon")
+  tipo      String // "entered" | "used" | "abandoned" | "crashed"
+  payload   String? // JSON opcional (detalles del crash, contexto…)
+  createdAt DateTime @default(now())
+
+  @@index([featureId, createdAt])
+  @@index([tipo])
+}

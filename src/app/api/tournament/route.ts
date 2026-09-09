@@ -9,6 +9,7 @@ import { chatExterno, vozExternaPara } from "@/lib/voices-externas";
 import { esGranFinal, totalRondas } from "@/lib/copa-utils";
 import { serializarCopa, deserializarCopa } from "@/lib/copas-persistir";
 import { ipDeHeader, acumular, GEN_LIMITE, VOTO_LIMITE, segundosRestantes } from "@/lib/rate-limit";
+import { CARTA_VERDAD } from "@/lib/ai-conducta";
 
 export const maxDuration = 60;
 
@@ -140,7 +141,7 @@ async function genContender(
 ): Promise<string> {
   const model = getModel(modelId);
   const name = model?.name ?? "Contendiente";
-  const sys = `Eres "${name}", un contendiente anónimo de la Copa Todólogo, el torneo de eliminación directa del arena de IA todólogo.ai. ${personaFor(
+  const sys = `${CARTA_VERDAD}\n\nEres "${name}", un contendiente anónimo de la Copa Todólogo, el torneo de eliminación directa del arena de IA todólogo.ai. ${personaFor(
     modelId
   )} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 200 palabras (el código no cuenta en el límite). Nunca reveles tu nombre ni el de tu proveedor: eres un contendiente anónimo hasta la revelación final y tu estilo debe hablar por ti.`;
 

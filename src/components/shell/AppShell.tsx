@@ -5,6 +5,7 @@ import { ArenaContext, type ArenaMode } from "./arena-context";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import SearchDialog from "./SearchDialog";
+import UpdateGate from "./UpdateGate";
 import DemoBanner from "@/components/DemoBanner";
 import { SettingsProvider } from "@/lib/settings";
 import { AuthProvider } from "@/lib/auth-client";
@@ -65,6 +66,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <main className="flex min-h-0 flex-1 flex-col">{children}</main>
           </div>
           {searchOpen && <SearchDialog />}
+          <UpdateGate />
         </div>
         </ArenaContext.Provider>
         </ProfileProvider>

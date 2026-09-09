@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Calculator as CalcIcon, Plus, X } from "lucide-react";
-import { MODELS, PROVIDERS, getModel, formatContext } from "@/lib/models-data";
+import { MODELS, PROVIDERS, getModel, formatContext, esGenerativo } from "@/lib/models-data";
 import { cn } from "@/lib/utils";
 
 const PRESETS = [
@@ -18,7 +18,12 @@ export default function CalculadoraPage() {
   const [picks, setPicks] = useState<string[]>(["glm-5.3", "claude-opus-5", "deepseek-v4"]);
   const [picker, setPicker] = useState("");
 
-  const sorted = useMemo(() => [...MODELS].sort((a, b) => b.elo - a.elo), []);
+  // v1.15.0: la calculadora compara costes por tokens de texto — fuera los
+  // generativos, que cobran por segundo/imagen y no son comparables.
+  const sorted = useMemo(
+    () => MODELS.filter((m) => !esGenerativo(m)).sort((a, b) => b.elo - a.elo),
+    []
+  );
 
   const cost = (id: string) => {
     const m = getModel(id);

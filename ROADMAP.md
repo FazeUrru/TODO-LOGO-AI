@@ -83,7 +83,17 @@
 
 ---
 
-## 🔨 En curso — v1.14.0 «El duelo viaja» *(objetivo: oct-nov 2026)*
+### v1.14.0 · 9 sept 2026 — *Integridad del leaderboard, canal Labs y changelog-interface*
+- **Auditoría del catálogo**: fuera «Gemini 3.8 Pro» (no existe; Google nunca tuvo una serie 3.8) y en su lugar el **Gemini 3 Pro real** (nov 2025). **DeepSeek V4.1 Flash se estrena hoy** con su ¡Nuevo! (beta API verificada en internet: imagen+texto nativo, ~420 tok/s) — catálogo final: 56 modelos de 28 organizaciones.
+- **Canal Todólogo Labs** (`/labs`): early access con cohortes Explorer / Builder / Inner Circle, 9 features candidatas, ciclo de vida de 8 semanas con `labs:graduate`, telemetría `LabsFeature`/`LabsEvent` y el ELO global blindado fuera del laboratorio.
+- **Sistema de actualización real**: `/api/version` + sondeo cada 4 min, pastilla con badge animado y cuenta atrás, y actualización forzosa con overlay bloqueante y recarga dura — imposible quedarse en un bundle viejo.
+- **Changelog-interface**: buscador, filtros por tipo, entradas plegables con TL;DR de impacto, TOC fijo, feed RSS (`/changelog/rss.xml`) y **trazabilidad simétrica**: cadena de diffs completa desde la v1.0.0 con etiquetas retroactivas y hora real de cada commit.
+- Icono del Modo Agente renovado (BrainCircuit) y logotipo de Qwen regenerado a tamaño pleno.
+- Detalles en el [CHANGELOG v1.14.0](CHANGELOG.md).
+
+---
+
+## 🔨 En curso — v1.15.0 «El duelo viaja» *(objetivo: oct-nov 2026)*
 
 | # | Función | Estado | Detalle |
 |---|---|:---:|---|
@@ -91,10 +101,11 @@
 | 2 | **Arena de imágenes con voto** | idea | Dos ilustraciones generadas, tú eliges la mejor; ranking ELO de generación de imágenes separado del de texto |
 | 3 | **Modo espectador de torneos** | idea | Observa una copa en directo y predice quién pasará la ronda |
 
-## 🔭 Próximo — v1.15.0 «Una sola voz» *(objetivo: dic 2026)*
+## 🔭 Próximo — v1.16.0 «Una sola voz» *(objetivo: dic 2026)*
 
 - **Internacionalización (i18n)**: es/en/pt con `next-intl`, la comunidad puede traducir la interfaz.
 - **Límite de tasa multi-instancia en el edge**: el rate-limit de la v1.13.0 vive en memoria por proceso; el edge middleware lo hará global.
+- **Primera graduación de Labs**: la regla de las 8 semanas vence el 4 de nov de 2026 — las features de cohortes se gradúan o se descartan con su telemetría delante.
 
 ## 🚀 Futuro — v2.0 «Todólogo sin límites» *(2027)*
 

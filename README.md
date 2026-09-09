@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.13.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.14.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
   <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI"><img alt="cobertura" src="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI/graph/badge.svg"></a>
@@ -38,7 +38,7 @@
 | ⚡ **Cómo responde** | Streaming SSE: el texto aparece palabra a palabra, también el razonamiento profundo — sin spinners eternos |
 | 🤖 **Con qué** | 56 modelos de 28 organizaciones · respuestas generadas al vuelo · backend real (Next.js 16 + Prisma + SQLite) |
 | 🎮 **Extras únicos** | Arcade con 3 juegos autoevolutivos (GTA VI Costa Vice, Isla Maldita, Imperios RTS) · Modo Agente · imágenes, 3D, web y pensamiento profundo en el chat |
-| 🛡️ **Calidad** | 59 tests · 97.8 % de cobertura en la lógica central · CI en vivo ([Tests y CI](#-tests-y-ci)) |
+| 🛡️ **Calidad** | 87 tests · 92,3 % de cobertura (líneas) en la lógica central · CI en vivo ([Tests y CI](#-tests-y-ci)) |
 | ⚙️ **Operación** | Cron interno con informe de salud en [`/api/health`](#-referencia-de-la-api) + watchdog con reinicio automático ([sección Operar](#%EF%B8%8F-operar-watchdog-y-cron-nivel-empresarial)) |
 | 🔒 **Honestidad** | Las «56 voces» salen de un motor propio con 56 personalidades — [qué es real y qué no](#-honestidad-qué-es-real-y-qué-no) |
 
@@ -287,12 +287,14 @@ npm run dev        # http://localhost:3000
 
 ## 🧪 Tests y CI
 
-**Tests unitarios (Vitest)** sobre la lógica crítica — **59 casos en 5 suites**:
+**Tests unitarios (Vitest)** sobre la lógica crítica — **87 casos en 7 suites**:
 
 - `tests/elo.test.ts` — `expectedScore` (igualdad → 0.5, ventaja de 400 → ~0.909, simetría), `eloDeltaFromVotes` (signo, empates, acotado ±48, entero) e integridad del catálogo (ids únicos, proveedores existentes, ELO creíble).
 - `tests/profile.test.ts` — saneado y validación del perfil de 15 ajustes: @usuario (mayúsculas, acentos, guiones sobrantes), webs válidas, límites de campos, valores por defecto y `savedAt`.
 - `tests/personas-asset.test.ts` — las personas de las 56 voces (determinismo, variedad, seguridad con ids raros) y `asset()` con basePath de GitHub Pages.
 - `tests/catalogo.test.ts` — `getModel`, `providerOf`, `formatContext` y categorías sin duplicados.
+- `tests/v1120.test.ts` y `tests/v1130.test.ts` — rondas de copa y gran final, diff del perfil, voces externas, serialización de copas, rate-limit y stats del Salón.
+- `tests/v1140.test.ts` — comparador semver del UpdateGate, registro de Labs (cohortes, 8 semanas, telemetría), metadatos del changelog (orden, cadena de diffs completa) y regresión anti-modelos-fantasma (Gemini 3.8 fuera, DeepSeek V4.1 Flash dentro con ¡Nuevo!).
 
 ```bash
 npm test                  # modo CI (una pasada)
@@ -526,7 +528,7 @@ TODO-LOGO-AI/
 ## Roadmap y changelog
 
 - 🗺️ [`ROADMAP.md`](ROADMAP.md) — hacia dónde va el proyecto: copas persistentes y compartir duelos, arena de imágenes, modo espectador, i18n, API pública…
-- 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN y, desde la v1.11.0, **enlaces a su commit exacto y a su diff completo** (etiquetas git `v1.4.0` → `v1.13.0`): un changelog navegable, no un texto estático.
+- 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN, su **hora real de commit** y un **enlace a su diff exacto** — la cadena de etiquetas git está completa `v1.0.0` → `v1.14.0` (tags retroactivos v1.0.0 y v1.2.0): un changelog navegable, con buscador, filtros y RSS en la app, no un texto estático.
 
 ## Contribuir
 

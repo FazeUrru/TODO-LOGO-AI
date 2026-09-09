@@ -55,7 +55,7 @@
   <g class="row fall">
     <rect x="36" y="196" width="828" height="42" rx="10" fill="#FFFFFF" stroke="#EEEDEC"/>
     <text x="52" y="222" class="lbl" font-size="13" font-weight="700" fill="#2E2B29">3</text>
-    <text x="120" y="222" class="lbl" font-size="13" fill="#2E2B29">Gemini 3.8 Pro</text>
+    <text x="120" y="222" class="lbl" font-size="13" fill="#2E2B29">Gemini 3 Pro</text>
     <rect class="bar1" x="420" y="210" width="228" height="12" rx="6" fill="#15803D" style="animation-delay:.3s"/>
     <text x="686" y="222" class="lbl" font-size="12.5" fill="#2E2B29">1487</text>
     <text x="700" y="222" class="lbl" font-size="12.5" fill="#6B6660">1.690</text>

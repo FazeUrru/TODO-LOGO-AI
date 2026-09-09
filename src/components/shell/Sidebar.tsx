@@ -21,11 +21,12 @@ import {
   Info,
   Plug,
   Sparkles,
+  FlaskConical,
   X,
   Swords,
   MessageCircle,
   Columns2,
-  Bot,
+  Waypoints,
   Trash2,
   LogOut,
   UserRound,
@@ -51,7 +52,7 @@ import { cn } from "@/lib/utils";
 
 const MODE_ICONS: Record<ArenaMode, typeof Swords> = {
   battle: Swords,
-  agent: Bot,
+  agent: Waypoints,
   sbs: Columns2,
   direct: MessageCircle,
   torneo: Trophy,
@@ -432,6 +433,7 @@ export default function Sidebar() {
             </div>
           )}
           {navItem(pathname === "/novedades", "/novedades", "Novedades", Newspaper)}
+          {navItem(pathname === "/labs", "/labs", "Labs", FlaskConical, "labs")}
           {navItem(pathname === "/conectores", "/conectores", "Conectores", Plug, "conectores")}
           {navItem(pathname === "/empresas", "/empresas", "Empresas", Building2)}
           {navItem(pathname === "/calculadora", "/calculadora", "Calculadora", Calculator)}

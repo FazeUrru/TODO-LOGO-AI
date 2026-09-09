@@ -13,6 +13,7 @@ import {
   PanelLeft,
   Check,
   Grid3X3,
+  Waypoints,
 } from "lucide-react";
 import { useUsed, NewBadge } from "@/lib/badges";
 import { MODELS, PROVIDERS, getModel } from "@/lib/models-data";
@@ -24,7 +25,7 @@ import { cn } from "@/lib/utils";
 
 const MODE_ICONS: Record<ArenaMode, typeof Swords> = {
   battle: Swords,
-  agent: Sparkles,
+  agent: Waypoints,
   sbs: Columns2,
   direct: MessageCircle,
   torneo: Trophy,

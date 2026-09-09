@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { db } from "@/lib/db";
 import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
+import { CARTA_VERDAD_BREVE } from "@/lib/ai-conducta";
 
 export const maxDuration = 90;
 
@@ -215,14 +216,14 @@ Devuelve ÚNICAMENTE un objeto JSON válido (sin markdown, sin explicaciones) co
   "successCriteria": ["...", "..."] (4 criterios),
   "totalEstimate": "estimación total de tiempo"
 }
-Todo en español. Sé concreto y técnico: nombres de tecnologías reales de 2026.`;
+Todo en español. Sé concreto y técnico: solo tecnologías y modelos REALES de 2026 — si no estás seguro de que algo existe, no lo menciones.`;
 
   try {
     const zai = await ZAI.create();
     const completion = await Promise.race([
       zai.chat.completions.create({
         messages: [
-          { role: "assistant", content: "Eres un orquestador de agentes de software. Respondes solo con JSON válido, sin markdown ni texto adicional." },
+          { role: "assistant", content: `Eres un orquestador de agentes de software. Respondes solo con JSON válido, sin markdown ni texto adicional. ${CARTA_VERDAD_BREVE}` },
           { role: "user", content: instruction },
         ],
         temperature: 0.6,
