@@ -53,6 +53,16 @@ function errRes(error: string, status = 400): Response {
 const K_VOTES = "todologo_demo_votes_v1";
 const K_USERS = "todologo_demo_users_v1";
 const K_SESSION = "todologo_demo_session_v1";
+const K_SALON = "todologo_demo_salon_v1"; // Salón de la Fama (v1.12.0)
+
+interface CampeonSalon {
+  copaId: string;
+  prompt: string;
+  size: number;
+  campeon: { id: string; name: string };
+  subcampeon: { id: string; name: string } | null;
+  at: string;
+}
 
 function lsGet<T>(key: string, fallback: T): T {
   try {
@@ -1183,6 +1193,25 @@ async function handleTournament(init: RequestInit | undefined): Promise<Response
       if (duelKey === "final" && copa.final) {
         copa.revealed = true;
         copa.championModelId = winner === "a" ? copa.final.a.modelId : copa.final.b.modelId;
+        // Salón de la Fama (v1.12.0): el campeón queda en tu navegador
+        try {
+          const sub = winner === "a" ? copa.final.b : copa.final.a;
+          const lista = lsGet<CampeonSalon[]>(K_SALON, []);
+          lista.unshift({
+            copaId: copa.id,
+            prompt: copa.prompt.slice(0, 300),
+            size: 4,
+            campeon: {
+              id: copa.championModelId,
+              name: getModel(copa.championModelId)?.name ?? copa.championModelId,
+            },
+            subcampeon: { id: sub.modelId, name: getModel(sub.modelId)?.name ?? sub.modelId },
+            at: new Date().toISOString(),
+          });
+          lsSet(K_SALON, lista.slice(0, 40));
+        } catch {
+          /* el salón es accesorio en la demo */
+        }
       }
     }
     await sleep(150);
@@ -1211,6 +1240,14 @@ export async function handleDemoFetch(rawPath: string, init?: RequestInit): Prom
     if (path === "/api/image" && method === "POST") return await handleImage(init);
     if (path === "/api/agent" && method === "POST") return await handleAgent(init);
     if (path === "/api/tournament" && method === "POST") return await handleTournament(init);
+    if (path === "/api/hall-of-fame") {
+      const lista = lsGet<CampeonSalon[]>(K_SALON, []);
+      return jsonRes({ ok: true, total: lista.length, campeones: lista.slice(0, 12) });
+    }
+    if (path === "/api/profile/historial") {
+      // En la demo el perfil vive en tu navegador: historial en la nube no aplica
+      return jsonRes({ ok: true, eventos: [] });
+    }
     if (path === "/api/news") {
       return jsonRes({ ok: true, articles: [], cached: true, note: "demo" });
     }

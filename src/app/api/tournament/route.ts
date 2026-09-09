@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { expectedScore } from "@/lib/elo";
 import { applyEloDuel } from "@/lib/elo-global";
 import { personaFor } from "@/lib/personas";
+import { chatExterno, vozExternaPara } from "@/lib/voices-externas";
+import { esGranFinal, totalRondas } from "@/lib/copa-utils";
 
 export const maxDuration = 60;
 
@@ -102,6 +104,20 @@ async function genContender(
   )} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 200 palabras (el código no cuenta en el límite). Nunca reveles tu nombre ni el de tu proveedor: eres un contendiente anónimo hasta la revelación final y tu estilo debe hablar por ti.`;
 
   const attempt = async (timeoutMs: number): Promise<string | null> => {
+    // v1.12.0 — voz de proveedor real si hay clave API configurada
+    const voz = model ? vozExternaPara(model.provider) : null;
+    if (voz) {
+      const r = await chatExterno(
+        voz,
+        [
+          { role: "assistant", content: sys },
+          { role: "user", content: prompt },
+        ],
+        temperature,
+        timeoutMs
+      );
+      if (r) return r.text;
+    }
     try {
       const completion = await Promise.race([
         zai.chat.completions.create({
@@ -161,7 +177,7 @@ async function generateRound(copa: Copa, roundIdx: number) {
 async function advance(copa: Copa, finishedRound: number) {
   const round = copa.rounds[finishedRound];
   if (round.some((d) => !d.winner)) return; // aún hay duelos pendientes
-  const totalRounds = Math.log2(copa.size); // 4→2, 8→3, 16→4
+  const totalRounds = totalRondas(copa.size); // 4→2, 8→3, 16→4
   if (finishedRound >= totalRounds - 1) return; // era la gran final
   const winners = round.map((d) => (d.winner === "a" ? d.a.modelId : d.b.modelId));
   const next: CopaDuel[] = [];
@@ -339,11 +355,31 @@ export async function POST(req: NextRequest) {
       persist(copa);
       // Ronda completa → se genera la siguiente con los ganadores
       await advance(copa, rIdx);
-      // Final votada → revelación y campeón
-      if (rIdx === copa.rounds.length - 1) {
+      // Gran final votada → revelación y campeón. La condición depende del
+      // TAMAÑO del cuadro (totalRondas), no de rounds.length, que crece con
+      // cada ronda creada: votar la primera semifinal de un cuadro de 4 no
+      // debe revelar campeón (bug de la v1.9.0 destapado por el Salón).
+      if (esGranFinal(copa.size, rIdx)) {
         copa.revealed = true;
         copa.championModelId = winner === "a" ? duel.a.modelId : duel.b.modelId;
         persist(copa);
+        // Salón de la Fama (v1.12.0): el campeón queda registrado en la BD
+        const subcampeon = winner === "a" ? duel.b : duel.a;
+        try {
+          await db.copaCampeon.create({
+            data: {
+              copaId: copa.id,
+              prompt: copa.prompt.slice(0, 300),
+              size: copa.size,
+              championModelId: copa.championModelId,
+              championName: getModel(copa.championModelId)?.name ?? copa.championModelId,
+              runnerUpModelId: subcampeon.modelId,
+              runnerUpName: getModel(subcampeon.modelId)?.name ?? subcampeon.modelId,
+            },
+          });
+        } catch {
+          /* el Salón de la Fama nunca rompe la revelación */
+        }
       }
     }
 

@@ -68,6 +68,31 @@ export default function ChangelogPage() {
         </p>
 
         <div className="relative mt-8 space-y-8 border-l border-border pl-6">
+          {/* ── v1.12.0 ── */}
+          <div className="relative">
+            <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-highlight ring-4 ring-background" />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="rounded-lg bg-foreground px-2.5 py-1 font-mono text-[13px] font-semibold text-background">
+                v1.12.0
+              </span>
+              <span className="text-[12.5px] text-muted-foreground">9 sept 2026 · Postgres global, voces reales y memoria de campeones</span>
+              <NewBadge k="changelog" />
+              <CodeLink href={`${REPO}/compare/v1.11.1...v1.12.0`}>diff v1.11.1…v1.12.0</CodeLink>
+            </div>
+
+            <div className="mt-3 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+              <ul className="space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+                <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Postgres gestionado para el ELO global</strong>: esquema gemelo, conmutador <code>DB_PROVIDER=postgres</code>, build de Vercel auto-sincronizado y guía paso a paso (Vercel → Storage → Postgres/Neon).</li>
+                <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Voces de proveedores reales</strong>: con claves API propias (<code>OPENAI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>, <code>GOOGLE_AI_API_KEY</code>…) los contendientes responden vía su API real, con reserva transparente al motor propio y declaración honesta del motor usado.</li>
+                <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Salón de la Fama</strong>: cada gran final coronada queda registrada en la base (ruta <code>/api/hall-of-fame</code>) y se muestra en el Modo Torneo. En la demo, en tu navegador.</li>
+                <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Historial del perfil en la nube</strong>: los ajustes que cambias quedan registrados y aparecen en Ajustes → Perfil → «Actividad del perfil».</li>
+                <li className="flex gap-2"><Tag kind="correccion" /> <strong>Revelación prematura de la copa (bug v1.9.0)</strong>: votar la primera semifinal de un cuadro de 4 coronaba campeón al azar — la detección de la gran final ahora deriva del tamaño del cuadro, con tests de regresión.</li>
+                <li className="flex gap-2"><Tag kind="correccion" /> Diagramas Mermaid blindados ante la sandbox de GitHub (adiós al «Unable to render rich display» intermitente) y validación de diagramas en la CI.</li>
+                <li className="flex gap-2"><Tag kind="correccion" /> El esquema efímero de Vercel ahora crea también <code>EloState</code> y las columnas de perfil: el ELO global ya no se pierde al reiniciar.</li>
+              </ul>
+            </div>
+          </div>
+
           {/* ── v1.11.1 ── */}
           <div className="relative">
             <span className="absolute -left-[31px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-highlight ring-4 ring-background" />

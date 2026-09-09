@@ -2,69 +2,177 @@ import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 
 /**
- * Auto-inicialización del esquema SQLite en entornos efímeros.
+ * Auto-inicialización del esquema en entornos efímeros (v1.12.0).
  *
- * En serverless (Vercel) el sistema de archivos de escritura es /tmp y cada
- * instancia arranca con una base vacía: este módulo crea las tablas con
- * CREATE TABLE IF NOT EXISTS en el arranque del proceso (hook register() de
- * Next, src/instrumentation.ts). En entornos persistentes (local, Docker,
- * VPS) la base ya existe y las sentencias son un no-op barato.
+ * En serverless (Vercel) sin base gestionada, cada instancia arranca con un
+ * sistema de archivos efímero: este módulo crea las tablas con
+ * CREATE TABLE IF NOT EXISTS en el arranque (hook register() de Next,
+ * src/instrumentation.ts). En entornos persistentes (local, Docker, VPS,
+ * Postgres gestionado) la base ya existe y las sentencias son un no-op barato.
+ *
+ * v1.12.0: consciente de dialecto (SQLite/PostgreSQL) y completo: cubre las
+ * seis tablas del esquema, incluidas EloState (ELO global), CopaCampeon
+ * (Salón de la Fama) y ProfileEvent (historial del perfil), más las columnas
+ * de perfil de User añadidas en v1.9.2 para bases creadas antes de esa
+ * versión.
  *
  * Se ejecuta UNA vez por proceso (bandera en globalThis).
  */
 
 const g = globalThis as unknown as { __todologoSchemaReady?: Promise<void> };
 
+/** ¿Dialecto PostgreSQL? DB_PROVIDER gana; si no, se deduce de DATABASE_URL. */
+function esPostgres(): boolean {
+  if (process.env.DB_PROVIDER === "postgres") return true;
+  if (process.env.DB_PROVIDER) return false;
+  return /^postgres(ql)?:\/\//i.test(process.env.DATABASE_URL ?? "");
+}
+
+const PG = esPostgres();
+const TS = PG ? "TIMESTAMPTZ NOT NULL DEFAULT now()" : "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP";
+
+async function crearTabla(nombre: string, ddl: string): Promise<void> {
+  await db.$executeRawUnsafe(ddl);
+}
+
+async function addColumnSiFalta(tabla: string, columna: string, def: string): Promise<void> {
+  try {
+    if (PG) {
+      await db.$executeRawUnsafe(`ALTER TABLE "${tabla}" ADD COLUMN IF NOT EXISTS "${columna}" ${def};`);
+      return;
+    }
+    // SQLite: no tiene IF NOT EXISTS; comprobamos la columna en table_info
+    const cols = (await db.$queryRawUnsafe<{ name: string }[]>(
+      `PRAGMA table_info("${tabla}");`
+    )) as { name: string }[];
+    if (Array.isArray(cols) && cols.some((c) => c.name === columna)) return;
+    await db.$executeRawUnsafe(`ALTER TABLE "${tabla}" ADD COLUMN "${columna}" ${def};`);
+  } catch {
+    /* columna ya presente o migración concurrente: continuar */
+  }
+}
+
 async function createSchema(): Promise<void> {
   try {
-    await db.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "Vote" (
-        "id"        TEXT     PRIMARY KEY,
-        "battleId"  TEXT     NOT NULL,
-        "modelAId"  TEXT     NOT NULL,
-        "modelBId"  TEXT     NOT NULL,
-        "winner"    TEXT     NOT NULL,
-        "category"  TEXT     NOT NULL DEFAULT 'global',
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIME
-      );
-    `);
-    await db.$executeRawUnsafe(
-      `CREATE INDEX IF NOT EXISTS "Vote_modelAId_idx" ON "Vote"("modelAId");`
+    await crearTabla(
+      "Vote",
+      `CREATE TABLE IF NOT EXISTS "Vote" (
+        "id"        TEXT PRIMARY KEY,
+        "battleId"  TEXT NOT NULL,
+        "modelAId"  TEXT NOT NULL,
+        "modelBId"  TEXT NOT NULL,
+        "winner"    TEXT NOT NULL,
+        "category"  TEXT NOT NULL DEFAULT 'global',
+        "createdAt" ${TS}
+      );`
     );
-    await db.$executeRawUnsafe(
-      `CREATE INDEX IF NOT EXISTS "Vote_modelBId_idx" ON "Vote"("modelBId");`
-    );
-    await db.$executeRawUnsafe(
-      `CREATE INDEX IF NOT EXISTS "Vote_createdAt_idx" ON "Vote"("createdAt");`
-    );
+    for (const [idx, col] of [
+      ["Vote_modelAId_idx", "modelAId"],
+      ["Vote_modelBId_idx", "modelBId"],
+      ["Vote_createdAt_idx", "createdAt"],
+    ] as const) {
+      await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "${idx}" ON "Vote"("${col}");`);
+    }
 
-    await db.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "AgentRun" (
-        "id"          TEXT     PRIMARY KEY,
-        "description" TEXT     NOT NULL,
-        "projectType" TEXT     NOT NULL,
-        "autonomy"    TEXT     NOT NULL,
-        "budget"      TEXT     NOT NULL,
-        "status"      TEXT     NOT NULL DEFAULT 'planificado',
-        "createdAt"   DATETIME NOT NULL DEFAULT CURRENT_TIME
-      );
-    `);
+    await crearTabla(
+      "AgentRun",
+      `CREATE TABLE IF NOT EXISTS "AgentRun" (
+        "id"          TEXT PRIMARY KEY,
+        "description" TEXT NOT NULL,
+        "projectType" TEXT NOT NULL,
+        "autonomy"    TEXT NOT NULL,
+        "budget"      TEXT NOT NULL,
+        "status"      TEXT NOT NULL DEFAULT 'planificado',
+        "createdAt"   ${TS}
+      );`
+    );
     await db.$executeRawUnsafe(
       `CREATE INDEX IF NOT EXISTS "AgentRun_createdAt_idx" ON "AgentRun"("createdAt");`
     );
 
-    await db.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "User" (
-        "id"           TEXT     PRIMARY KEY,
-        "email"        TEXT     NOT NULL UNIQUE,
-        "name"         TEXT     NOT NULL,
+    await crearTabla(
+      "User",
+      `CREATE TABLE IF NOT EXISTS "User" (
+        "id"           TEXT PRIMARY KEY,
+        "email"        TEXT NOT NULL UNIQUE,
+        "name"         TEXT NOT NULL,
         "passwordHash" TEXT,
-        "provider"     TEXT     NOT NULL DEFAULT 'email',
-        "createdAt"    DATETIME NOT NULL DEFAULT CURRENT_TIME
-      );
-    `);
+        "provider"     TEXT NOT NULL DEFAULT 'email',
+        "createdAt"    ${TS}
+      );`
+    );
 
-    logger.info("db.schema_ready", {});
+    await crearTabla(
+      "EloState",
+      `CREATE TABLE IF NOT EXISTS "EloState" (
+        "modelId"   TEXT PRIMARY KEY,
+        "elo"       ${PG ? "DOUBLE PRECISION" : "REAL"} NOT NULL DEFAULT 1000,
+        "wins"      INTEGER NOT NULL DEFAULT 0,
+        "losses"    INTEGER NOT NULL DEFAULT 0,
+        "ties"      INTEGER NOT NULL DEFAULT 0,
+        "battles"   INTEGER NOT NULL DEFAULT 0,
+        "updatedAt" ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "EloState_elo_idx" ON "EloState"("elo");`);
+
+    await crearTabla(
+      "CopaCampeon",
+      `CREATE TABLE IF NOT EXISTS "CopaCampeon" (
+        "id"              TEXT PRIMARY KEY,
+        "copaId"          TEXT NOT NULL UNIQUE,
+        "prompt"          TEXT NOT NULL,
+        "size"            INTEGER NOT NULL DEFAULT 4,
+        "championModelId" TEXT NOT NULL,
+        "championName"    TEXT NOT NULL,
+        "runnerUpModelId" TEXT,
+        "runnerUpName"    TEXT,
+        "createdAt"       ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "CopaCampeon_createdAt_idx" ON "CopaCampeon"("createdAt");`
+    );
+
+    await crearTabla(
+      "ProfileEvent",
+      `CREATE TABLE IF NOT EXISTS "ProfileEvent" (
+        "id"      TEXT PRIMARY KEY,
+        "userId"  TEXT NOT NULL,
+        "campo"   TEXT NOT NULL,
+        "detalle" TEXT NOT NULL DEFAULT '',
+        "at"      ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "ProfileEvent_userId_at_idx" ON "ProfileEvent"("userId", "at");`
+    );
+
+    // Columnas de perfil (v1.9.2) para bases creadas antes de esa versión
+    const B = PG ? "BOOLEAN" : "BOOLEAN";
+    const perfilCols: [string, string][] = [
+      ["displayName", "TEXT"],
+      ["username", "TEXT"],
+      ["bio", "TEXT"],
+      ["avatar", "TEXT"],
+      ["accent", "TEXT"],
+      ["pronouns", "TEXT"],
+      ["location", "TEXT"],
+      ["website", "TEXT"],
+      ["focus", "TEXT"],
+      ["publicProfile", B],
+      ["showStats", B],
+      ["showTrophies", B],
+      ["weeklyDigest", B],
+      ["newModelsAlert", B],
+      ["arenaInvites", B],
+      ["profileAt", PG ? "TIMESTAMPTZ" : "DATETIME"],
+    ];
+    for (const [col, def] of perfilCols) {
+      await addColumnSiFalta("User", col, def);
+    }
+
+    logger.info("db.schema_ready", { dialect: PG ? "postgresql" : "sqlite" });
   } catch (err) {
     logger.warn("db.schema_init_failed", {
       error: err instanceof Error ? err.message : String(err),

@@ -14,6 +14,7 @@ import {
 import { useArena } from "@/components/shell/arena-context";
 import Markdown from "./Markdown";
 import ProviderLogo from "./ProviderLogo";
+import SalonFama from "./SalonFama";
 import { markUsed } from "@/lib/badges";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -403,6 +404,7 @@ export default function TournamentView() {
               gran final.
             </p>
           </div>
+          <SalonFama />
         </div>
       </div>
     );
@@ -467,6 +469,8 @@ export default function TournamentView() {
             <RotateCcw className="h-4 w-4" />
             Nueva copa
           </button>
+
+          <SalonFama destacadoId={champ?.id ?? null} />
         </div>
       </div>
     );

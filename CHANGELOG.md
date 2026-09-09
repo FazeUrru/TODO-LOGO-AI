@@ -3,19 +3,36 @@
 > Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [Versionado Semántico](https://semver.org/lang/es/).
 > La versión actual y su fecha se muestran también dentro de la app (sidebar → Ajustes).
 >
-> 🔗 **Changelog navegable**: desde la v1.11.0 cada versión enlaza a su **commit exacto** y a su **diff completo** mediante etiquetas git (`v1.4.0` → `v1.11.0`). En la app, la página Changelog reproduce los mismos enlaces.
+> 🔗 **Changelog navegable**: desde la v1.11.0 cada versión enlaza a su **commit exacto** y a su **diff completo** mediante etiquetas git (`v1.4.0` → `v1.12.0`). En la app, la página Changelog reproduce los mismos enlaces.
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.12.0
-- Postgres gestionado para ELO global en serverless.
-- Voces de proveedores reales conectando APIs externas junto al motor propio.
-- Historial del perfil en la nube y Hall of Fame de copas.
+### Planeado para v1.13.0
+- Sesiones de copa persistidas en BD (multi-instancia y copas que sobreviven reinicios).
+- Rate-limiting por IP en las rutas de generación.
+- Página pública del Salón de la Fama con estadísticas por modelo coronado.
 
 ### Explorando
 - Arena de imágenes con voto y ranking separado.
 - Internacionalización es/en/pt.
 - Compartir duelos y copas por URL con replay del veredicto.
+
+## [1.12.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.11.1...v1.12.0) · 9 sept 2026 — *Postgres global, voces reales y memoria de campeones*
+
+### Añadido
+- **Postgres gestionado para el ELO global** 🐘: esquema Prisma gemelo (`prisma/schema.postgres.prisma`), conmutador `DB_PROVIDER=postgres`, build de Vercel que genera el cliente y sincroniza el esquema solo (`scripts/vercel-build.mjs`) y `db-init` consciente de dialecto que crea las **seis** tablas en SQLite y Postgres. Guía paso a paso en el README (Vercel → Storage → Postgres/Neon).
+- **Voces de proveedores reales** 🗣️: con claves API propias en el entorno (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_AI_API_KEY`, `MISTRAL_API_KEY`, `XAI_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY` para Meta, `DASHSCOPE_API_KEY` para Qwen, `MOONSHOT_API_KEY`, `COHERE_API_KEY`), los contendientes de esos proveedores responden vía su API real — en batalla, lado a lado, directo y Copa — con reserva transparente al motor propio. El campo `engine` de la respuesta declara qué voz se usó (honestidad intacta). Slugs sobreescribibles con `VOZ_MODELO_<PROVEEDOR>`.
+- **Salón de la Fama de la Copa** 🏆: cada gran final coronada escribe su campeón (y subcampeón) en la base de datos; nueva ruta `GET /api/hall-of-fame` y tarjeta en el Modo Torneo (pantalla de sorteo y revelación) que destaca al campeón recién coronado. En la demo estática vive en el `localStorage`.
+- **Historial del perfil en la nube** ☁️: el autoguardado registra qué campos cambiaron (`ProfileEvent`), con nueva ruta `GET /api/profile/historial` y tarjeta «Actividad del perfil» en Ajustes → Perfil (solo con sesión iniciada).
+
+### Corregido
+- **Revelación prematura de la copa (bug de la v1.9.0)** 🏆: la condición de gran final usaba `rounds.length`, que crece con cada ronda creada — votar la primera semifinal de un cuadro de 4 coronaba campeón al azar. Ahora el total de rondas se deriva del tamaño del cuadro (`esGranFinal()` en `copa-utils.ts`, con tests de regresión) y el Salón de la Fama registra siempre al campeón real de la final.
+- **Diagramas Mermaid blindados ante la sandbox de GitHub** 🛡️: eliminados los constructos frágiles (`<br/>` en etiquetas, emoji en nodos, alias con paréntesis/slashes) que provocan el error intermitente *«Unable to render rich display: Cannot read properties of undefined (reading 'render')»*. La CI valida ahora los 4 diagramas con el parser real de Mermaid (`scripts/check-mermaid.mjs`) antes de cada push.
+- `db-init` no creaba `EloState` en entornos efímeros: el ELO global no persistía en Vercel con SQLite efímero. Ahora el esquema efímero está completo y añade las columnas de perfil a bases anteriores a la v1.9.2.
+
+### Técnico
+- `scripts/prepare-db.mjs` (postinstall) genera el cliente con el esquema de `DB_PROVIDER`; `scripts/vercel-build.mjs` encadena generate → `prisma db push` (si hay `DATABASE_URL`) → `next build` en Vercel.
+- Suite ampliada a **59 tests**: rondas de la copa y detección de la gran final, diff del perfil, etiquetas y mapeo de voces externas (endpoints, slugs, formato OpenAI/Anthropic) y sus cabeceras.
 
 ## [1.11.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.11.0...v1.11.1) · 9 sept 2026 — *La instancia oficial, a un clic desde cualquier parte*
 

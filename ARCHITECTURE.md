@@ -38,9 +38,9 @@ No hay estado de sesión distribuido ni cachés externas: el despliegue es un pr
 sequenceDiagram
     participant U as Usuario
     participant C as ChatExperience
-    participant B as /api/battle
+    participant B as API battle
     participant S as z-ai SDK
-    participant D as SQLite (Vote)
+    participant D as SQLite Vote
 
     U->>C: prompt + modo + categoría
     C->>B: POST { prompt, modelAId?, modelBId?, composerMode }
@@ -68,10 +68,10 @@ Detalles que importan:
 sequenceDiagram
     participant U as Usuario
     participant T as TournamentView
-    participant A as /api/tournament
-    participant M as Map de copas (globalThis)
+    participant A as API tournament
+    participant M as Map de copas en memoria
     participant S as z-ai SDK
-    participant D as SQLite (Vote)
+    participant D as SQLite Vote
 
     U->>T: consigna + "Sortear"
     T->>A: POST { action: "start", prompt }

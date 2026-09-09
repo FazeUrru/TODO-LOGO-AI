@@ -1,9 +1,19 @@
+// Esquema PostgreSQL — gemelo 1:1 de prisma/schema.prisma (SQLite).
+//
+// v1.12.0: ELO global en serverless. Selecciona este esquema con
+// DB_PROVIDER=postgres (el cliente Prisma y todo el código de la app son
+// idénticos para ambos motores; solo cambia el datasource).
+//
+// Local:  bun run db:generate:pg / db:push:pg  (con DATABASE_URL apuntando a Postgres)
+// Vercel: define DATABASE_URL (Neon / Vercel Postgres) + DB_PROVIDER=postgres;
+//         scripts/vercel-build.mjs genera el cliente y sincroniza el esquema solo.
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -22,8 +32,7 @@ model Vote {
   @@index([createdAt])
 }
 
-// ELO global persistente (v1.9.0) — sobrevive reinicios.
-// Postgres-ready: para migrar, cambia provider a "postgresql" y DATABASE_URL.
+// ELO global persistente (v1.9.0) — con Postgres es global entre instancias.
 model EloState {
   modelId   String   @id
   elo       Float    @default(1000)

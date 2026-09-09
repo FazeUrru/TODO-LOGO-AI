@@ -3,6 +3,7 @@ import ZAI from "z-ai-web-dev-sdk";
 import { getModel, MODELS } from "@/lib/models-data";
 import { ALL_3D_IDS } from "@/lib/models-3d";
 import { personaFor } from "@/lib/personas";
+import { chatExterno, vozExternaPara, type VozExterna } from "@/lib/voices-externas";
 
 export const maxDuration = 60;
 
@@ -84,6 +85,19 @@ function buildMessages(
 interface GeneratedSide {
   text: string | null;
   thinking: string | null;
+  voz: string | null; // proveedor externo usado, o null = motor propio
+}
+
+/** Nota de honestidad del motor: qué generó cada lado de la batalla. */
+function engineNote(vozA: string | null, vozB: string | null) {
+  const usadas = [...new Set([vozA, vozB].filter((v): v is string => Boolean(v)))];
+  if (usadas.length === 0) {
+    return { id: "todologo-glm", note: "Motor único de Todólogo con la personalidad de cada modelo" };
+  }
+  return {
+    id: "voces-externas",
+    note: `Voces reales vía API de proveedor (${usadas.join(", ")}) con reserva al motor propio de Todólogo`,
+  };
 }
 
 async function generateSide(
@@ -92,9 +106,16 @@ async function generateSide(
   prompt: string,
   temperature: number,
   history: HistoryTurn[],
-  think = false
+  think = false,
+  voz: VozExterna | null = null
 ): Promise<GeneratedSide> {
   const msgs = buildMessages(systemPrompt, prompt, history);
+  // v1.12.0 — voz de proveedor real si hay clave (el razonamiento profundo
+  // se queda en el motor propio, que devuelve reasoning estructurado)
+  if (voz && !think) {
+    const r = await chatExterno(voz, msgs, temperature);
+    if (r) return { text: r.text, thinking: null, voz: voz.proveedor };
+  }
   try {
     const completion = await Promise.race([
       zai.chat.completions.create({
@@ -119,9 +140,10 @@ async function generateSide(
     return {
       text: content && content.trim().length > 0 ? content.trim() : null,
       thinking: rawThink ? rawThink.slice(0, 2000) : null,
+      voz: null,
     };
   } catch {
-    return { text: null, thinking: null };
+    return { text: null, thinking: null, voz: null };
   }
 }
 
@@ -142,6 +164,7 @@ interface StreamSideResult {
   text: string;
   thinking: string;
   empty: boolean;
+  voz: string | null;
 }
 
 /** Itera el ReadableStream del SDK y extrae deltas {content, reasoning} estilo OpenAI. */
@@ -201,7 +224,8 @@ async function streamSide(
   temperature: number,
   history: HistoryTurn[],
   think: boolean,
-  send: (ev: Record<string, unknown>) => void
+  send: (ev: Record<string, unknown>) => void,
+  voz: VozExterna | null = null
 ): Promise<StreamSideResult> {
   const deltaKey = side === "A" ? "dA" : "dB";
   const thinkKey = side === "A" ? "tA" : "tB";
@@ -211,6 +235,16 @@ async function streamSide(
   const push = (kind: string, v: string) => {
     send({ t: kind, v });
   };
+
+  // v1.12.0 — voz de proveedor real si hay clave: respuesta de una pieza
+  // (el razonamiento profundo se queda en el motor propio)
+  if (voz && !think) {
+    const r = await chatExterno(voz, buildMessages(systemPrompt, prompt, history), temperature);
+    if (r) {
+      push(deltaKey, r.text);
+      return { text: r.text, thinking: "", empty: false, voz: voz.proveedor };
+    }
+  }
 
   try {
     const started = await Promise.race([
@@ -261,7 +295,7 @@ async function streamSide(
     /* cae a la respuesta de reserva */
   }
 
-  return { text, thinking, empty: text.trim().length === 0 };
+  return { text, thinking, empty: text.trim().length === 0, voz: null };
 }
 
 /** Búsqueda web real vía el SDK; nunca rompe el flujo si falla (1 reintento). */
@@ -388,6 +422,10 @@ export async function POST(req: NextRequest) {
   const think = body.composerMode === "profundo";
   const finalPrompt = `${prompt}${webContext}`;
 
+  // v1.12.0 — voces de proveedores reales si hay claves API en el entorno
+  const vozA = vozExternaPara(modelA.provider);
+  const vozB = modelB ? vozExternaPara(modelB.provider) : null;
+
   const sys = (name: string, extra = "") =>
     `Eres "${name}", un contendiente anónimo del arena de IA todólogo.ai. ${personaFor(
       name === modelA.name ? aId : (bId ?? "")
@@ -418,7 +456,7 @@ export async function POST(req: NextRequest) {
           });
 
           const resA = streamSide(
-            zai, "A", sys(modelA.name), finalPrompt, 0.65, historyA, think, send
+            zai, "A", sys(modelA.name), finalPrompt, 0.65, historyA, think, send, vozA
           );
           const resB =
             !single && modelB
@@ -430,7 +468,8 @@ export async function POST(req: NextRequest) {
                   0.9,
                   historyB,
                   think,
-                  send
+                  send,
+                  vozB
                 )
               : null;
 
@@ -447,10 +486,7 @@ export async function POST(req: NextRequest) {
           send({
             t: "end",
             usedFallback: usedA || usedB,
-            engine: {
-              id: "todologo-glm",
-              note: "Motor único de Todólogo con la personalidad de cada modelo",
-            },
+            engine: engineNote(outA.voz, outB?.voz ?? null),
           });
         } catch {
           send({
@@ -486,7 +522,8 @@ export async function POST(req: NextRequest) {
       finalPrompt,
       0.65,
       historyA,
-      think
+      think,
+      vozA
     );
     const genB =
       modelB && historyB.length >= 0
@@ -496,9 +533,10 @@ export async function POST(req: NextRequest) {
             finalPrompt,
             0.9,
             historyB,
-            think
+            think,
+            vozB
           )
-        : Promise.resolve({ text: null, thinking: null });
+        : Promise.resolve({ text: null, thinking: null, voz: null });
 
     const [resA, resB] = await Promise.all([genA, genB]);
 
@@ -513,10 +551,9 @@ export async function POST(req: NextRequest) {
       thinkingB: modelB ? (resB.thinking ?? undefined) : undefined,
       sources: sources.length > 0 ? sources : undefined,
       usedFallback: !resA.text || (Boolean(modelB) && !resB.text),
-      // Honestidad: las respuestas las genera el motor único de Todólogo
-      // (GLM vía z-ai-web-dev-sdk) encarnando la personalidad de cada modelo,
-      // no los modelos comerciales reales — requieren claves de cada proveedor.
-      engine: { id: "todologo-glm", note: "Motor único de Todólogo con la personalidad de cada modelo" },
+      // Honestidad: qué motor generó cada lado (voces externas si hay claves
+      // de proveedor configuradas, motor propio en caso contrario)
+      engine: engineNote(resA.voz, resB.voz),
     });
   } catch {
     return NextResponse.json({

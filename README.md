@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.11.1-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.12.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
   <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI"><img alt="cobertura" src="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI/graph/badge.svg"></a>
@@ -38,7 +38,7 @@
 | ⚡ **Cómo responde** | Streaming SSE: el texto aparece palabra a palabra, también el razonamiento profundo — sin spinners eternos |
 | 🤖 **Con qué** | 56 modelos de 28 organizaciones · respuestas generadas al vuelo · backend real (Next.js 16 + Prisma + SQLite) |
 | 🎮 **Extras únicos** | Arcade con 3 juegos autoevolutivos (GTA VI Costa Vice, Isla Maldita, Imperios RTS) · Modo Agente · imágenes, 3D, web y pensamiento profundo en el chat |
-| 🛡️ **Calidad** | 48 tests · 97.7 % de cobertura en la lógica central · CI en vivo ([Tests y CI](#-tests-y-ci)) |
+| 🛡️ **Calidad** | 59 tests · 97.8 % de cobertura en la lógica central · CI en vivo ([Tests y CI](#-tests-y-ci)) |
 | ⚙️ **Operación** | Cron interno con informe de salud en [`/api/health`](#-referencia-de-la-api) + watchdog con reinicio automático ([sección Operar](#%EF%B8%8F-operar-watchdog-y-cron-nivel-empresarial)) |
 | 🔒 **Honestidad** | Las «56 voces» salen de un motor propio con 56 personalidades — [qué es real y qué no](#-honestidad-qué-es-real-y-qué-no) |
 
@@ -167,11 +167,11 @@ Es un torneo de eliminación directa al estilo de un cuadro de tenis, pero entre
 
 ```mermaid
 flowchart LR
-    P["Tu consigna"] --> SF1["Semifinal 1<br/>A1 vs A2"]
-    P --> SF2["Semifinal 2<br/>B1 vs B2"]
-    SF1 -- "votas" --> F["GRAN FINAL<br/>F1 vs F2"]
-    SF2 -- "votas" --> F
-    F -- "votas" --> C["🏆 CAMPEÓN<br/>revelación + confeti"]
+    P["Tu consigna"] --> SF1["Semifinal 1 · A1 vs A2"]
+    P --> SF2["Semifinal 2 · B1 vs B2"]
+    SF1 -->|"votas"| F["GRAN FINAL · F1 vs F2"]
+    SF2 -->|"votas"| F
+    F -->|"votas"| C["CAMPEON · revelación y confeti"]
 ```
 
 **Cómo funciona, paso a paso:**
@@ -188,6 +188,7 @@ flowchart LR
 - **Votos idempotentes.** Votar dos veces el mismo duelo no duplica el voto ni corrompe el ELO (la segunda llamada devuelve el estado actual).
 - **Anti-carreras.** La final se crea con un marcador sincrónico en el servidor antes de generar, así que dos votos casi simultáneos nunca disparan dos finales.
 - **Sesiones de copa** en memoria del proceso con expiración y limpieza automática (se conservan las 120 más recientes).
+- **Salón de la Fama (v1.12.0)**: cada campeón coronado queda registrado en la base de datos (o en tu navegador en la demo) y aparece en la tarjeta del Modo Torneo.
 
 ## Superpoderes del chat
 
@@ -227,7 +228,7 @@ Este proyecto se toma en serio la transparencia — hay una sección equivalente
 | Pieza | Estado real | Detalle |
 |---|---|---|
 | Infraestructura | ✅ **Real** | APIs propias, Prisma + SQLite, fórmulas ELO en servidor, votación idempotente por `battleId`, Copa con anonato verificado en servidor, cuentas scrypt + cookie httpOnly firmada |
-| Las «56 voces» | ⚠️ **Un motor con 56 personalidades** | Todas las respuestas salen del motor único de Todólogo (GLM vía `z-ai-web-dev-sdk`) encarnando el estilo de cada modelo — no son los modelos comerciales originales, porque cada proveedor exige sus propias claves de API. Lo declaramos en la revelación y en `/acerca` |
+| Las «56 voces» | ⚠️ **Un motor con 56 personalidades** (o voces reales con tu clave) | Todas las respuestas salen del motor único de Todólogo (GLM vía `z-ai-web-dev-sdk`) encarnando el estilo de cada modelo — no son los modelos comerciales originales, porque cada proveedor exige sus propias claves de API. **Desde la v1.12.0**, si configuras `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_AI_API_KEY` u otras, esos contendientes responden vía la API real de su proveedor y la respuesta declara qué voz se usó. Lo declaramos en la revelación y en `/acerca` |
 | Login social | ⚠️ **Dos vías** | Sin credenciales OAuth: entrada rápida por correo (sin contraseña, marcada como tal). Con `GOOGLE_CLIENT_ID`/`SECRET` o `GITHUB_CLIENT_ID`/`SECRET`: flujo OAuth 2.0 nativo (Authorization Code + state CSRF) contra el consentimiento real del proveedor — [guía de OAuth](#-oauth-nativo-google--github) |
 | ELO de la demo Pages | ⚠️ **Local** | En GitHub Pages no hay backend: las respuestas se generan en tu navegador y el ELO vive en tu `localStorage` (la píldora «Demo estática» lo recuerda — [descargo arriba](#-resumen-en-30-segundos)). En servidor real (local/Docker/Vercel) el ELO sí es **global**: cada voto escribe en la base compartida |
 | Imágenes / 3D / vídeo | ✅ Real en servidor / ⚠️ procedural en demo | Generación por IA con backend; arte SVG procedural determinista en la demo estática |
@@ -286,7 +287,7 @@ npm run dev        # http://localhost:3000
 
 ## 🧪 Tests y CI
 
-**Tests unitarios (Vitest)** sobre la lógica crítica — **48 casos en 4 suites**:
+**Tests unitarios (Vitest)** sobre la lógica crítica — **59 casos en 5 suites**:
 
 - `tests/elo.test.ts` — `expectedScore` (igualdad → 0.5, ventaja de 400 → ~0.909, simetría), `eloDeltaFromVotes` (signo, empates, acotado ±48, entero) e integridad del catálogo (ids únicos, proveedores existentes, ELO creíble).
 - `tests/profile.test.ts` — saneado y validación del perfil de 15 ajustes: @usuario (mayúsculas, acentos, guiones sobrantes), webs válidas, límites de campos, valores por defecto y `savedAt`.
@@ -299,7 +300,7 @@ npm run test:watch        # modo desarrollo
 npm run test:coverage     # informe de cobertura (v8)
 ```
 
-**Cobertura:** **97.7 % sentencias · 90 % ramas · 100 % funciones** sobre la lógica central (`elo`, `personas`, `profile-shared`, `models-data`, `asset-path`, `version`). La CI genera el informe y lo sube a [Codecov](https://codecov.io/gh/FazeUrru/TODO-LOGO-AI) — el badge de arriba es real y se actualiza en cada push.
+**Cobertura:** **97.8 % sentencias · 93 % ramas · 100 % funciones** sobre la lógica central (`elo`, `personas`, `profile-shared`, `models-data`, `asset-path`, `version`). La CI genera el informe y lo sube a [Codecov](https://codecov.io/gh/FazeUrru/TODO-LOGO-AI) — el badge de arriba es real y se actualiza en cada push.
 
 **CI (GitHub Actions)** — `.github/workflows/ci.yml`, dos jobs en cada push y PR:
 
@@ -337,11 +338,20 @@ El backend real (batallas con IA, ELO global en base de datos, cuentas, OAuth) t
    | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | opcional | Activa el OAuth nativo de Google |
    | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | opcional | Activa el OAuth nativo de GitHub |
 
-3. **Deploy.** `vercel.json` fija la región `cdg1` (París, latencia mínima a España) y `maxDuration: 60` para las APIs generativas.
+3. **Deploy.** `vercel.json` fija la región `cdg1` (París, latencia mínima a España), `maxDuration: 60` para las APIs generativas y un build que genera el cliente Prisma y sincroniza el esquema solo.
 
-> **Honestidad de ingeniería:** `/tmp` en serverless es **efímero por instancia** — los votos sobreviven entre peticiones de la misma instancia y entre horas de alta actividad, pero un reescalado puede restablecer la base. Para ELO global a prueba de balas usa **Docker/VPS con volumen** (sección anterior, persistencia garantizada) o migra `DATABASE_URL` a un Postgres gestionado (Prisma lo hace trivial: cambiar el `provider` y la URL). Está en el [ROADMAP](ROADMAP.md).
+### 🐘 ELO global de verdad: conecta Postgres (recomendado, 2 minutos)
 
-Comprobación post-deploy: `curl https://tu-proyecto.vercel.app/api/health` → `{"ok":true,...}`.
+Desde la v1.12.0 el proyecto trae esquema Prisma gemelo para PostgreSQL (`prisma/schema.postgres.prisma`). Con Postgres gestionado, el ELO, los votos y los campeones del Salón de la Fama son **globales y persistentes entre instancias** — sin el carácter efímero de `/tmp`:
+
+1. En tu proyecto de Vercel: **Storage → Create Database → Postgres (Neon)**. Vercel crea la base y puebla `DATABASE_URL` automáticamente.
+2. Añade la variable `DB_PROVIDER=postgres` (Project → Settings → Environment Variables).
+3. **Redespliega** (Deployments → Redeploy). El build detecta el provider, genera el cliente correcto, ejecuta `prisma db push` contra tu base y compila.
+4. Verifica: `curl https://tu-proyecto.vercel.app/api/health` → `"checks":{"database":"up",...}`.
+
+En local o CI también: `DATABASE_URL="postgres://…" DB_PROVIDER=postgres bun run db:push:pg`.
+
+Comprobación post-deploy: `curl https://tu-proyecto.vercel.app/api/health` → `{"ok":true,...}`. Sin Postgres, `/tmp` en serverless es **efímero por instancia**: el esquema se recrea solo al arrancar y el ELO vive mientras viva la instancia — conecta Postgres (arriba) o usa Docker/VPS con volumen para persistencia garantizada.
 
 ## ⚙️ Operar: watchdog y cron (nivel empresarial)
 
@@ -398,20 +408,20 @@ Resumen ejecutivo — el análisis completo, con diagramas de secuencia y decisi
 ```mermaid
 flowchart TB
     subgraph Cliente["Navegador (React 19)"]
-        UI["AppShell · Sidebar · TopBar<br/>ChatExperience · TournamentView<br/>LeaderboardView · páginas"]
-        LS["localStorage:<br/>ajustes · historial · insignias · sesión"]
+        UI["AppShell · Sidebar · TopBar · ChatExperience · TournamentView · LeaderboardView · páginas"]
+        LS["localStorage: ajustes · historial · insignias · sesión"]
     end
     subgraph Servidor["Next.js App Router (rutas de API)"]
-        B["/api/battle<br/>generación por 2 vías + web + 3D"]
-        T["/api/tournament<br/>sesiones de copa + bracket"]
-        V["/api/vote<br/>registro de votos + swing"]
-        L["/api/leaderboard<br/>ELO por 10 categorías"]
-        A["/api/agent · /api/image<br/>/api/news · /api/stats · /api/auth/*"]
-        CR["cron interno<br/>latido-bd · purga-copas · informe-diario"]
+        B["/api/battle · generación por 2 vías + web + 3D"]
+        T["/api/tournament · sesiones de copa + bracket"]
+        V["/api/vote · registro de votos + swing"]
+        L["/api/leaderboard · ELO por 10 categorías"]
+        A["/api/agent · /api/image · /api/news · /api/stats · /api/auth"]
+        CR["cron interno · latido-bd · purga-copas · informe-diario"]
     end
     subgraph Datos
-        DB[("SQLite + Prisma<br/>Vote · AgentRun · User")]
-        SDK["z-ai-web-dev-sdk<br/>(chat · imagen · búsqueda web)"]
+        DB[("SQLite + Prisma · Vote · AgentRun · User · EloState")]
+        SDK["z-ai-web-dev-sdk · chat · imagen · búsqueda web"]
     end
     UI --> B & T & V & L & A
     B & T --> SDK
@@ -516,7 +526,7 @@ TODO-LOGO-AI/
 ## Roadmap y changelog
 
 - 🗺️ [`ROADMAP.md`](ROADMAP.md) — hacia dónde va el proyecto: torneos de 8 y 16, Postgres gestionado, perfiles con historial en la nube, arena de imágenes, API pública…
-- 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN y, desde la v1.11.0, **enlaces a su commit exacto y a su diff completo** (etiquetas git `v1.4.0` → `v1.11.1`): un changelog navegable, no un texto estático.
+- 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN y, desde la v1.11.0, **enlaces a su commit exacto y a su diff completo** (etiquetas git `v1.4.0` → `v1.12.0`): un changelog navegable, no un texto estático.
 
 ## Contribuir
 

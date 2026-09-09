@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useProfile, retrySync } from "@/lib/profile";
 import { markUsed } from "@/lib/badges";
+import ActividadPerfil from "./ActividadPerfil";
 import { cn } from "@/lib/utils";
 import {
   ACCENTS,
@@ -339,6 +340,9 @@ export default function PerfilAjustes() {
           <Switch checked={profile.arenaInvites} onChange={(v) => change("arenaInvites", v)} />
         </Row>
       </Section>
+
+      {/* ── Nube: actividad del perfil (v1.12.0) ── */}
+      <ActividadPerfil />
     </div>
   );
 }

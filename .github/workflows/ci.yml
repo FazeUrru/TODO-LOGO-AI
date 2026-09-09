@@ -23,6 +23,9 @@ jobs:
       - name: Generar cliente Prisma
         run: bunx prisma generate
 
+      - name: Validar diagramas Mermaid (render de GitHub)
+        run: bun scripts/check-mermaid.mjs
+
       - name: Lint
         run: bun run lint
 

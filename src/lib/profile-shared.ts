@@ -72,6 +72,40 @@ export function focusLabel(id: string): string {
   return FOCUS_AREAS.find((f) => f.id === id)?.label ?? id;
 }
 
+// ── Historial del perfil en la nube (v1.12.0) ──
+
+/** Etiqueta legible de cada campo del perfil (timeline de actividad). */
+export const PROFILE_FIELD_LABELS: Record<keyof UserProfile, string> = {
+  displayName: "Nombre visible",
+  username: "@usuario",
+  bio: "Biografía",
+  avatar: "Avatar",
+  accent: "Color de acento",
+  pronouns: "Pronombres",
+  location: "Ubicación",
+  website: "Enlace web",
+  focus: "Área de IA favorita",
+  publicProfile: "Perfil público",
+  showStats: "Mostrar estadísticas",
+  showTrophies: "Mostrar copas",
+  weeklyDigest: "Resumen semanal",
+  newModelsAlert: "Aviso de nuevos modelos",
+  arenaInvites: "Invitaciones a copas",
+};
+
+/**
+ * Campos cuyo valor cambió entre dos versiones del perfil (mismo orden que
+ * la declaración de UserProfile). `prev` null = primer guardado conocido.
+ */
+export function diffProfile(
+  prev: Partial<UserProfile> | null,
+  next: UserProfile
+): (keyof UserProfile)[] {
+  const claves = Object.keys(PROFILE_FIELD_LABELS) as (keyof UserProfile)[];
+  if (!prev) return [];
+  return claves.filter((k) => prev[k] !== next[k]);
+}
+
 // ── Límites ──
 
 export const LIMITS = {
