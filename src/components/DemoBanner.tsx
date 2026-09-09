@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { Container, ExternalLink, ShieldCheck, TriangleAlert, X } from "lucide-react";
-import { isStaticDemo } from "@/lib/static-mode";
+import { isStaticDemo, PRODUCCION_URL } from "@/lib/static-mode";
 import { cn } from "@/lib/utils";
 
 const DISMISS_KEY = "todologo.bannerDemoOculto";
@@ -91,9 +91,20 @@ export default function DemoBanner() {
             <Container className="h-3 w-3" aria-hidden />
             docker compose up --build
           </button>
-          {copiado && <span className="ml-1 text-[12px] font-medium">¡copiado!</span>}
+          {copiado && <span className="ml-1 text-[12px] font-medium">¡copiado!</span>}{" "}
+          o entra directamente en la instancia oficial en producción.
         </p>
         <div className="flex items-center gap-2 text-[12.5px] font-medium">
+          <a
+            href={PRODUCCION_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Abrir la instancia oficial: IA real, base de datos y torneos globales"
+            className="inline-flex items-center gap-1 rounded-full bg-amber-900 px-2.5 py-1 font-medium text-amber-50 transition-colors hover:bg-amber-800 dark:bg-amber-100 dark:text-amber-950 dark:hover:bg-white"
+          >
+            Instancia oficial en vivo
+            <ExternalLink className="h-3 w-3" aria-hidden />
+          </a>
           <a
             href={`${REPO}#-docker`}
             target="_blank"

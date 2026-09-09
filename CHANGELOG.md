@@ -17,6 +17,15 @@
 - Internacionalización es/en/pt.
 - Compartir duelos y copas por URL con replay del veredicto.
 
+## [1.11.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.11.0...v1.11.1) · 9 sept 2026 — *La instancia oficial, a un clic desde cualquier parte*
+
+### Añadido
+- **Instancia oficial en producción** 🚀: [https://todo-logo-ai.vercel.app/](https://todo-logo-ai.vercel.app/) — IA real, base de datos y torneos globales sin instalar nada. Ahora es la llamada principal del README (encima de la demo estática), abre la sección Demo en vivo, lleva badge propio en la cabecera y aparece en el descargo de honestidad.
+- El **banner de demo** añade la pastilla sólida «Instancia oficial en vivo»: quien aterrice en la demo estática salta a la experiencia real con un clic, además de poder desplegar la suya con `docker compose up --build`.
+
+### Mejorado
+- La URL de producción vive en una única constante (`PRODUCCION_URL` en `src/lib/static-mode.ts`): cambiar de dominio no toca ningún componente, y el banner y el README se mantienen sincronizados por diseño.
+
 ## [1.11.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.10.0...v1.11.0) · 9 sept 2026 — *Streaming en tiempo real + producción sin fricción*
 
 ### Añadido

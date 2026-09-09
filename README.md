@@ -9,10 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.11.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.11.1-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
   <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI"><img alt="cobertura" src="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI/graph/badge.svg"></a>
+  <a href="https://todo-logo-ai.vercel.app/"><img alt="producción" src="https://img.shields.io/badge/producci%C3%B3n-en%20linea-black?style=flat-square&logo=vercel"></a>
   <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/deploy-pages.yml"><img alt="demo" src="https://img.shields.io/badge/demo-GitHub%20Pages-blue?style=flat-square&logo=github"></a>
   <img alt="next.js" src="https://img.shields.io/badge/Next.js-16-black?style=flat-square">
   <img alt="modelos" src="https://img.shields.io/badge/modelos-56-2E2B29?style=flat-square">
@@ -22,7 +23,8 @@
 </p>
 
 <p align="center">
-  🌐 <strong><a href="https://fazeurru.github.io/TODO-LOGO-AI/">VER LA DEMO EN VIVO — https://fazeurru.github.io/TODO-LOGO-AI/</a></strong> 🌐
+  ▶️ <strong><a href="https://todo-logo-ai.vercel.app/">ABRIR LA ARENA EN PRODUCCIÓN — https://todo-logo-ai.vercel.app/</a></strong> ▶️<br>
+  <sub>IA real, base de datos y torneos globales, sin instalar nada · 🌐 demo estática: <a href="https://fazeurru.github.io/TODO-LOGO-AI/">fazeurru.github.io/TODO-LOGO-AI</a></sub>
 </p>
 
 ---
@@ -40,7 +42,7 @@
 | ⚙️ **Operación** | Cron interno con informe de salud en [`/api/health`](#-referencia-de-la-api) + watchdog con reinicio automático ([sección Operar](#%EF%B8%8F-operar-watchdog-y-cron-nivel-empresarial)) |
 | 🔒 **Honestidad** | Las «56 voces» salen de un motor propio con 56 personalidades — [qué es real y qué no](#-honestidad-qué-es-real-y-qué-no) |
 
-> ⚠️ **Descargo sobre la demo de GitHub Pages** — la demo juega **en tu navegador** (sin servidor): respuestas, votos y ELO se generan y guardan en tu `localStorage` con las mismas fórmulas. **No significa que el proyecto sea una simulación**: el mismo código, sin cambios, arranca un **backend real con IA, base de datos Prisma/SQLite y OAuth** (local, Docker o Vercel — [cómo](#-inicio-rápido)). La app lo declara **en grande**: un banner ámbar en la parte superior con el comando Docker a un clic, además de la píldora «Demo estática». Detalles: [tabla de honestidad](#-honestidad-qué-es-real-y-qué-no).
+> ⚠️ **Descargo sobre la demo de GitHub Pages** — la demo juega **en tu navegador** (sin servidor): respuestas, votos y ELO se generan y guardan en tu `localStorage` con las mismas fórmulas. **No significa que el proyecto sea una simulación**: el mismo código, sin cambios, arranca un **backend real con IA, base de datos Prisma/SQLite y OAuth** (local, Docker o Vercel — [cómo](#-inicio-rápido)). ¿Sin instalar nada? Abre la [instancia oficial en producción →](https://todo-logo-ai.vercel.app/). La app lo declara **en grande**: un banner ámbar en la parte superior con el comando Docker a un clic, además de la píldora «Demo estática». Detalles: [tabla de honestidad](#-honestidad-qué-es-real-y-qué-no).
 
 ## Índice
 
@@ -81,7 +83,11 @@ Debajo del capó hay un backend real: 56 modelos de 28 organizaciones compiten c
 
 ## 🌐 Demo en vivo (GitHub Pages)
 
-**Cada push a `main` despliega automáticamente una demo funcional de la app en GitHub Pages:**
+**Primero, la experiencia completa: la instancia oficial corre en producción con IA real, base de datos y torneos globales — sin instalar nada:**
+
+> ### → [**https://todo-logo-ai.vercel.app/**](https://todo-logo-ai.vercel.app/)
+
+**Y además, cada push a `main` despliega automáticamente una demo funcional de la app en GitHub Pages:**
 
 > ### → [**https://fazeurru.github.io/TODO-LOGO-AI/**](https://fazeurru.github.io/TODO-LOGO-AI/)
 
@@ -93,7 +99,7 @@ La demo es la aplicación completa —batallas, Copa Todólogo, ranking, modos d
 | Votos y ELO | SQLite + Prisma (persistentes y globales) | `localStorage` (persistentes en tu navegador) |
 | Imágenes | Generación real por IA | Arte procedural SVG determinista |
 | Cuentas | scrypt + sesiones en servidor | SHA-256 + sesión en `localStorage` |
-| URL | la que configures | `https://fazeurru.github.io/TODO-LOGO-AI/` |
+| URL | [todo-logo-ai.vercel.app](https://todo-logo-ai.vercel.app/) (oficial) o la que configures | `https://fazeurru.github.io/TODO-LOGO-AI/` |
 
 **Regenerar la demo a mano:** `node scripts/build-pages.mjs` produce el export en `.next-static/`; el workflow `.github/workflows/deploy-pages.yml` lo hace solo en cada push a `main`.
 
@@ -510,7 +516,7 @@ TODO-LOGO-AI/
 ## Roadmap y changelog
 
 - 🗺️ [`ROADMAP.md`](ROADMAP.md) — hacia dónde va el proyecto: torneos de 8 y 16, Postgres gestionado, perfiles con historial en la nube, arena de imágenes, API pública…
-- 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN y, desde la v1.11.0, **enlaces a su commit exacto y a su diff completo** (etiquetas git `v1.4.0` → `v1.11.0`): un changelog navegable, no un texto estático.
+- 📋 [`CHANGELOG.md`](CHANGELOG.md) — cada versión con sus NUEVO/MEJORA/CORRECCIÓN y, desde la v1.11.0, **enlaces a su commit exacto y a su diff completo** (etiquetas git `v1.4.0` → `v1.11.1`): un changelog navegable, no un texto estático.
 
 ## Contribuir
 

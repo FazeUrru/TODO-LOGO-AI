@@ -10,3 +10,9 @@ export function isStaticDemo(): boolean {
   if (process.env.NEXT_PUBLIC_STATIC_MODE === "1") return true;
   return window.location.hostname.endsWith(".github.io");
 }
+
+/**
+ * Instancia oficial de producción (Vercel): IA real, base de datos y torneos globales.
+ * Constante única para que cambiar de dominio no toque ningún componente.
+ */
+export const PRODUCCION_URL = "https://todo-logo-ai.vercel.app/";
