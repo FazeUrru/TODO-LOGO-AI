@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.15.0",
+    fecha: "9 sept 2026",
+    hora: "13:32",
+    titulo: "Los generativos entran al chat: vídeo, voz e imagen, todo interno",
+    tldr:
+      "El chat ya rueda vídeo real, narra con 7 voces propias y genera imágenes — sin salir de la conversación y con el motor interno rotulado con honestidad.",
+    diffDesde: "1.14.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.14.0",
     fecha: "9 sept 2026",
     hora: "13:14",

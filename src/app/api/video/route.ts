@@ -6,23 +6,23 @@ import { guardarVideoLocal } from "@/lib/guardar-video";
 export const maxDuration = 300;
 
 /**
- * POST /api/video — Modo Cine (v1.15.0, Labs): generación de vídeo REAL.
+ * POST /api/video — Modo Cine (v1.15.0, Labs) y modo vídeo del chat: vídeo REAL.
  *
- * Motor: la generación de vídeo del SDK de Z.ai (CogVideoX), con prompts
- * enriquecidos por el «motor rotativo»: cada petición rota el estilo del
- * enriquecimiento entre los referentes del catálogo actual (Seedance 2.5,
- * Veo 3.1, Kling 3.0 Turbo…), igual que el compositor cambia de modelo.
- * El vídeo producido es real: mp4 descargable con audio.
+ * Motor: la generación de vídeo del SDK de Z.ai — el motor interno de
+ * Todólogo. El «rotativo» no son motores externos: cada rodaje rota un
+ * ESTILO cinematográfico de enriquecimiento (multi-plano, documental,
+ * acción…) inspirado en los referentes del catálogo. El vídeo producido
+ * es real: mp4 con audio, descargable y guardado en /generated.
  *
  * Body: { prompt: string, duracion?: 5 | 10 }
  * Respuesta:
- *  - { ok: true, url, motor, segundos }                       → listo
- *  - { ok: true, pending: true, taskId, motor }               → seguir en /api/video/status
+ *  - { ok: true, url, estilo, motor, segundos }               → listo
+ *  - { ok: true, pending: true, taskId, estilo, motor, segundos } → seguir en /api/video/status
  *  - { ok: false, error }                                     → fallo
  */
 
-/** Motores de enriquecimiento rotativo — reflejan el catálogo v1.15.0. */
-const MOTORES = [
+/** Estilos cinematográficos rotativos del motor interno (v1.15.0). */
+const ESTILOS = [
   {
     id: "seedance-2.5",
     nombre: "Seedance 2.5",
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const motor = MOTORES[Math.floor(Date.now() / 1000) % MOTORES.length];
+  const motor = ESTILOS[Math.floor(Date.now() / 1000) % ESTILOS.length];
   const promptFinal = `${prompt}. Style: ${motor.estilo}.`;
 
   try {
@@ -131,7 +131,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           ok: true,
           url: local ?? url,
-          motor: motor.nombre,
+          estilo: motor.nombre,
+          motor: "Interno de Todólogo",
           motorId: motor.id,
           segundos: duracion,
           taskId: tarea.id,
@@ -145,7 +146,8 @@ export async function POST(req: NextRequest) {
       ok: true,
       pending: true,
       taskId: tarea.id,
-      motor: motor.nombre,
+      estilo: motor.nombre,
+      motor: "Interno de Todólogo",
       motorId: motor.id,
       segundos: duracion,
     });

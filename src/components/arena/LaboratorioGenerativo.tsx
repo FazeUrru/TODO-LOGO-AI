@@ -211,7 +211,7 @@ function ModoCine() {
   const [frase, setFrase] = useState(0);
   const [resultado, setResultado] = useState<{
     url: string;
-    motor: string;
+    estilo: string;
     segundos: number;
   } | null>(null);
   const [error, setError] = useState("");
@@ -221,7 +221,7 @@ function ModoCine() {
     if (timerRef.current) clearInterval(timerRef.current);
   }, []);
 
-  const sondear = useCallback((taskId: string, motor: string, segundos: number) => {
+  const sondear = useCallback((taskId: string, estilo: string, segundos: number) => {
     const intentos = setInterval(async () => {
       try {
         const r = await fetch(`/api/video/status?id=${encodeURIComponent(taskId)}`);
@@ -229,7 +229,7 @@ function ModoCine() {
         if (d.ok && d.ready) {
           clearInterval(intentos);
           if (timerRef.current) clearInterval(timerRef.current);
-          setResultado({ url: d.url, motor, segundos });
+          setResultado({ url: d.url, estilo, segundos });
           setRodando(false);
           labsEvent("modo-cine", "used");
         }
@@ -264,10 +264,10 @@ function ModoCine() {
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error ?? "El rodaje falló.");
       if (data.pending) {
-        sondear(data.taskId, data.motor, data.segundos);
+        sondear(data.taskId, data.estilo ?? "", data.segundos);
         return; // el sondeo cerrará el estado
       }
-      setResultado({ url: data.url, motor: data.motor, segundos: data.segundos });
+      setResultado({ url: data.url, estilo: data.estilo ?? "", segundos: data.segundos });
       labsEvent("modo-cine", "used");
     } catch (e) {
       setError(e instanceof Error ? e.message : "El rodaje falló. Inténtalo de nuevo.");
@@ -280,10 +280,10 @@ function ModoCine() {
   return (
     <div className="space-y-4">
       <p className="text-[13.5px] leading-relaxed text-foreground/85">
-        Escribe la escena y rueda un <strong>vídeo real</strong> (mp4 con audio, descargable).
-        El <strong>motor rotativo</strong> alterna el estilo de rodaje entre los referentes del
-        leaderboard — Seedance 2.5, Veo 3.1, Kling 3.0 Turbo, Sora 2, Runway Gen-4.5 y Wan 3.0 —
-        así que la misma escena sale distinta en cada rodaje.
+        Escribe la escena y rueda un <strong>vídeo real</strong> (mp4 con audio, descargable) con el{" "}
+        <strong>motor interno de Todólogo</strong>. El <strong>estilo rotativo</strong> alterna el sabor del
+        rodaje entre los referentes del leaderboard — Seedance 2.5, Veo 3.1, Kling 3.0 Turbo, Sora 2,
+        Runway Gen-4.5 y Wan 3.0 — así que la misma escena sale distinta en cada intento.
       </p>
 
       <textarea
@@ -355,8 +355,9 @@ function ModoCine() {
           />
           <div className="flex items-center justify-between gap-3 px-4 py-2.5">
             <p className="text-[12.5px] text-muted-foreground">
-              Motor rotativo: <span className="font-medium text-foreground">{resultado.motor}</span>{" "}
-              · {resultado.segundos} s · audio nativo
+              Motor interno de Todólogo · estilo{" "}
+              <span className="font-medium text-foreground">{resultado.estilo}</span> · {resultado.segundos} s ·
+              audio nativo
             </p>
             <a
               href={resultado.url}

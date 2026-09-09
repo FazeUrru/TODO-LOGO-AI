@@ -22,6 +22,7 @@ import {
   RefreshCw,
   LayoutList,
   BadgeCheck,
+  Clapperboard,
   ChevronDown,
   ChevronsUpDown,
 } from "lucide-react";
@@ -83,6 +84,29 @@ function Tldr({ children }: { children: React.ReactNode }) {
 
 /* ── Cuerpos ricos por versión (el detalle completo de cada release) ── */
 const CUERPOS: Record<string, React.ReactNode> = {
+  "1.15.0": (
+    <div className="space-y-4">
+      <div>
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+          <Clapperboard className="h-4 w-4" /> Generativos dentro de la conversación
+        </h2>
+        <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+          <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Vídeo real en el chat</strong>: el modo vídeo / skill <code>/video</code> rueda un clip <strong>mp4 con audio</strong> con el motor interno de Todólogo y lo incrusta en la conversación con reproductor y descarga — tarjeta de rodaje en vivo (1-4 min) y mensaje honesto si la toma falla.</li>
+          <li className="flex gap-2"><Tag kind="nuevo" /> <strong>Voz interna del chat</strong>: nuevo modo voz + skill <code>/voz</code> — tu texto narrado por el <strong>motor TTS propio</strong> con <strong>7 voces internas</strong> (Tongtong, Chuichui, Xiaochen, Jam, Kazi, Douji y Luodo), selector bajo el cuadro de texto y reproductor dentro del turno.</li>
+          <li className="flex gap-2"><Tag kind="nuevo" /> <strong>La imagen confirma su sitio</strong>: el modo imagen ya generaba dentro del chat con el motor propio — vídeo, voz e imagen comparten ahora la misma vía 100% interna (<code>/generated</code>), sin páginas externas ni APIs de terceros.</li>
+        </ul>
+      </div>
+      <div>
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+          <BadgeCheck className="h-4 w-4" /> Rotulación honesta del rodaje
+        </h2>
+        <ul className="mt-2 space-y-1.5 text-[13.5px] leading-relaxed text-foreground/90">
+          <li className="flex gap-2"><Tag kind="mejora" /> El «motor rotativo» nunca fue un carrusel de motores ajenos: eran <strong>estilos cinematográficos</strong> de enriquecimiento. Ahora la API y la interfaz lo dicen sin ambigüedad — <em>motor interno de Todólogo · estilo X</em> — y los nombres del leaderboard describen el sabor del rodaje, no quien lo fabricó.</li>
+          <li className="flex gap-2"><Tag kind="mejora" /> El Modo Cine de Labs comparte motor, sondeo y etiqueta honesta con el chat: una sola fuente de verdad para todo el vídeo generado.</li>
+        </ul>
+      </div>
+    </div>
+  ),
   "1.14.0": (
     <div className="space-y-4">
       <div>

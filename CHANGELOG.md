@@ -11,7 +11,7 @@
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.15.0
+### Planeado para v1.16.0
 - Compartir duelos y copas por URL permanente con replay de las respuestas y del veredicto.
 - Arena de imágenes con voto y ranking ELO separado del de texto — el flag experimental ya está abierto en Todólogo Labs (`arena-imagenes`, cohorte Explorer).
 - Modo espectador de torneos: observa una copa en directo y predice quién pasará la ronda (ligado al flag `streaming-ws` de Labs).
@@ -20,6 +20,24 @@
 - Internacionalización es/en/pt (next-intl, con la comunidad traduciendo).
 - Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
 - Primera graduación de features de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
+
+## [1.15.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.14.0...v1.15.0) · 9 sept 2026, 13:32 — *Los generativos entran al chat: vídeo, voz e imagen, todo interno*
+
+> 💡 **En una frase:** el chat ya rueda vídeo real, narra con voces propias y genera imágenes — sin salir de la conversación y sin motores externos; y el rodaje se rotula con honestidad: estilos rotativos, motor interno.
+
+### Añadido
+- **Vídeo real dentro del chat** 🎬: el modo vídeo (botón de cámara o skill `/video`) ya no escribe solo el guion — **rueda un clip mp4 con audio** mediante el motor interno de Todólogo y lo incrusta en la conversación con reproductor y descarga. Tarjeta de rodaje en vivo («Rodando tu escena…», 1-4 min de revelado), sondeo robusto vía `/api/video/status` y mensaje honesto si la toma falla.
+- **Voz interna del chat** 🔊 (nuevo modo voz + skill `/voz`): dicta o escribe un texto y el chat lo narra con el **motor TTS propio** (el mismo del estudio de audio de Labs), con selector de **7 voces internas** (Tongtong · cálida, Chuichui · brillante, Xiaochen · serena, Jam · potente, Kazi · tersa, Douji · joven, Luodo · grave) justo bajo el cuadro de texto y reproductor de audio dentro del turno. Cero servicios de voz de terceros.
+- **La imagen ya era interna y se queda en el chat**: el modo imagen confirma su sitio en la conversación — misma vía que vídeo y voz, todo generado y servido desde la propia app (`/generated`).
+
+### Mejorado
+- **Rotulación honesta del rodaje** 🏷️: el «motor rotativo» nunca fue un carrusel de motores ajenos — eran **estilos cinematográficos** de enriquecimiento. La API y la interfaz lo dicen ahora sin ambigüedad: *motor interno de Todólogo · estilo Seedance 2.5 / Veo 3.1 / Kling 3.0 Turbo / Sora 2 / Runway Gen-4.5 / Wan 3.0*. Los nombres del leaderboard describen el sabor del rodaje, no quien lo fabricó: el criterio anti-fantasmas de v1.14.0 aplicado a la atribución de motores.
+- El Modo Cine de Labs comparte el mismo motor y la misma etiqueta honesta que el chat.
+
+### Técnico
+- `TurnMedia` ampliado con `voz`, `estilo` y `segundos`; tarjetas `VideoCard` (reproductor + estado de rodaje) y `AudioCard` (reproductor + descarga) en el chat.
+- `/api/video` responde ahora `{estilo, motor: "Interno de Todólogo"}` y el laboratorio consume `estilo`; el flujo de sondeo se reutiliza tal cual desde el chat.
+- Suite ampliada a **97 tests**: carta de verdad en los prompts internos, modos generativos del chat declarados, honestidad de etiquetas del rodaje y regresión del catálogo (wan-3.0 con categorías completas).
 
 ## [1.14.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.13.0...v1.14.0) · 9 sept 2026, 13:14 — *Integridad del leaderboard, canal Labs, carta de verdad y changelog-interface*
 

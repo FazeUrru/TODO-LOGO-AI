@@ -81,11 +81,17 @@ const Viewer3D = dynamic(() => import("./Viewer3D"), {
 /* ───────────────────────── Tipos ───────────────────────── */
 
 interface TurnMedia {
-  type: "image" | "3d" | "video";
+  type: "image" | "3d" | "video" | "audio";
   url?: string;
   prompt?: string;
   model?: string;
   recipe?: string;
+  /** v1.15.0 — voz interna usada en la locución. */
+  voz?: string;
+  /** v1.15.0 — estilo cinematográfico aplicado por el motor interno. */
+  estilo?: string;
+  /** v1.15.0 — duración del clip en segundos. */
+  segundos?: number;
 }
 
 interface WebSource {
@@ -134,7 +140,8 @@ interface AgentPlan {
   totalEstimate: string;
 }
 
-type ComposerMode = "texto" | "codigo" | "imagen" | "video" | "modelos3d" | "web" | "profundo" | "juego";
+type ComposerMode =
+  "texto" | "codigo" | "imagen" | "video" | "voz" | "modelos3d" | "web" | "profundo" | "juego";
 
 const CATEGORIES = BATTLE_CATEGORIES;
 
@@ -215,6 +222,17 @@ const AGENT_AUTONOMY = [
   { id: "L3", label: "L3 · Total" },
 ];
 
+/* ── Voces internas del chat (v1.15.0) — motor TTS propio, sin APIs externas ── */
+const VOCES_CHAT = [
+  { id: "tongtong", nombre: "Tongtong · cálida" },
+  { id: "chuichui", nombre: "Chuichui · brillante" },
+  { id: "xiaochen", nombre: "Xiaochen · serena" },
+  { id: "jam", nombre: "Jam · potente" },
+  { id: "kazi", nombre: "Kazi · tersa" },
+  { id: "douji", nombre: "Douji · joven" },
+  { id: "luodo", nombre: "Luodo · grave" },
+] as const;
+
 const AGENT_BUDGETS = [
   { id: "lean", label: "Ajustado" },
   { id: "standard", label: "Estándar" },
@@ -236,7 +254,8 @@ const SKILLS: Skill[] = [
   { id: "web", icon: Globe, name: "/web", desc: "Busca en internet y cita fuentes", mode: "web" },
   { id: "profundo", icon: Brain, name: "/profundo", desc: "Razona a fondo antes de responder", mode: "profundo" },
   { id: "imagen", icon: ImageIcon, name: "/imagen", desc: "Genera una ilustración con IA", mode: "imagen" },
-  { id: "video", icon: Clapperboard, name: "/video", desc: "Escribe un guion de vídeo (beta)", mode: "video" },
+  { id: "video", icon: Clapperboard, name: "/video", desc: "Rueda un vídeo real (mp4 con audio)", mode: "video" },
+  { id: "voz", icon: AudioLines, name: "/voz", desc: "Locución con la voz interna del chat", mode: "voz" },
   { id: "modelo3d", icon: Box, name: "/modelo3d", desc: "Crea un modelo 3D interactivo", mode: "modelos3d" },
   { id: "juego", icon: Gamepad2, name: "/juego", desc: "Juego AAA jugable y autoevolutivo", mode: "juego" },
   { id: "codigo", icon: SquareTerminal, name: "/codigo", desc: "Respuesta con código listo", mode: "codigo" },
@@ -322,11 +341,13 @@ export default function ChatExperience() {
   const usedLabCine = useUsed("lab-cine");
   const usedLabEstudio = useUsed("lab-estudio");
   const usedLabAudio = useUsed("lab-audio");
+  const usedVoz = useUsed("modo-voz");
 
   // Agente
   const [agentMission, setAgentMission] = useState("");
   const [agentType, setAgentType] = useState("juego-aaa");
   const [agentAutonomy, setAgentAutonomy] = useState("L3");
+  const [vozId, setVozId] = useState<string>("tongtong");
   const [agentBudget, setAgentBudget] = useState("unlimited");
   const [agentPlan, setAgentPlan] = useState<AgentPlan | null>(null);
   const [agentGenerated, setAgentGenerated] = useState<boolean | null>(null);
@@ -521,13 +542,14 @@ export default function ChatExperience() {
       toast({ title: "El Modo Agente planifica misiones", description: "Usa imagen, vídeo, 3D, web o código en Batalla, Lado a Lado o Directo." });
       return;
     }
-    if (next === "imagen" || next === "video" || next === "modelos3d") {
+    if (next === "imagen" || next === "video" || next === "voz" || next === "modelos3d") {
       ensureDirect(next === "modelos3d" ? "El 3D" : `El modo ${next}`);
     }
     if (next === "codigo") markUsed("modo-codigo");
     if (next === "juego") markUsed("modo-juego");
     if (next === "imagen") markUsed("modo-imagen");
     if (next === "video") markUsed("modo-video");
+    if (next === "voz") markUsed("modo-voz");
     if (next === "modelos3d") markUsed("modo-3d");
     if (next === "web") markUsed("modo-web");
     if (next === "profundo") markUsed("modo-profundo");
@@ -543,7 +565,7 @@ export default function ChatExperience() {
         setPrompt("");
         return;
       }
-      if (s.mode === "imagen" || s.mode === "video" || s.mode === "modelos3d") {
+      if (s.mode === "imagen" || s.mode === "video" || s.mode === "voz" || s.mode === "modelos3d") {
         ensureDirect(s.mode === "modelos3d" ? "El 3D" : `El modo ${s.mode}`);
       }
       markUsed(`modo-${s.mode === "modelos3d" ? "3d" : s.mode}`);
@@ -574,6 +596,16 @@ export default function ChatExperience() {
     if (activeMode === "imagen") {
       markUsed("modo-imagen");
       await runImage(raw);
+      return;
+    }
+    if (activeMode === "voz") {
+      markUsed("modo-voz");
+      await runVoz(raw);
+      return;
+    }
+    if (activeMode === "video") {
+      markUsed("modo-video");
+      await runVideo(raw);
       return;
     }
     await runChat(content, activeMode, raw);
@@ -883,6 +915,102 @@ export default function ChatExperience() {
     }
   }
 
+  /**
+   * v1.15.0 — vídeo REAL dentro del chat: el motor interno de Todólogo (Z.ai)
+   * rueda un mp4 con audio y queda incrustado en la conversación, guardado en
+   * /generated. Sin páginas externas ni APIs de terceros.
+   */
+  async function runVideo(desc: string) {
+    const userTurn: Turn = { role: "user", content: desc };
+    setTurnsA((t) => [...t, userTurn]);
+    setPhase("chat");
+    setThinking(true);
+    // Turno provisional: la tarjeta de vídeo muestra el rodaje en curso
+    setTurnsA((t) => [
+      ...t,
+      { role: "assistant", content: "Rodando tu escena…", media: { type: "video" } },
+    ]);
+    const reemplazar = (turno: Turn) => setTurnsA((t) => [...t.slice(0, -1), turno]);
+    try {
+      const res = await fetch("/api/video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: desc, duracion: 5 }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "El rodaje no pudo iniciarse.");
+      let url: string | null = data.pending ? null : (data.url ?? null);
+      if (!url && data.taskId) {
+        // Sondeo externo (mismo mecanismo del Modo Cine): hasta ~4,5 min
+        const limite = Date.now() + 280_000;
+        while (!url && Date.now() < limite) {
+          await new Promise((r) => setTimeout(r, 6_000));
+          const s = (await fetch(`/api/video/status?id=${encodeURIComponent(data.taskId)}`)
+            .then((r) => r.json())
+            .catch(() => null)) as { ok?: boolean; ready?: boolean; failed?: boolean; url?: string } | null;
+          if (s?.ok && s.ready && s.url) url = s.url;
+          if (s?.ok && s.failed) throw new Error("El motor descartó la toma. Prueba con otra escena.");
+        }
+      }
+      if (!url) throw new Error("El revelado tardó más de la cuenta. Inténtalo de nuevo en unos minutos.");
+      reemplazar({
+        role: "assistant",
+        content: `Aquí tienes tu vídeo para: «${desc.slice(0, 140)}»`,
+        media: { type: "video", url, estilo: data.estilo, segundos: data.segundos },
+      });
+      if (settings.soundOnDone) playDoneChime();
+    } catch (e) {
+      reemplazar({
+        role: "assistant",
+        content: `No pude rodar el vídeo: ${
+          e instanceof Error ? e.message : "inténtalo de nuevo"
+        }. Reformula la escena o prueba en unos minutos.`,
+      });
+    } finally {
+      setThinking(false);
+    }
+  }
+
+  /**
+   * v1.15.0 — locución DENTRO del chat: la voz se genera con el motor TTS
+   * interno (el mismo del estudio de audio) y suena en un reproductor del
+   * propio turno. Sin servicios de voz externos.
+   */
+  async function runVoz(texto: string) {
+    const voz = VOCES_CHAT.find((v) => v.id === vozId) ?? VOCES_CHAT[0];
+    const userTurn: Turn = { role: "user", content: texto };
+    setTurnsA((t) => [...t, userTurn]);
+    setPhase("chat");
+    setThinking(true);
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto, voz: voz.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "No se pudo generar la locución.");
+      setTurnsA((t) => [
+        ...t,
+        {
+          role: "assistant",
+          content: `Locución lista con la voz interna ${voz.nombre.split(" · ")[0]}:`,
+          media: { type: "audio", url: data.url, voz: voz.nombre },
+        },
+      ]);
+      if (settings.soundOnDone) playDoneChime();
+    } catch (e) {
+      toast({
+        title: "Modo voz",
+        description: e instanceof Error ? e.message : "Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+      setTurnsA((t) => t.slice(0, -1));
+    } finally {
+      setThinking(false);
+    }
+  }
+
   async function runAgent(mission: string) {
     setAgentMission(mission);
     setPhase("chat");
@@ -1088,8 +1216,10 @@ export default function ChatExperience() {
               : cMode === "imagen"
                 ? "Describe la imagen que quieres generar…"
                 : cMode === "video"
-                  ? "¿Qué vídeo quieres? Te escribo el guion…"
-                  : cMode === "modelos3d"
+                  ? "Describe la escena: ruedo un clip real (mp4 con audio) en 1-4 min…"
+                  : cMode === "voz"
+                    ? "Escribe el texto y lo narraré con la voz interna que elijas…"
+                    : cMode === "modelos3d"
                     ? "¿Qué modelo 3D quieres girar? (133 listos o uno a tu medida)"
                     : cMode === "codigo"
                       ? "Pide código: funciones, componentes, consultas…"
@@ -1101,6 +1231,35 @@ export default function ChatExperience() {
         }
         className="w-full resize-none bg-transparent px-4 pt-3.5 text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground/80 scrollbar-thin"
       />
+      {/* v1.15.0 — selector de voz interna (visible solo en modo voz) */}
+      {cMode === "voz" && (
+        <div
+          className="flex items-center gap-1.5 overflow-x-auto px-3 pb-1 pt-0.5 scrollbar-thin"
+          role="radiogroup"
+          aria-label="Voz interna del chat"
+        >
+          <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Voz interna
+          </span>
+          {VOCES_CHAT.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => setVozId(v.id)}
+              role="radio"
+              aria-checked={vozId === v.id}
+              className={cn(
+                "shrink-0 rounded-full border px-2.5 py-1 text-[11.5px] font-medium transition-colors",
+                vozId === v.id
+                  ? "border-transparent bg-primary text-primary-foreground"
+                  : "border-border bg-card text-muted-foreground hover:bg-accent"
+              )}
+            >
+              {v.nombre}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5">
         <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-thin">
           {/* Añadir archivos / enlaces / vídeos / documentos */}
@@ -1221,7 +1380,9 @@ export default function ChatExperience() {
           {/* Modo imagen */}
           {modeToggle("imagen", ImageIcon, usedImagen, "Modo imagen: genera una ilustración con IA")}
           {/* Modo vídeo */}
-          {modeToggle("video", Video, usedVideo, "Modo vídeo (beta): guion de vídeo profesional")}
+          {modeToggle("video", Video, usedVideo, "Modo vídeo: rueda un clip real (mp4 con audio) dentro del chat")}
+          {/* Modo voz (v1.15.0) */}
+          {modeToggle("voz", AudioLines, usedVoz, "Modo voz: locución interna del chat con 7 voces propias")}
           {/* Modo 3D */}
           {modeToggle("modelos3d", Box, used3d, "Modelos 3D reales: gira y acerca")}
           {/* Búsqueda web real */}
@@ -1295,7 +1456,7 @@ export default function ChatExperience() {
 
           {/* Búsqueda web ya es un modo real (botón Globe) */}
 
-          {mode === "battle" && phase === "chat" && !battle?.revealed && cMode !== "imagen" && cMode !== "video" && cMode !== "modelos3d" && (
+          {mode === "battle" && phase === "chat" && !battle?.revealed && cMode !== "imagen" && cMode !== "video" && cMode !== "voz" && cMode !== "modelos3d" && (
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -1335,8 +1496,10 @@ export default function ChatExperience() {
     cMode === "imagen"
       ? "El modo imagen crea una ilustración con IA a partir de tu descripción."
       : cMode === "video"
-        ? "El modo vídeo escribe tu guion completo; la generación de vídeo llega muy pronto (beta)."
-        : cMode === "modelos3d"
+        ? "El modo vídeo rueda un clip REAL (mp4 con audio) con el motor interno de Todólogo: 1-4 min de revelado, directo en la conversación."
+        : cMode === "voz"
+          ? "El modo voz narra tu texto con las voces internas del chat: elige voz bajo el cuadro de texto y envía."
+          : cMode === "modelos3d"
           ? "El modo 3D construye un modelo interactivo: 133 ya hechos, personalizados con IA o tu propio .glb."
           : cMode === "web"
             ? "El modo web busca en internet en tiempo real y responde citando sus fuentes."
@@ -1749,15 +1912,61 @@ function ImageCard({ url, prompt }: { url: string; prompt: string }) {
   );
 }
 
-function VideoCard() {
+function VideoCard({ url, estilo, segundos }: { url?: string; estilo?: string; segundos?: number }) {
+  if (!url) {
+    return (
+      <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-border bg-secondary/60 px-3 py-2.5">
+        <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+        <p className="text-[12.5px] leading-snug text-muted-foreground">
+          Rodando tu escena con el <span className="font-medium text-foreground">motor interno de Todólogo</span>…
+          El revelado tarda 1-4 min; el vídeo aparecerá aquí mismo cuando esté listo.
+        </p>
+      </div>
+    );
+  }
   return (
-    <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-border bg-secondary/60 px-3 py-2.5">
-      <Clapperboard className="mt-0.5 h-4 w-4 shrink-0" />
-      <p className="text-[12.5px] leading-snug text-muted-foreground">
-        Guion de vídeo listo. La <span className="font-medium text-foreground">generación de vídeo real</span> llega
-        muy pronto a todólogo.ai; mientras tanto, este guion sirve para producir tu clip en cualquier editor.
-      </p>
-    </div>
+    <figure className="mt-2 overflow-hidden rounded-xl border border-border">
+      <video src={url} controls playsInline preload="metadata" className="block w-full bg-black" />
+      <figcaption className="flex items-center justify-between gap-2 bg-card px-3 py-2">
+        <span className="min-w-0 truncate text-[12px] text-muted-foreground">
+          Vídeo real · motor interno de Todólogo{estilo ? ` · estilo ${estilo}` : ""}{segundos ? ` · ${segundos}s` : ""}
+        </span>
+        <a
+          href={url}
+          download="todologo-video.mp4"
+          target="_blank"
+          rel="noreferrer"
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11.5px] font-medium hover:bg-accent"
+        >
+          <Download className="h-3 w-3" />
+          Descargar
+        </a>
+      </figcaption>
+    </figure>
+  );
+}
+
+/** v1.15.0 — locución interna: reproductor de audio dentro del turno del chat. */
+function AudioCard({ url, voz }: { url: string; voz?: string }) {
+  return (
+    <figure className="mt-2 rounded-xl border border-border bg-secondary/40 px-3 py-2.5">
+      <audio controls src={url} className="w-full" />
+      <figcaption className="mt-1.5 flex items-center justify-between gap-2">
+        <span className="min-w-0 truncate text-[12px] text-muted-foreground">
+          Locución interna de Todólogo{voz ? ` · ${voz}` : ""}
+        </span>
+        <a
+          href={url}
+          download="todologo-voz.mp3"
+          target="_blank"
+          rel="noreferrer"
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11.5px] font-medium hover:bg-accent"
+        >
+          <Download className="h-3 w-3" />
+          Descargar
+        </a>
+      </figcaption>
+    </figure>
   );
 }
 
@@ -1888,7 +2097,10 @@ function ChatPanel({
                   />
                 </div>
               )}
-              {t.media?.type === "video" && <VideoCard />}
+              {t.media?.type === "video" && (
+                <VideoCard url={t.media.url} estilo={t.media.estilo} segundos={t.media.segundos} />
+              )}
+              {t.media?.type === "audio" && t.media.url && <AudioCard url={t.media.url} voz={t.media.voz} />}
               {t.sources && t.sources.length > 0 && <SourcesRow sources={t.sources} />}
               <div className="mt-1.5 flex items-center gap-3">
                 {settings.quickCopy && (

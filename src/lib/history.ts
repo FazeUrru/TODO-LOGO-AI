@@ -10,11 +10,14 @@ export interface SavedTurn {
   role: "user" | "assistant";
   content: string;
   media?: {
-    type: "image" | "3d" | "video";
+    type: "image" | "3d" | "video" | "audio";
     url?: string;
     prompt?: string;
     model?: string;
     recipe?: string;
+    voz?: string;
+    estilo?: string;
+    segundos?: number;
   };
   thinking?: string;
   sources?: { title: string; url: string; host: string }[];
