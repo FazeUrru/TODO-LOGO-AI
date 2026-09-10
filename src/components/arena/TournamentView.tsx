@@ -24,6 +24,7 @@ import Confeti from "./Confeti";
 import { NewBadge, markUsed } from "@/lib/badges";
 import { reportarEventoLabs } from "@/lib/use-labs";
 import { isStaticDemo } from "@/lib/static-mode";
+import { registrarVotoJurado } from "@/lib/jurado-client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -54,7 +55,7 @@ interface Copa {
   champion?: Contender["model"] | null;
 }
 
-const SIZES = [4, 8, 16] as const;
+const SIZES = [4, 8, 16, 32, 64] as const;
 
 /**
  * v1.19.0 — Consignas del modo espectador: la grada se sienta a ver una copa
@@ -297,6 +298,11 @@ export default function TournamentView() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "El voto no se pudo registrar.");
+      // ELO de jurado (v1.20.0): el servidor calcula el estado — el cuadro es
+      // anónimo y el cliente no puede derivar el consenso por su cuenta.
+      if (data.usuarioElo) {
+        registrarVotoJurado(winner === "a" ? "A" : "B", "", "", data.usuarioElo);
+      }
       setCopa(data.copa as Copa);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Error inesperado";
@@ -413,14 +419,14 @@ export default function TournamentView() {
             <span className="font-display text-[30px] font-semibold">Copa Todólogo</span>
           </div>
           <h1 className="mt-3 text-center font-display text-[40px] font-light leading-[1.1] tracking-tight sm:text-[48px]">
-            Hasta 16 modelos.{" "}
+            Hasta 64 modelos.{" "}
             <span className="bg-highlight inline-block px-2 font-medium italic leading-[1.05]">
               Un campeón.
             </span>
           </h1>
           <p className="mt-4 max-w-[560px] text-center text-[14.5px] leading-relaxed text-muted-foreground">
-            El torneo de eliminación directa que no existe en ningún otro arena: sortea 4, 8
-            o 16 modelos anónimos, compiten por eliminatorias con tu misma consigna, tú
+            El torneo de eliminación directa que no existe en ningún otro arena: sortea 4, 8,
+            16, 32 o incluso 64 modelos anónimos, compiten por eliminatorias con tu misma consigna, tú
             decides quién gana cada duelo y la gran final corona al campeón. Todos los votos
             mueven el ELO real del ranking — y desde la v1.9.0 también el ELO global
             persistente.
@@ -431,13 +437,13 @@ export default function TournamentView() {
             <p className="flex items-center gap-1.5 text-[12.5px] font-medium text-muted-foreground">
               <Users className="h-3.5 w-3.5" /> Tamaño del cuadro
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-5 gap-2">
               {SIZES.map((s) => (
                 <button
                   key={s}
                   onClick={() => setSize(s)}
                   className={cn(
-                    "rounded-lg border px-3 py-2.5 text-center transition-colors",
+                    "rounded-lg border px-2 py-2.5 text-center transition-colors",
                     size === s
                       ? "border-foreground bg-accent"
                       : "border-border hover:bg-accent/60"
@@ -449,7 +455,11 @@ export default function TournamentView() {
                       ? "Semis + final"
                       : s === 8
                         ? "Cuartos + semis + final"
-                        : "Octavos · torneo XXL"}
+                        : s === 16
+                          ? "Octavos · XXL"
+                          : s === 32
+                            ? "Dieciseisavos · XL"
+                            : "64 · el máximo"}
                   </span>
                 </button>
               ))}
@@ -458,7 +468,11 @@ export default function TournamentView() {
               <p className="text-[11.5px] text-muted-foreground">
                 {size === 8
                   ? "3 rondas y 7 duelos: el sorteo genera los cuartos en paralelo (~15-50 s) y cada ronda se juega al votar."
-                  : "4 rondas y 15 duelos: torneo completo con octavos, cuartos, semis y gran final. Cada ronda se genera al votar la anterior."}
+                  : size === 16
+                    ? "4 rondas y 15 duelos: torneo completo con octavos, cuartos, semis y gran final. Cada ronda se genera al votar la anterior."
+                    : size === 32
+                      ? "5 rondas y 31 duelos con dieciseisavos incluidos. La primera ronda (16 duelos) se genera por oleadas: cuenta con hasta ~1 minuto."
+                      : "6 rondas y 63 duelos: TODA la Copa Todólogo XXL. La primera ronda son 32 duelos por oleadas — el cuadro se guarda en BD y sobrevive a todo."}
               </p>
             )}
           </div>

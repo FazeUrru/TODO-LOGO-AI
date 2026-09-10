@@ -24,6 +24,7 @@ import { MODELS, getModel, PROVIDERS } from "@/lib/models-data";
 import { MODELOS_IMAGEN, selloDe } from "@/lib/arena-imagen";
 import { NewBadge, markUsed } from "@/lib/badges";
 import { reportarEventoLabs } from "@/lib/use-labs";
+import { registrarVotoJurado } from "@/lib/jurado-client";
 import { useToast } from "@/hooks/use-toast";
 import Confeti from "./Confeti";
 import { cn } from "@/lib/utils";
@@ -752,6 +753,8 @@ function ArenaImagen() {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error ?? "El voto no se pudo registrar.");
+      // ELO de jurado (v1.20.0): la arena de imagen también te puntúa
+      registrarVotoJurado(w, batalla.aId, batalla.bId, data.usuarioElo ?? null);
       const eloA = data.elo[batalla.aId];
       const eloB = data.elo[batalla.bId];
       setElos({ a: eloA?.total ?? null, b: eloB?.total ?? null });

@@ -4,6 +4,7 @@ import { getModel, CATEGORIAS_GENERATIVAS } from "@/lib/models-data";
 import { eloDeltaFromVotes, expectedScore, type Winner } from "@/lib/elo";
 import { applyEloDuel, applyArenaDuel, esArenaGenerativa, ELO_BASE } from "@/lib/elo-global";
 import { ipDeHeader, acumular, VOTO_LIMITE, segundosRestantes } from "@/lib/rate-limit";
+import { procesarJurado } from "@/lib/jurado-servidor";
 
 interface VoteRequest {
   battleId?: string;
@@ -138,6 +139,11 @@ export async function POST(req: NextRequest) {
 
   const [statA, statB] = await Promise.all([computeDelta(modelAId), computeDelta(modelBId)]);
 
+  // ELO de jurado (v1.20.0): tu voto también mueve TU escalera. Con sesión
+  // se persiste en UserElo (ranking público); sin sesión se devuelve el
+  // estado calculado y el cliente lo guarda en su dispositivo.
+  const jurado = await procesarJurado(modelAId, modelBId, winner, category);
+
   // En arenas generativas el rating visible es el ELO de la arena (EloArena,
   // ya actualizado con este voto); en texto, ficha estática + delta, como
   // siempre desde la v1.9.0.
@@ -168,6 +174,18 @@ export async function POST(req: NextRequest) {
       [modelBId]: { base: baseB, delta: statB.delta, total: newB },
     },
     swing,
+    usuarioElo: jurado
+      ? {
+          elo: jurado.estado.elo,
+          votos: jurado.estado.votos,
+          aciertos: jurado.estado.aciertos,
+          racha: jurado.estado.racha,
+          mejorRacha: jurado.estado.mejorRacha,
+          delta: jurado.delta,
+          acierto: jurado.acierto,
+          persistido: jurado.persistido,
+        }
+      : null,
     message:
       winner === "tie"
         ? "Empate registrado. El ELO se mantiene estable."

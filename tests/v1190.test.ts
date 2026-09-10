@@ -13,8 +13,7 @@ describe("v1.19.0 — versión y trazabilidad", () => {
   it("la app va por la 1.19.1 o superior (la cadena sigue viva)", () => {
     const [mayor, menor, parche] = APP_VERSION.split(".").map((n) => parseInt(n, 10));
     expect(mayor).toBe(1);
-    expect(menor).toBe(19);
-    expect(parche).toBeGreaterThanOrEqual(1);
+    expect(menor > 19 || (menor === 19 && parche >= 1)).toBe(true);
   });
 
   it("changelog-meta y CHANGELOG.md incluyen la 1.19.0 en la cadena", () => {
@@ -26,9 +25,11 @@ describe("v1.19.0 — versión y trazabilidad", () => {
     expect(md).toContain("La arena de imagen ya es de verdad");
   });
 
-  it("el roadmap apunta a la v1.20.0", () => {
+  it("el roadmap v1.20.0 se cumplió (relajado en 1.20.0: la entrada planeada pasa a publicada)", () => {
     const md = leer("CHANGELOG.md");
-    expect(md).toContain("Planeado para v1.20.0");
+    expect(
+      md.includes("Planeado para v1.20.0") || md.includes("Copas de 32 y 64")
+    ).toBe(true);
   });
 });
 

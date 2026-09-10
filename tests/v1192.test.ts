@@ -20,13 +20,15 @@ const techo = <T>(p: Promise<T>, ms = 3000): Promise<T> =>
 
 describe("v1.19.2 — versión y trazabilidad", () => {
   it("la app va por la 1.19.2 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.19.2");
+    expect(APP_VERSION).toBe("1.20.0");
   });
 
   it("changelog-meta y CHANGELOG.md incluyen la 1.19.2 como corrección", () => {
-    expect(VERSIONS[0].version).toBe("1.19.2");
-    expect(VERSIONS[0].diffDesde).toBe("1.19.1");
-    expect(VERSIONS[0].kinds).toContain("correccion");
+    // Relajado (v1.20.0): busca su propia entrada — la cabecera cambia con cada release
+    const meta = VERSIONS.find((v) => v.version === "1.19.2");
+    expect(meta).toBeDefined();
+    expect(meta?.diffDesde).toBe("1.19.1");
+    expect(meta?.kinds).toContain("correccion");
     const md = leer("CHANGELOG.md");
     expect(md).toContain("Adiós al atasco");
     expect(md).toContain("Interbloqueo del vigilante de silencio");

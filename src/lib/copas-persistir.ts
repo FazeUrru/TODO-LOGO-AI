@@ -34,7 +34,7 @@ export interface Copa {
   id: string;
   prompt: string;
   createdAt: number;
-  size: 4 | 8 | 16;
+  size: 4 | 8 | 16 | 32 | 64;
   roundNames: string[];
   labelNames: string[];
   rounds: CopaDuel[][];
@@ -59,7 +59,8 @@ function esCopaValida(x: unknown): x is Copa {
     c.id.length > 0 &&
     typeof c.prompt === "string" &&
     typeof c.createdAt === "number" &&
-    (c.size === 4 || c.size === 8 || c.size === 16) &&
+    // v1.20.0 — cuadros de 32 y 64 admitidos (Copa Todólogo XXL)
+    (c.size === 4 || c.size === 8 || c.size === 16 || c.size === 32 || c.size === 64) &&
     Array.isArray(c.roundNames) &&
     Array.isArray(c.labelNames) &&
     Array.isArray(c.rounds) &&

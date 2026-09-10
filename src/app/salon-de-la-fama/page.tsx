@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Trophy, Crown, Medal, ArrowLeft, Swords, Users, TrendingUp, Award } from "lucide-react";
+import { Trophy, Crown, Medal, ArrowLeft, Swords, Users, TrendingUp, Award, Scale } from "lucide-react";
 import Link from "next/link";
 import { markUsed } from "@/lib/badges";
 import ProviderLogo from "@/components/arena/ProviderLogo";
@@ -32,6 +32,22 @@ interface Stats {
   copaMasGrande: number | null;
   copasXL: number;
   ultimo: { id: string; name: string; prompt: string; at: string } | null;
+}
+
+/** Fila del ranking de jurados (v1.20.0 — /api/v2/jurados). */
+interface JuradoRow {
+  rank: number;
+  nombre: string;
+  avatar: string | null;
+  elo: number;
+  titulo: string;
+  color: string;
+  votos: number;
+  aciertos: number;
+  precision: number | null;
+  racha: number;
+  mejorRacha: number;
+  ultimoDia: string | null;
 }
 
 function fechaCorta(iso: string): string {
@@ -68,6 +84,8 @@ function StatCard({
 export default function SalonDeLaFamaPage() {
   const [filas, setFilas] = useState<CampeonRow[] | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
+  // ELO de jurado (v1.20.0): el ranking de las personas que votan
+  const [jurados, setJurados] = useState<JuradoRow[] | null>(null);
   // La condición de demo es constante por sesión (patrón del DemoBanner):
   // se lee con useSyncExternalStore para hidratar sin desajustes.
   const demo = useSyncExternalStore(
@@ -88,6 +106,16 @@ export default function SalonDeLaFamaPage() {
       })
       .catch(() => {
         if (vivo) setFilas([]);
+      });
+    // v1.20.0 — Jurados del arena: ranking público de ELO de jurado
+    fetch("/api/v2/jurados")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("sin-jurados"))))
+      .then((j: { rows?: JuradoRow[] }) => {
+        if (!vivo) return;
+        setJurados(Array.isArray(j.rows) ? j.rows : []);
+      })
+      .catch(() => {
+        if (vivo) setJurados([]);
       });
     return () => {
       vivo = false;
@@ -212,6 +240,51 @@ export default function SalonDeLaFamaPage() {
               );
             })}
           </ul>
+        )}
+
+        {/* v1.20.0 — Jurados del arena: el ranking de las personas que votan */}
+        {jurados !== null && jurados.length > 0 && (
+          <section className="mt-10">
+            <div className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+              <Scale className="h-4 w-4" aria-hidden />
+              Jurados del arena
+            </div>
+            <h2 className="mt-2 font-display text-[24px] font-semibold">
+              Las personas que votan también tienen su ranking
+            </h2>
+            <p className="mt-1.5 max-w-[600px] text-[13.5px] leading-relaxed text-foreground/80">
+              El ELO de jurado premia votar alineado con el consenso del arena, con bonus por
+              racha diaria. Cuentas con perfil público y estadísticas visibles.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {jurados.slice(0, 10).map((j) => (
+                <li
+                  key={`${j.rank}-${j.nombre}`}
+                  className="rounded-xl border border-border bg-card px-4 py-3"
+                >
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="font-mono text-[12px] text-muted-foreground">#{j.rank}</span>
+                    {j.avatar ? (
+                      <span className="text-[16px]">{j.avatar}</span>
+                    ) : (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[10px] font-bold">
+                        {j.nombre.slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
+                    <span className="text-[14px] font-medium">{j.nombre}</span>
+                    <span className={cn("text-[12.5px] font-semibold", j.color)}>
+                      {j.titulo}
+                    </span>
+                    <span className="ml-auto font-display text-[16px] font-semibold">{j.elo}</span>
+                  </div>
+                  <p className="mt-0.5 pl-10 text-[11.5px] text-muted-foreground">
+                    {j.votos} votos · {j.precision !== null ? `${j.precision}% al consenso` : "sin consenso aún"} ·
+                    racha {j.racha} (máx. {j.mejorRacha})
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         <div className="mt-8">

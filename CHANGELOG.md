@@ -9,12 +9,23 @@
 >
 > 🧩 **Huecos de numeración**: no existen v1.1.x ni v1.3.x — eran iteraciones internas fusionadas dentro de la v1.2.0 y la v1.4.0 sin llegar a publicarse.
 
-## [Sin publicar] — lo que viene
+## [1.20.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.19.2...v1.20.0) · 10 sept 2026, 12:20 — *Copas de 32 y 64, API pública con claves y tu propio ELO: el jurado entra en el ranking*
 
-### Planeado para v1.20.0
-- Copas de 32 y 64 modelos (flag `copa-32-64` de Labs): generación paralela a gran escala y UX de cuadro XXL.
-- API pública v2 con claves personales y contrato OpenAPI (graduación del flag `api-publica`).
-- ELO por usuario con historial de votos personales: tu caja de aciertos del Oráculo, contra el mundo.
+> 💡 **En una frase:** la Copa Todólogo admite cuadros de 32 y 64 contendientes, el arena se puede consumir desde fuera del navegador con claves personales (`/api/v2`), cada voto mueve ahora TU propia escalera de jurado — y hay un Duelo del día que toda la comunidad comparte.
+
+### Añadido
+- **Copas de 32 y 64 modelos** 🏆 (graduación del flag Labs `copa-32-64`): cuadros XXL con 5 y 6 rondas («dieciseisavos» y «treintaidosavos de final» incluidos). El sorteo se **garantiza** contra catálogo insuficiente y las rondas grandes se generan **por oleadas de 6 duelos con presupuesto de reloj**: la copa de 64 siempre arranca, persiste a BD en cada oleada y nunca rebasa el serverless.
+- **Catálogo ampliado a 86 modelos (64 de texto)** 🆕: ocho refuerzos con insignia ¡NUEVO! — Mistral Large 3.1, Codestral 26 Air, Command A2 Light, Nova Pro 2, Nemotron 5 Super, Granite 5 Max, Step 3.5 Max y Spark X2. Sin ellos, una copa de 64 era matemáticamente imposible.
+- **API pública v2** 🔌 (graduación del flag Labs `api-publica`): lectura abierta con CORS — `/api/v2/leaderboard`, `/api/v2/models`, `/api/v2/campeones`, `/api/v2/jurados` — y generación con **claves personales** `sk-todo-…` — `/api/v2/battle` (duelo anónimo con ambas respuestas) y `/api/v2/vote` (voto y revelación). Rate-limit propio de 20 llamadas/minuto **por clave**, revocación inmediata, contrato **OpenAPI 3.1** en `/api/v2/openapi` y documentación completa con gestor de claves en **/api-publica**.
+- **ELO de jurado** ⚖️: el ranking de las personas que votan. Votar al favorito del consenso (+8 + racha), ir contra el consenso (−4), empate (+2), feedback (+1); **racha diaria** con bonus hasta +7 y **títulos** (Aprendiz → Aficionado → Conocedor → Crítico → Árbitro → **Leyenda del jurado**). Con sesión se persiste en la tabla `UserElo` y alimenta el **ranking público de jurados**; sin sesión, el historial vive en tu navegador con las mismas reglas.
+- **Duelo del día** 📅: un duelo anónimo al día para TODA la comunidad — pareja y consigna deterministas por fecha (20 consignas curadas rotando). Al votar: **consenso comunitario** (porcentajes A/B/empate), identidades reveladas, tu delta de jurado y replay compartible como cualquier duelo. Página propia **/dia** con entrada en el menú.
+- **Jurados del arena en el Salón de la Fama** 🏛️: top de jurados con ELO, precisión al consenso y racha, alimentado por `/api/v2/jurados`.
+
+### Corregido
+- **Copa de 64 imposible por catálogo** 🧩: con 58 modelos de texto, el pool del 70 % (41) devolvía menos contendientes que el cuadro pedido y el constructor de emparejamientos habría leído `undefined` — copa corrupta y gran final que nunca se detectaba. Ahora el pool se expande al catálogo completo cuando el cuadro lo exige, el tamaño real manda si el catálogo no llega y el catálogo ya supera los 64 modelos de texto.
+- **Ráfaga de generación a granel** 🌊: la primera ronda de un cuadro grande dispara hasta 64 generaciones; en una sola ráfaga el upstream respondía 429 a granel y la ronda caía entera a la reserva. Oleadas + presupuesto global + persistencia incremental: cada oleada guardada sobrevive aunque la función muera.
+
+## [Sin publicar] — lo que viene
 
 ### Explorando
 - Internacionalización es/en/pt (next-intl, con la comunidad traduciendo).

@@ -6,7 +6,8 @@ import { expectedScore } from "@/lib/elo";
 import { applyEloDuel } from "@/lib/elo-global";
 import { personaFor } from "@/lib/personas";
 import { chatExterno, vozExternaPara } from "@/lib/voices-externas";
-import { esGranFinal, totalRondas } from "@/lib/copa-utils";
+import { esGranFinal, totalRondas, TAMANOS, COPA_SIZES, sortearIds, type CopaSize } from "@/lib/copa-utils";
+import { procesarJurado } from "@/lib/jurado-servidor";
 import { serializarCopa, deserializarCopa } from "@/lib/copas-persistir";
 import { ipDeHeader, acumular, GEN_LIMITE, VOTO_LIMITE, segundosRestantes } from "@/lib/rate-limit";
 import { CARTA_VERDAD } from "@/lib/ai-conducta";
@@ -34,7 +35,7 @@ export interface Copa {
   id: string;
   prompt: string;
   createdAt: number;
-  size: 4 | 8 | 16;
+  size: CopaSize;
   roundNames: string[];
   labelNames: string[]; // prefijo por ronda: ["O","C","S","F"]
   rounds: CopaDuel[][];
@@ -107,26 +108,16 @@ async function cargarCopa(id: string): Promise<Copa | null> {
 
 /* ───────────────────────── Sorteo ───────────────────────── */
 
-/** N modelos distintos del tramo alto del ranking (sorteo aleatorio).
- *  v1.17.1 — la copa es de texto: los generativos no entran al bracket. */
+/**
+ * Sortea N contendientes del tramo alto del ranking (v1.17.1: la copa es de
+ * texto). v1.20.0 delega en sortearIds(): el pool se expande al catálogo
+ * completo cuando el cuadro lo exige (una copa de 64 no cabe en el 70 % de
+ * 58 modelos de texto) y reduce a potencia de 2 si el catálogo no llega.
+ */
 function pickN(n: number): string[] {
-  const sorted = [...MODELS.filter((m) => !esGenerativo(m))].sort((a, b) => b.elo - a.elo);
-  const pool = sorted.slice(0, Math.ceil(sorted.length * 0.7));
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool.slice(0, n).map((m) => m.id);
+  const semillas = MODELS.filter((m) => !esGenerativo(m)).map((m) => ({ id: m.id, elo: m.elo }));
+  return sortearIds(n, semillas);
 }
-
-const SIZE_CFG: Record<number, { names: string[]; prefixes: string[] }> = {
-  4: { names: ["Semifinales", "Gran final"], prefixes: ["S", "F"] },
-  8: { names: ["Cuartos de final", "Semifinales", "Gran final"], prefixes: ["C", "S", "F"] },
-  16: {
-    names: ["Octavos de final", "Cuartos de final", "Semifinales", "Gran final"],
-    prefixes: ["O", "C", "S", "F"],
-  },
-};
 
 /* ─────────────────── Generación de respuestas ─────────────────── */
 
@@ -208,25 +199,53 @@ async function genContender(
   return texto ?? fallbackResponse(label, prompt);
 }
 
-/** Genera en paralelo todas las respuestas de una ronda. */
+/**
+ * Genera en paralelo todas las respuestas de una ronda.
+ *
+ * v1.20.0 — OLEADAS con presupuesto: una copa de 64 dispara 64 generaciones
+ * en la primera ronda; la ráfaga completa provocaba 429 a granel aguas arriba
+ * y toda la ronda caía a la respuesta de reserva. Ahora se procesa en
+ * oleadas de 6 duelos y, si el reloj global se agota, el resto recibe su
+ * reserva honesta al instante — la copa SIEMPRE arranca, pase lo que pase
+ * aguas arriba, y el progreso se persiste a BD en cada oleada.
+ */
 async function generateRound(copa: Copa, roundIdx: number) {
   const zai = await ZAI.create();
   const round = copa.rounds[roundIdx];
   const prefix = copa.labelNames[roundIdx];
-  await Promise.all(
-    round.map((duel, d) => {
-      const la = prefix + (d * 2 + 1);
-      const lb = prefix + (d * 2 + 2);
-      duel.a.label = la;
-      duel.b.label = lb;
-      return Promise.all([
-        genContender(zai, duel.a.modelId, la, copa.prompt, 0.65).then((t) => (duel.a.text = t)),
-        new Promise((r) => setTimeout(r, 700)).then(() =>
-          genContender(zai, duel.b.modelId, lb, copa.prompt, 0.9).then((t) => (duel.b.text = t))
-        ),
-      ]);
-    })
-  );
+  const t0 = Date.now();
+  const PRESUPUESTO_MS = 50_000;
+  const OLEADA = 6;
+
+  const generarDuelo = async (duel: CopaDuel, d: number) => {
+    const la = prefix + (d * 2 + 1);
+    const lb = prefix + (d * 2 + 2);
+    duel.a.label = la;
+    duel.b.label = lb;
+    return Promise.all([
+      genContender(zai, duel.a.modelId, la, copa.prompt, 0.65).then((t) => (duel.a.text = t)),
+      new Promise((r) => setTimeout(r, 700)).then(() =>
+        genContender(zai, duel.b.modelId, lb, copa.prompt, 0.9).then((t) => (duel.b.text = t))
+      ),
+    ]);
+  };
+
+  for (let i = 0; i < round.length; i += OLEADA) {
+    const queda = PRESUPUESTO_MS - (Date.now() - t0);
+    if (i > 0 && queda < 12_000) {
+      // Reloj global agotado: reserva honesta para los duelos restantes.
+      for (let d = i; d < round.length; d++) {
+        const duel = round[d];
+        duel.a.label = prefix + (d * 2 + 1);
+        duel.b.label = prefix + (d * 2 + 2);
+        duel.a.text = duel.a.text || fallbackResponse(duel.a.label, copa.prompt);
+        duel.b.text = duel.b.text || fallbackResponse(duel.b.label, copa.prompt);
+      }
+      break;
+    }
+    await Promise.all(round.slice(i, i + OLEADA).map((duel, j) => generarDuelo(duel, i + j)));
+    await persist(copa); // progreso incremental: la copa sobrevive al timeout
+  }
   await persist(copa);
 }
 
@@ -359,11 +378,16 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const allowedSizes = [4, 8, 16];
-    const size = (allowedSizes.includes(Number(body.size)) ? Number(body.size) : 4) as 4 | 8 | 16;
-    const cfg = SIZE_CFG[size];
-
-    const ids = pickN(size);
+    const pedida = (
+      (COPA_SIZES as readonly number[]).includes(Number(body.size)) ? Number(body.size) : 4
+    ) as CopaSize;
+    const ids = pickN(pedida);
+    // Si el catálogo no alcanzó para el cuadro pedido, sortearIds devolvió la
+    // mayor potencia de 2 jugable: el TAMAÑO REAL manda (roundNames, rondas y
+    // detección de la gran final dependen de copa.size — no puede decir 64
+    // con un cuadro de 32, o el campeón jamás se corona).
+    const size = (ids.length < pedida ? ids.length : pedida) as CopaSize;
+    const cfg = TAMANOS[size];
     const first: CopaDuel[] = [];
     for (let i = 0; i < ids.length; i += 2) {
       first.push({
@@ -422,11 +446,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ELO de jurado de esta acción (null si el duelo ya estaba decidido)
+    let jurado: Awaited<ReturnType<typeof procesarJurado>> = null;
+
     // Idempotencia: un duelo ya decidido devuelve el estado sin re-votar
     if (!duel.winner) {
       duel.winner = winner;
       duel.swing = await recordDuel(copa, duel, winner);
       await persist(copa);
+      // ELO de jurado (v1.20.0): tu voto también mueve TU escalera. El
+      // resultado viaja en la respuesta — el cliente anónimo no conoce los
+      // modelId hasta la revelación, así que el servidor manda el estado.
+      jurado = await procesarJurado(duel.a.modelId, duel.b.modelId, winner === "a" ? "A" : "B", "global");
       // Ronda completa → se genera la siguiente con los ganadores
       await advance(copa, rIdx);
       // Gran final votada → revelación y campeón. La condición depende del
@@ -457,7 +488,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, copa: publicState(copa) });
+    return NextResponse.json({
+      ok: true,
+      copa: publicState(copa),
+      usuarioElo: jurado
+        ? {
+            elo: jurado.estado.elo,
+            votos: jurado.estado.votos,
+            aciertos: jurado.estado.aciertos,
+            racha: jurado.estado.racha,
+            mejorRacha: jurado.estado.mejorRacha,
+            delta: jurado.delta,
+            acierto: jurado.acierto,
+            persistido: jurado.persistido,
+          }
+        : null,
+    });
   }
 
   return NextResponse.json({ error: "Acción desconocida." }, { status: 400 });

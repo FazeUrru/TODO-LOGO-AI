@@ -51,14 +51,18 @@ describe("v1.14.0 — registro de Todólogo Labs", () => {
   });
 
   it("jerarquía de cohortes: inner ⊇ builder ⊇ explorer", () => {
-    const copa = featurePorId("copa-32-64")!;
-    const api = featurePorId("api-publica")!;
+    // Actualizado en v1.20.0: copa-32-64 y api-publica se GRADUARON (ya no se
+    // activan desde Labs) — los fixtures pasan a features aún en pruebas.
+    const equipos = featurePorId("duelo-equipos")!;
+    const plantillas = featurePorId("plantillas-prompts")!;
     const trueSkill = featurePorId("elo-bayesiano")!;
-    expect(puedeActivar(copa, "explorer")).toBe(true);
-    expect(puedeActivar(api, "explorer")).toBe(false);
-    expect(puedeActivar(api, "builder")).toBe(true);
+    const copaGraduada = featurePorId("copa-32-64")!;
+    expect(puedeActivar(equipos, "explorer")).toBe(true);
+    expect(puedeActivar(plantillas, "explorer")).toBe(false);
+    expect(puedeActivar(plantillas, "builder")).toBe(true);
     expect(puedeActivar(trueSkill, "builder")).toBe(false);
     expect(puedeActivar(trueSkill, "inner")).toBe(true);
+    expect(puedeActivar(copaGraduada, "inner")).toBe(false); // graduada: fuera del canal
   });
 
   it("cohorte de sesión: anónimo → explorer, registrado → builder, invitado → inner", () => {

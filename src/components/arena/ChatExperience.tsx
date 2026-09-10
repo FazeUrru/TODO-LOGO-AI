@@ -71,6 +71,7 @@ import TournamentView from "./TournamentView";
 import LaboratorioGenerativo from "./LaboratorioGenerativo";
 import { detectModel3D, ALL_3D_IDS } from "@/lib/models-3d";
 import { isStaticDemo } from "@/lib/static-mode";
+import { registrarVotoJurado } from "@/lib/jurado-client";
 import { ExternalLink, Brain } from "lucide-react";
 import ErrorBoundary from "./ErrorBoundary";
 
@@ -1318,6 +1319,8 @@ export default function ChatExperience() {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error);
+      // ELO de jurado (v1.20.0): tu veredicto mueve tu propia escalera
+      registrarVotoJurado(winner, battle.aId, battle.bId, data.usuarioElo ?? null);
       const eloA = data.elo[battle.aId];
       const eloB = data.elo[battle.bId];
       setBattle({

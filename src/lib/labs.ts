@@ -79,7 +79,9 @@ export const LABS_FEATURES: LabsFeature[] = [
     descripcion:
       "Cuadruplicar el bracket de la Copa Todólogo hasta 32 y 64 contendientes: generación paralela a gran escala y una UX de cuadro que no se pierda.",
     cohorte: "explorer",
-    estado: "en-pruebas",
+    // v1.20.0 — graduada: sorteo garantizado (pool expandido al catálogo
+    // completo), oleadas con presupuesto y catálogo de 64 modelos de texto.
+    estado: "graduado",
     expira: "2026-11-04",
     metricas: ["entered", "used", "abandoned", "crashed"],
   },
@@ -111,7 +113,9 @@ export const LABS_FEATURES: LabsFeature[] = [
     descripcion:
       "/api/v2/battle con claves personales, rate-limit propio y contrato OpenAPI: feedback real de DX antes de comprometer el contrato para siempre.",
     cohorte: "builder",
-    estado: "en-pruebas",
+    // v1.20.0 — graduada: /api/v2 completa (leaderboard, models, campeones,
+    // jurados, battle, vote, openapi), claves sk-todo-… y docs en /api-publica.
+    estado: "graduado",
     expira: "2026-11-04",
     metricas: ["entered", "used", "abandoned"],
   },

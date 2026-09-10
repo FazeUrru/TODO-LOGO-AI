@@ -13,6 +13,7 @@
 
 import { MODELS, PROVIDERS, getModel, CATEGORIAS_GENERATIVAS, esGenerativo, type AIModel } from "./models-data";
 import { categoryElo, eloDeltaFromVotes, expectedScore, type LeaderRow, type Winner } from "./elo";
+import { dueloDeDia, fechaDeDuelo } from "./duelo-dia";
 import { RECIPES_3D } from "./models-3d";
 import { estadisticasSalon } from "./salon-utils";
 import { selloDe, sortearDuoImagen } from "./arena-imagen";
@@ -1479,6 +1480,96 @@ async function handleTournament(init: RequestInit | undefined): Promise<Response
   return errRes("Acción desconocida.");
 }
 
+/* ─────────────── Duelo del día (espejo de GET/POST /api/dia) ─────────────── */
+
+interface DiaRegistro {
+  fecha: string;
+  aId: string;
+  bId: string;
+  prompt: string;
+  textoA: string;
+  textoB: string;
+}
+
+let diaCache: DiaRegistro | null = null;
+
+/** Espejo del duelo del día: misma pareja y consigna deterministas que
+ *  dueloDeDia(), textos locales (composeAnswer) y consenso simulado con
+ *  vida propia — la demo nunca se queda sin duelo de hoy. */
+function construirDia(): DiaRegistro {
+  const fecha = fechaDeDuelo();
+  const { modelAId, modelBId, prompt } = dueloDeDia(fecha);
+  return {
+    fecha,
+    aId: modelAId,
+    bId: modelBId,
+    prompt,
+    textoA: composeAnswer(modelAId, prompt, { shorter: true }),
+    textoB: composeAnswer(modelBId, prompt, { shorter: true }),
+  };
+}
+
+function consensoDiaDemo(fecha: string): { A: number; B: number; tie: number; total: number } {
+  // Votos reales de hoy en localStorage + un grada simulada determinista
+  const reales = getVotes().filter((v) => v.battleId.startsWith(`dia-${fecha}`));
+  const A = reales.filter((v) => v.winner === "A").length;
+  const B = reales.filter((v) => v.winner === "B").length;
+  const tie = reales.filter((v) => v.winner === "tie").length;
+  const h = (fecha.split("-").reduce((a, p) => a + Number(p || 0), 0) % 60) + 40;
+  const sA = A + h;
+  const sB = B + Math.floor(h * 0.7);
+  const sTie = tie + Math.floor(h * 0.15);
+  return { A: sA, B: sB, tie: sTie, total: sA + sB + sTie };
+}
+
+async function handleDia(init: RequestInit | undefined, method: string): Promise<Response> {
+  if (!diaCache) diaCache = construirDia();
+  if (diaCache.fecha !== fechaHoyDemo()) diaCache = construirDia();
+
+  if (method === "GET") {
+    return jsonRes({
+      ok: true,
+      fecha: diaCache.fecha,
+      battleId: `dia-${diaCache.fecha}`,
+      prompt: diaCache.prompt,
+      a: { text: diaCache.textoA },
+      b: { text: diaCache.textoB },
+      anonimos: true,
+    });
+  }
+
+  const body = ((): JSON => {
+    try {
+      return JSON.parse(String(init?.body ?? "{}")) as JSON;
+    } catch {
+      return {};
+    }
+  })();
+  const winner = String(body.winner ?? "") as Winner;
+  if (!["A", "B", "tie", "bad"].includes(winner)) {
+    return errRes("Voto inválido (A | B | tie | bad).");
+  }
+  addVote({ battleId: `dia-${diaCache.fecha}-${rid("v")}`, modelAId: diaCache.aId, modelBId: diaCache.bId, winner, category: "global" });
+  const consenso = consensoDiaDemo(diaCache.fecha);
+  const A = getModel(diaCache.aId);
+  const B = getModel(diaCache.bId);
+  return jsonRes({
+    ok: true,
+    fecha: diaCache.fecha,
+    consenso,
+    revelacion: {
+      a: { id: diaCache.aId, name: A?.name ?? diaCache.aId, provider: A?.provider ?? "", elo: A?.elo ?? 1000 },
+      b: { id: diaCache.bId, name: B?.name ?? diaCache.bId, provider: B?.provider ?? "", elo: B?.elo ?? 1000 },
+    },
+    // usuarioElo null → el cliente aplica la regla local (jurado-client)
+    usuarioElo: null,
+  });
+}
+
+function fechaHoyDemo(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 /* ───────────────────────── Enrutador ───────────────────────── */
 
 export async function handleDemoFetch(rawPath: string, init?: RequestInit): Promise<Response | null> {
@@ -1492,6 +1583,7 @@ export async function handleDemoFetch(rawPath: string, init?: RequestInit): Prom
     if (path.startsWith("/api/auth/")) {
       return (await handleAuth(path, init)) ?? errRes("Endpoint de autenticación desconocido.", 404);
     }
+    if (path === "/api/dia") return await handleDia(init, method);
     if (path === "/api/battle" && method === "POST") return await handleBattle(init);
     if (path === "/api/vote" && method === "POST") return await handleVote(init);
     if (path === "/api/leaderboard") return handleLeaderboard(rawPath);

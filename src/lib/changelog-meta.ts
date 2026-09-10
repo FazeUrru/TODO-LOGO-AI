@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.20.0",
+    fecha: "10 sept 2026",
+    hora: "12:20",
+    titulo: "Copas de 32 y 64, API pública con claves y tu propio ELO: el jurado entra en el ranking",
+    tldr:
+      "La Copa admite hasta 64 contendientes con catálogo suficiente, el arena se puede consumir por /api/v2 con claves personales y cada voto ahora mueve TU escalera de jurado — además de un Duelo del día que toda la comunidad comparte.",
+    diffDesde: "1.19.2",
+    hash: null,
+    kinds: ["nuevo", "mejora", "correccion"],
+  },
+  {
     version: "1.19.2",
     fecha: "10 sept 2026",
     hora: "11:45",

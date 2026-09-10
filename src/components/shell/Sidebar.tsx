@@ -15,6 +15,8 @@ import {
   Newspaper,
   Building2,
   Calculator,
+  CalendarDays,
+  KeyRound,
   History,
   MessagesSquare,
   ChevronUp,
@@ -428,6 +430,7 @@ export default function Sidebar() {
 
           {navItem(pathname === "/leaderboard", "/leaderboard", "Leaderboard", Trophy)}
           {navItem(pathname === "/muro", "/muro", "Muro de replays", BrickWall, "muro")}
+          {navItem(pathname === "/dia", "/dia", "Duelo del día", CalendarDays, "duelo-del-dia")}
           {open
             ? navItem(false, null, "Buscar", Search, undefined, () => arena.setSearchOpen(true))
             : navItem(false, null, "Buscar", Search, undefined, () => arena.setSearchOpen(true))}
@@ -445,6 +448,7 @@ export default function Sidebar() {
           {navItem(pathname === "/cuanticas", "/cuanticas", "Cuánticas", Atom)}
           {navItem(pathname === "/mcps", "/mcps", "MCPs", Server)}
           {navItem(pathname === "/pruebas", "/pruebas", "Pruebas", Activity)}
+          {navItem(pathname === "/api-publica", "/api-publica", "API pública", KeyRound, "api-publica")}
         </nav>
 
         {/* Promo + sesión + pie */}

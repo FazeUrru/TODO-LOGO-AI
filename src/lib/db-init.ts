@@ -242,6 +242,42 @@ async function createSchema(): Promise<void> {
       `CREATE INDEX IF NOT EXISTS "DueloGuardado_shares_idx" ON "DueloGuardado"("shares");`
     );
 
+    // ELO de jurado (v1.20.0): el ranking de las personas que votan
+    await crearTabla(
+      "UserElo",
+      `CREATE TABLE IF NOT EXISTS "UserElo" (
+        "userId"     TEXT PRIMARY KEY,
+        "elo"        ${PG ? "DOUBLE PRECISION" : "REAL"} NOT NULL DEFAULT 1000,
+        "votos"      INTEGER NOT NULL DEFAULT 0,
+        "aciertos"   INTEGER NOT NULL DEFAULT 0,
+        "racha"      INTEGER NOT NULL DEFAULT 0,
+        "mejorRacha" INTEGER NOT NULL DEFAULT 0,
+        "ultimoDia"  TEXT,
+        "updatedAt"  ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "UserElo_elo_idx" ON "UserElo"("elo");`
+    );
+
+    // Claves API personales (v1.20.0 — API pública v2)
+    await crearTabla(
+      "ApiKey",
+      `CREATE TABLE IF NOT EXISTS "ApiKey" (
+        "id"         TEXT PRIMARY KEY,
+        "key"        TEXT NOT NULL UNIQUE,
+        "name"       TEXT NOT NULL,
+        "userId"     TEXT NOT NULL,
+        "calls"      INTEGER NOT NULL DEFAULT 0,
+        "lastUsedAt" ${PG ? "TIMESTAMPTZ" : "DATETIME"},
+        "revoked"    BOOLEAN NOT NULL DEFAULT FALSE,
+        "createdAt"  ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "ApiKey_userId_idx" ON "ApiKey"("userId");`
+    );
+
 
     // Columnas de perfil (v1.9.2) para bases creadas antes de esa versión
     const B = PG ? "BOOLEAN" : "BOOLEAN";

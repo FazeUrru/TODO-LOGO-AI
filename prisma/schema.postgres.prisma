@@ -193,3 +193,37 @@ model LabsEvent {
   @@index([featureId, createdAt])
   @@index([tipo])
 }
+
+// ELO de jurado (v1.20.0): el ranking de las personas que votan. Cada voto
+// mueve el ELO del usuario según su alineación con el consenso del arena,
+// con racha diaria y títulos (Aprendiz → Leyenda). Sin sesión, el historial
+// vive en el localStorage del dispositivo — esta tabla es la cuenta real.
+model UserElo {
+  userId     String   @id
+  elo        Float    @default(1000)
+  votos      Int      @default(0)
+  aciertos   Int      @default(0)
+  racha      Int      @default(0)
+  mejorRacha Int      @default(0)
+  ultimoDia  String? // "YYYY-MM-DD" (UTC) del último voto
+  updatedAt  DateTime @updatedAt
+
+  @@index([elo])
+}
+
+// Clave API personal (v1.20.0 — API pública v2): credenciales para consumir
+// /api/v2/battle y /api/v2/vote desde fuera de la web, con rate-limit propio
+// por clave y revocación inmediata. La clave completa solo se muestra al
+// crearla; la BD guarda el secreto y la UI lista un enmascarado.
+model ApiKey {
+  id         String    @id @default(cuid())
+  key        String    @unique // "sk-todo-…" (secreto completo)
+  name       String
+  userId     String
+  calls      Int       @default(0)
+  lastUsedAt DateTime?
+  revoked    Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
