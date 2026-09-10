@@ -15,8 +15,9 @@ describe("v1.18.0 — versión y trazabilidad", () => {
 
   it("changelog-meta y CHANGELOG.md incluyen la 1.18.0 en la cadena", () => {
     expect(VERSIONS.some((v) => v.version === "1.18.0")).toBe(true);
-    expect(VERSIONS[0].diffDesde).toBe("1.18.0");
-    expect(VERSIONS[0].kinds).toContain("nuevo");
+    const meta = VERSIONS.find((v) => v.version === "1.18.0");
+    expect(meta?.diffDesde).toBe("1.17.1");
+    expect(meta?.kinds).toContain("nuevo");
     const md = leer("CHANGELOG.md");
     expect(md).toContain("Duelos y copas compartibles: replay permanente por URL");
   });

@@ -227,52 +227,73 @@ interface StreamSideResult {
   voz: string | null;
 }
 
-/** Itera el ReadableStream del SDK y extrae deltas {content, reasoning} estilo OpenAI. */
-async function* upstreamDeltas(
-  body: ReadableStream<Uint8Array>
-): AsyncGenerator<{ content: string; reasoning: string }> {
+/**
+ * Itera el ReadableStream del SDK y extrae deltas {content, reasoning} estilo OpenAI.
+ *
+ * v1.19.2 — devuelve además `cancelar()`, que cancela el READER directamente.
+ * Es la única vía de escape fiable contra un upstream colgado sin FIN: la
+ * especificación de Streams resuelve los `read()` pendientes con {done:true}
+ * cuando se cancela el stream, desbloqueando este generador aunque el
+ * upstream nunca mande otro byte. El vigilante de silencio lo usa para no
+ * heredar el cuelgue (antes, con `await iterador.return()`, el propio
+ * vigilante se quedaba clavado y el SSE nunca cerraba → UI atascada).
+ */
+function upstreamDeltas(body: ReadableStream<Uint8Array>): {
+  iterador: AsyncGenerator<{ content: string; reasoning: string }>;
+  cancelar: () => void;
+} {
   const reader = body.getReader();
   const dec = new TextDecoder();
   let buf = "";
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let idx: number;
-      while ((idx = buf.indexOf("\n")) !== -1) {
-        const line = buf.slice(0, idx).trim();
-        buf = buf.slice(idx + 1);
-        if (!line.startsWith("data:")) continue;
-        const data = line.slice(5).trim();
-        if (!data || data === "[DONE]") continue;
-        try {
-          const j = JSON.parse(data) as {
-            choices?: { delta?: Record<string, unknown> }[];
-          };
-          const delta = j.choices?.[0]?.delta;
-          if (!delta) continue;
-          const content =
-            typeof delta.content === "string" ? delta.content : "";
-          const reasoning =
-            typeof delta.reasoning_content === "string"
-              ? delta.reasoning_content
-              : typeof delta.reasoning === "string"
-                ? delta.reasoning
-                : "";
-          if (content || reasoning) yield { content, reasoning };
-        } catch {
-          /* línea no JSON (keep-alive, comentario): ignorar */
+  const iterador = (async function* () {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let idx: number;
+        while ((idx = buf.indexOf("\n")) !== -1) {
+          const line = buf.slice(0, idx).trim();
+          buf = buf.slice(idx + 1);
+          if (!line.startsWith("data:")) continue;
+          const data = line.slice(5).trim();
+          if (!data || data === "[DONE]") continue;
+          try {
+            const j = JSON.parse(data) as {
+              choices?: { delta?: Record<string, unknown> }[];
+            };
+            const delta = j.choices?.[0]?.delta;
+            if (!delta) continue;
+            const content =
+              typeof delta.content === "string" ? delta.content : "";
+            const reasoning =
+              typeof delta.reasoning_content === "string"
+                ? delta.reasoning_content
+                : typeof delta.reasoning === "string"
+                  ? delta.reasoning
+                  : "";
+            if (content || reasoning) yield { content, reasoning };
+          } catch {
+            /* línea no JSON (keep-alive, comentario): ignorar */
+          }
         }
       }
+    } finally {
+      try {
+        reader.cancel();
+      } catch {
+        /* ya cerrado */
+      }
     }
-  } finally {
+  })();
+  const cancelar = () => {
     try {
       reader.cancel();
     } catch {
       /* ya cerrado */
     }
-  }
+  };
+  return { iterador, cancelar };
 }
 
 /** Genera un lado con streaming: reenvía cada delta vía send() y acumula el
@@ -302,6 +323,8 @@ async function streamSide(
   const thinkKey = side === "A" ? "tA" : "tB";
   let text = "";
   let thinking = "";
+  // v1.19.2 — origen del reloj GLOBAL del lado (connect + lectura + reintentos)
+  const t0Stream = Date.now();
 
   const push = (kind: string, v: string) => {
     send({ t: kind, v });
@@ -319,6 +342,14 @@ async function streamSide(
       aj.recortePrompt && prompt.length > aj.recortePrompt ? prompt.slice(0, aj.recortePrompt) : prompt;
     const temp = Math.max(0.2, temperature * aj.factorTemperatura);
     const thinkAjustado = think && aj.thinking;
+
+    // v1.19.2 — reloj GLOBAL del lado: connect + lectura + reintentos viven
+    // DENTRO de presupuestoMs medido desde el arranque de streamSide. Antes
+    // cada intento se daba un presupuesto fresco (25s de conexión + 55s de
+    // lectura = 80s) y superaba el maxDuration del serverless: la plataforma
+    // mataba la función con el stream abierto y el cliente se quedaba
+    // clavado a mitad de código.
+    const restanteGlobal = () => Math.max(0, presupuestoMs - (Date.now() - t0Stream));
 
     // v1.12.0 — voz de proveedor real si hay clave: respuesta de una pieza
     // (el razonamiento profundo se queda en el motor propio). Con imágenes
@@ -338,6 +369,8 @@ async function streamSide(
       }
     }
 
+    // Conexión vigilada: si no arranca dentro del reloj restante, muere.
+    const esperaConexion = Math.min(STREAM_CONNECT_TIMEOUT_MS, restanteGlobal());
     const started = await Promise.race([
       zai.chat.completions.create({
         messages: buildMessages(systemPrompt, promptAjustado, hist, images) as never,
@@ -346,18 +379,21 @@ async function streamSide(
         stream: true,
       }),
       new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), STREAM_CONNECT_TIMEOUT_MS)
+        setTimeout(() => resolve(null), esperaConexion)
       ),
     ]);
 
     if (started && typeof (started as ReadableStream).getReader === "function") {
-      const deadline = Date.now() + presupuestoMs;
-      // v1.19.1 — vigilante de silencio: un stream mudo muere y se reintenta
-      for await (const d of vigilanteDeLectura(
-        upstreamDeltas(started as ReadableStream<Uint8Array>),
-        { primerChunkMs: STREAM_CONNECT_TIMEOUT_MS, entreChunkMs: 12_000 }
-      )) {
-        if (Date.now() > deadline) break;
+      // v1.19.2 — el vigilante recibe `cancelar` (reader directo) y el
+      // reloj restante global: silencio → cancelación inmediata + throw,
+      // sin heredar el cuelgue del upstream.
+      const { iterador, cancelar } = upstreamDeltas(started as ReadableStream<Uint8Array>);
+      for await (const d of vigilanteDeLectura(iterador, {
+        primerChunkMs: Math.min(STREAM_CONNECT_TIMEOUT_MS, restanteGlobal() || 1),
+        entreChunkMs: 12_000,
+        cancelar,
+      })) {
+        if (restanteGlobal() <= 0) break;
         if (d.reasoning) {
           thinking += d.reasoning;
           push(thinkKey, d.reasoning);

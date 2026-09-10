@@ -19,8 +19,9 @@ describe("v1.19.0 — versión y trazabilidad", () => {
 
   it("changelog-meta y CHANGELOG.md incluyen la 1.19.0 en la cadena", () => {
     expect(VERSIONS.some((v) => v.version === "1.19.0")).toBe(true);
-    expect(VERSIONS[0].diffDesde).toBe("1.19.0");
-    expect(VERSIONS[0].kinds).toContain("mejora");
+    const meta = VERSIONS.find((v) => v.version === "1.19.0");
+    expect(meta?.diffDesde).toBe("1.18.0");
+    expect(meta?.kinds).toContain("mejora");
     const md = leer("CHANGELOG.md");
     expect(md).toContain("La arena de imagen ya es de verdad");
   });

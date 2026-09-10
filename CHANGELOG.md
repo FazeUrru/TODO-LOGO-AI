@@ -22,6 +22,15 @@
 - Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
 - Primera graduación masiva de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
 
+## [1.19.2](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.19.1...v1.19.2) · 10 sept 2026, 11:45 — *Adiós al atasco: la IA ya no se congela a mitad de una respuesta (ni codificando)*
+
+> 💡 **En una frase:** el síntoma «escribo código y la IA se queda atascada en un punto donde no avanza» era un interbloqueo real dentro del vigilante que debía evitarlo — corregido en servidor y cliente: cualquier cuelgue aguas arriba ahora se detecta, se cancela y se regenera.
+
+### Corregido
+- **Interbloqueo del vigilante de silencio (raíz del atasco)** ⛓️: al detectar silencio, el vigilante hacía `await iterador.return()`. Un generador asíncrono con un `next()` pendiente solo completa su `return()` cuando ese `next()` resuelve — y ese `next()` esperaba eternamente a `reader.read()` de un upstream colgado sin FIN. El vigilante que debía salvar el atasco era él mismo el atasco: el SSE nunca cerraba y el cliente quedaba clavado a mitad de respuesta, sin error y sin avance (típico al codificar: las respuestas largas multiplican la probabilidad de cuelgue). Ahora la secuencia es: cancelación DIRECTA del reader (desbloquea el `read()` pendiente), cierre del generador en fuego y olvido y `throw` inmediato — el reintento arranca sin heredar el upstream zombi.
+- **Presupuesto de reloj GLOBAL por lado** ⏱️: cada intento de streaming se daba un presupuesto fresco (25s de conexión + 55s de lectura = 80s potenciales dentro de un serverless de 60s) — la plataforma mataba la función con el stream abierto y el cliente sin cerrar. Ahora conexión + lectura + reintentos viven dentro de un único reloj por lado, la conexión se acota al tiempo restante y el motor de reintentos comprueba el presupuesto ANTES de arrancar cada intento (no solo entre pausas): la función ya no puede pasarse de `maxDuration` a mitad de stream.
+- **Vigilantes del cliente** 🛡️: la lectura SSE del navegador gana dos techos propios — 45s de silencio (por encima del peor hueco legítimo del servidor, ~28s) y 90s absolutos por intento. Si la conexión muere sin contenido, el bucle de recuperación repinta los paneles y reintenta mostrando «Recuperando señal»; con contenido parcial, lo que llegó se queda marcado «(generación interrumpida)». La UI ya no puede quedarse congelada sin reaccionar, pase lo que pase aguas arriba.
+
 ## [1.19.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.19.0...v1.19.1) · 10 sept 2026, 11:00 — *Que no se atasquen: motor de reintentos con autocorrección hasta 50 intentos*
 
 > 💡 **En una frase:** si un upstream se cae, calla o se queda a medias, la arena lo detecta sola y lo regenera hasta 50 veces con parámetros autocorregidos — y tú ves «Recuperando señal · intento N/50» en vez de un panel congelado.

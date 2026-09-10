@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.19.2",
+    fecha: "10 sept 2026",
+    hora: "11:45",
+    titulo: "Adiós al atasco: la IA ya no se congela a mitad de una respuesta (ni codificando)",
+    tldr:
+      "El clásico «escribo código y la IA se queda clavada en un punto» era un interbloqueo real del vigilante que debía evitarlo — corregido en servidor y cliente: cualquier cuelgue aguas arriba ahora se detecta, se cancela y se regenera.",
+    diffDesde: "1.19.1",
+    hash: null,
+    kinds: ["correccion"],
+  },
+  {
     version: "1.19.1",
     fecha: "10 sept 2026",
     hora: "11:00",

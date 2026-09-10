@@ -59,6 +59,16 @@ export async function conReintentos<T>(
   let motivo: string | null = null;
 
   for (let n = 1; n <= max; n++) {
+    // v1.19.2 — ANTES de cada intento (no solo entre pausas): si el reloj
+    // ya consumió el presupuesto, no se arranca otro intento. Sin este
+    // guardia, un intento de 55s + otro intento fresco de 25s superaban el
+    // maxDuration del serverless y la función moría a medias con el stream
+    // abierto (el cliente se quedaba colgado sin «end» y sin cierre).
+    const consumido = Date.now() - inicio;
+    if (n > 1 && consumido >= presupuesto) {
+      logger.error("reintentos.agotados", { etiqueta, max, motivo, consumido, presupuesto });
+      return null;
+    }
     try {
       const r = await fn(n, motivo);
       if (r !== null && r !== undefined) return r;
@@ -112,10 +122,26 @@ export function autocorreccion(n: number): AjusteAutocorreccion {
  * calla demasiado — antes del primer chunk (primerChunkMs) o ENTRE chunks
  * (entreChunkMs). Así un stream mudo nunca congela la arena: muere, se
  * informa y el motor lo reintenta.
+ *
+ * v1.19.2 — CORRECCIÓN DEL ATASCO: antes se hacía `await iterador.return()`.
+ * Un async generator con un `next()` pendiente solo completa su `return()`
+ * cuando el `next()` pendiente resuelve — y ese `next()` esperaba eternamente
+ * a `reader.read()` de un upstream colgado sin FIN. Resultado: el vigilante
+ * que debía salvar el atasco era él mismo el que se atascaba, el SSE nunca
+ * cerraba y el cliente se quedaba clavado a mitad de una respuesta (síntoma:
+ * «la IA se queda atascada en un punto donde no avanza», típico al codificar
+ * porque las respuestas largas multiplica las probabilidades de cuelgue).
+ *
+ * La secuencia correcta al detectar silencio es:
+ *  1. `cancelar()` — cancela el READER directamente (no pasa por el
+ *     generador): la especificación de Streams resuelve los `read()`
+ *     pendientes con {done:true}, desbloqueando el generador.
+ *  2. `iterador.return()` en fuego y olvido (NUNCA await).
+ *  3. `throw` INMEDIATO: el reintento arranca ya.
  */
 export async function* vigilanteDeLectura<T>(
   iterador: AsyncIterator<T>,
-  opts: { primerChunkMs: number; entreChunkMs: number }
+  opts: { primerChunkMs: number; entreChunkMs: number; cancelar?: () => void }
 ): AsyncGenerator<T> {
   let primero = true;
   while (true) {
@@ -130,12 +156,21 @@ export async function* vigilanteDeLectura<T>(
       if (despertar) clearTimeout(despertar);
     }
     if (resultado === "silencio") {
-      // Cancela el stream subyacente: el upstream mudo no puede colgarnos
+      // 1) Cancelación DIRECTA del lector: desbloquea el read() pendiente.
       try {
-        await iterador.return?.(undefined as never);
+        opts.cancelar?.();
       } catch {
         /* ya muerto */
       }
+      // 2) Cierre del generador en fuego y olvido — awaiting it sería
+      //    encolarse detrás del next() pendiente y colgarnos (el bug).
+      try {
+        Promise.resolve(iterador.return?.(undefined as never)).catch(() => {});
+      } catch {
+        /* ya muerto */
+      }
+      // 3) El throw sale YA: el motor de reintentos regenera sin esperar
+      //    al upstream zombi.
       throw new Error(`vigilante: ${primero ? "sin primer chunk" : "silencio entre chunks"}`);
     }
     if (resultado.done) return;

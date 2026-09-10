@@ -777,6 +777,9 @@ export default function ChatExperience() {
     let finalSources: WebSource[] | undefined;
     let aborted = false;
     let recibioFin = false;
+    // v1.19.2 — el vigilante del cliente disparó (stream sin datos ni cierre):
+    // distingue el cuelgue de red del «error» explícito del servidor.
+    let vigilanteDisparado = false;
 
     /** Convierte los acumuladores en el turno final (post-proceso como siempre). */
     const kindDe = (txt: string): "juego" | undefined => {
@@ -830,13 +833,18 @@ export default function ChatExperience() {
 
       for (let intentoRed = 1; intentoRed <= MAX_INTENTOS_RED; intentoRed++) {
       if (intentoRed > 1) {
-        setRecuperando({ n: intentoRed, max: MAX_INTENTOS_RED, motivo: "conexión perdida" });
+        setRecuperando({
+          n: intentoRed,
+          max: MAX_INTENTOS_RED,
+          motivo: vigilanteDisparado ? "el servidor dejó de emitir" : "conexión perdida",
+        });
         setTurnsA([...nextA, { role: "assistant", content: "" }]);
         if (!isDirect) setTurnsB([...nextB, { role: "assistant", content: "" }]);
         await new Promise((r) => setTimeout(r, Math.min(300 * Math.pow(1.3, intentoRed - 2), 3000)));
       }
       setRecuperando(null);
       recibioFin = false;
+      vigilanteDisparado = false;
       accA = "";
       accB = "";
       thinkA = undefined;
@@ -988,8 +996,48 @@ export default function ChatExperience() {
         /* el cierre del lector dispara la finalización */
       };
 
-      while (true) {
-        const { done, value } = await reader.read();
+      // v1.19.2 — VIGILANTES DEL CLIENTE: la capa de servidor ya se
+      // autorrepara, pero si la CONEXIÓN SSE muere sin FIN (función serverless
+      // asesinada por maxDuration, proxy que traga la conexión, red agujero
+      // negro), `reader.read()` quedaría pendiente para siempre y la UI
+      // clavada a mitad de código, sin error y sin avance. Dos techos:
+      //  · SILENCIO (45s): el peor hueco legítimo del servidor es ~28s
+      //    (conexión 25s + pausa de reintento 3s) — por encima de eso, muerto.
+      //  · TURNO (90s): techo absoluto del intento aunque lleguen bytes goteando.
+      // Al dispararse: cancel() del reader (resuelve el read() pendiente) y
+      // salida del intento — sin contenido, el bucle de recuperación reintenta;
+      // con contenido parcial, se queda marcado «(generación interrumpida)».
+      const SILENCIO_CLIENTE_MS = 45_000;
+      const TURNO_CLIENTE_MS = 90_000;
+      const t0Intento = Date.now();
+      const restanteIntento = () => TURNO_CLIENTE_MS - (Date.now() - t0Intento);
+
+      let falloLectura = false;
+      while (!falloLectura) {
+        const espera = Math.max(0, Math.min(SILENCIO_CLIENTE_MS, restanteIntento()));
+        let despertar: ReturnType<typeof setTimeout> | undefined;
+        const goteo = new Promise<"silencio">((resolve) => {
+          despertar = setTimeout(() => resolve("silencio"), espera);
+        });
+        let lect: ReadableStreamReadResult<Uint8Array> | "silencio";
+        try {
+          lect = await Promise.race([reader.read(), goteo]);
+        } finally {
+          if (despertar) clearTimeout(despertar);
+        }
+        if (lect === "silencio") {
+          // Conexión zombi: cancelación directa (nunca await: el cancel de un
+          // stream muerto podría no resolver) y fuera de este intento.
+          try {
+            void reader.cancel().catch(() => {});
+          } catch {
+            /* ya muerto */
+          }
+          vigilanteDisparado = true;
+          falloLectura = true;
+          break;
+        }
+        const { done, value } = lect;
         if (done) break;
         buf += dec.decode(value, { stream: true });
         let idx: number;
@@ -1004,6 +1052,16 @@ export default function ChatExperience() {
           }
         }
       }
+      if (falloLectura) {
+        if (flushTimer !== null) {
+          clearTimeout(flushTimer);
+          flushTimer = null;
+        }
+        // Sin contenido y hay intentos: el bucle exterior repinta y reintenta.
+        if (!accA.trim() && !accB.trim() && intentoRed < MAX_INTENTOS_RED) continue;
+        generado = true;
+        break;
+      }
       if (flushTimer !== null) {
         clearTimeout(flushTimer);
         flushTimer = null;
@@ -1013,7 +1071,7 @@ export default function ChatExperience() {
       // murió en silencio → limpiar y reintentar (hasta 50). Con contenido
       // parcial o fin normal, lo que llegó se queda.
       const conContenido = Boolean(accA.trim() || accB.trim());
-      if (!recibioFin && !conContenido && !aborted && intentoRed < MAX_INTENTOS_RED) {
+      if (!recibioFin && !conContenido && !aborted && !vigilanteDisparado && intentoRed < MAX_INTENTOS_RED) {
         continue;
       }
       generado = true;
