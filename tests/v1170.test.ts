@@ -48,9 +48,10 @@ describe("v1.17.0 — juegos en tiempo real", () => {
 
   it("el chat detecta juegos durante el streaming y al finalizar (kind juego)", () => {
     const src = leer("src/components/arena/ChatExperience.tsx");
-    expect(src).toContain('kind?: "juego"');
+    // v1.21.0 — el kind admite «app»: una app fullstack ya no se disfraza de juego
+    expect(src).toContain('kind?: "juego" | "app"');
     expect(src).toContain("kindDe");
-    expect(src).toContain("extraerJuego");
+    expect(src).toContain("extraerBloqueHtml");
     expect(src).toContain("quitarBloqueHtml");
     expect(src).toContain("<GamePanel");
   });

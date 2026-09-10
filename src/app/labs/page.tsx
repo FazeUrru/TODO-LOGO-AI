@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { FlaskConical, ShieldCheck, Timer, Users, ArrowLeft, Info } from "lucide-react";
+import { FlaskConical, ShieldCheck, Timer, Users, ArrowLeft, ArrowUpRight, Info } from "lucide-react";
 import Link from "next/link";
 import { markUsed, NewBadge } from "@/lib/badges";
 import { isStaticDemo } from "@/lib/static-mode";
@@ -111,6 +111,16 @@ function TarjetaFeature({
             <Info className="h-3.5 w-3.5" aria-hidden />
             Cohorte {COHORTES[f.cohorte].nombre}
           </span>
+        )}
+        {/* v1.21.0 — si la feature tiene página propia y está activa, se entra desde aquí. */}
+        {activa && f.url && (
+          <Link
+            href={f.url}
+            className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-[12.5px] font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Abrir
+            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+          </Link>
         )}
         <p className="text-[12px] leading-snug text-muted-foreground">
           {puede

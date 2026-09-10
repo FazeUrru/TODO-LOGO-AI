@@ -9,6 +9,29 @@
 >
 > 🧩 **Huecos de numeración**: no existen v1.1.x ni v1.3.x — eran iteraciones internas fusionadas dentro de la v1.2.0 y la v1.4.0 sin llegar a publicarse.
 
+## [1.21.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.20.0...v1.21.0) · 10 sept 2026, 16:40 — *El Modo Código dice la verdad sobre lo que genera — y el duelo 2v2 con árbitro entra en Labs*
+
+> 💡 **En una frase:** pedir una app fullstack ya no te la sirve en plato de «Juego en tiempo real» — el clasificador distingue un juego real de una app y el código se queda a la vista; y el flag Labs `duelo-equipos` estrena su arena: dos equipos de dos contendientes, apoyos entre compañeros y un árbitro con veredicto motivado.
+
+### Corregido
+- **El Modo Código disfrazaba apps de juegos** 🎭: el detector de artefactos consideraba «juego jugable» a CUALQUIER documento HTML completo (>1500 caracteres) — así que pedir «una app fullstack», «una web» o «un panel» en Modo Código (o en texto) hacía que la respuesta apareciera en el marco «Juego en tiempo real», con el código escondido. Ahora el clasificador (`src/lib/clasificador-html.ts`) exige señales reales de juego (canvas + bucle/teclado/vocabulario, o bucle + teclado + vocabulario para juegos de DOM) y clasifica el resto como **app**: nuevo marco «App en vivo» con su propio rótulo, badge «interactiva» y avisos adaptados. En una app el código SE QUEDA en la respuesta (es justo lo que se pidió); solo en los juegos se retira (el panel lo ejecuta).
+- **La respuesta del Modo Código ahora depende de lo que pidas** (servidor y espejo demo): juego pedido → HTML jugable de verdad; app/web fullstack pedida → código POR ARCHIVOS (esquema Prisma + API + cliente, con notas de despliegue); y el resto, snippet parametrizado como siempre. En el servidor, la regla de artefacto va en el marco: un único HTML jugable solo si se pide explícitamente un juego.
+- **Marcos honestos** 🏷️: GamePanel admite `tipo: "juego" | "app"` y cambia icono, rótulo, badge, mensajes de «llegó a medias» y títulos de copiado según lo que contenga.
+
+### Añadido
+- **Duelo por equipos 2v2 con árbitro** 🤝 (arena del flag Labs `duelo-equipos`, cohorte Explorer): página propia **/labs/duelo-equipos** con puerta de activación, ejemplos de consigna, teatro de fases en vivo y veredicto del árbitro con notas por equipo. Mecánica: abridores de cada equipo → cierres que conocen el borrador de su compañero y añaden un **APOYO** → árbitro que lee los dos dosieres y devuelve veredicto + notas 0-10 + razón. Reservas honestas si un proveedor no responde y desempate determinista (mismo duelo → mismo veredicto).
+- **Lab del código**: endpoint `POST /api/labs/duelo-equipos` con rate-limit propio, **cero escrituras en Votes/EloState** (regla nº 2 de Labs: ni un `db.` en la ruta) y espejo exacto en el motor demo para la demo estática.
+- **Marcador del duelo en tu dispositivo** 🧮: azul/rojo/empates y arbitrajes totales en `localStorage` (`labs:duelo-equipos:marcador`), con resumen en la página. Telemetría de Labs (used/crashed) desde el primer día.
+- **Enlace «Abrir» en /labs**: las features con página propia y flag activado se entran directamente desde su tarjeta.
+
+## [Sin publicar] — lo que viene
+
+### Explorando
+- Internacionalización es/en/pt (next-intl, con la comunidad traduciendo).
+- Streaming bidireccional por WebSocket para copas con audiencia concurrente (flag `streaming-ws`: el modo espectador ya viaja por SSE, el salto real a WS está en pruebas).
+- Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
+- Primera graduación masiva de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
+
 ## [1.20.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.19.2...v1.20.0) · 10 sept 2026, 12:20 — *Copas de 32 y 64, API pública con claves y tu propio ELO: el jurado entra en el ranking*
 
 > 💡 **En una frase:** la Copa Todólogo admite cuadros de 32 y 64 contendientes, el arena se puede consumir desde fuera del navegador con claves personales (`/api/v2`), cada voto mueve ahora TU propia escalera de jurado — y hay un Duelo del día que toda la comunidad comparte.
@@ -24,14 +47,6 @@
 ### Corregido
 - **Copa de 64 imposible por catálogo** 🧩: con 58 modelos de texto, el pool del 70 % (41) devolvía menos contendientes que el cuadro pedido y el constructor de emparejamientos habría leído `undefined` — copa corrupta y gran final que nunca se detectaba. Ahora el pool se expande al catálogo completo cuando el cuadro lo exige, el tamaño real manda si el catálogo no llega y el catálogo ya supera los 64 modelos de texto.
 - **Ráfaga de generación a granel** 🌊: la primera ronda de un cuadro grande dispara hasta 64 generaciones; en una sola ráfaga el upstream respondía 429 a granel y la ronda caía entera a la reserva. Oleadas + presupuesto global + persistencia incremental: cada oleada guardada sobrevive aunque la función muera.
-
-## [Sin publicar] — lo que viene
-
-### Explorando
-- Internacionalización es/en/pt (next-intl, con la comunidad traduciendo).
-- Streaming bidireccional por WebSocket para copas con audiencia concurrente (flag `streaming-ws`: el modo espectador ya viaja por SSE, el salto real a WS está en pruebas).
-- Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
-- Primera graduación masiva de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
 
 ## [1.19.2](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.19.1...v1.19.2) · 10 sept 2026, 11:45 — *Adiós al atasco: la IA ya no se congela a mitad de una respuesta (ni codificando)*
 

@@ -38,6 +38,8 @@ export interface LabsFeature {
   estado: EstadoLabs;
   expira: string; // fecha ISO — regla de las 8 semanas
   metricas: string[]; // eventos estructurados que emite
+  /** v1.21.0 — página propia de la feature, si tiene una (se enlaza desde /labs). */
+  url?: string;
 }
 
 export const COHORTES: Record<
@@ -92,6 +94,9 @@ export const LABS_FEATURES: LabsFeature[] = [
       "Dos modelos cooperan por equipo y un tercero arbitra: mecánica de apoyo no trivial que necesita pruebas reales de UX antes de tocar el ELO.",
     cohorte: "explorer",
     estado: "en-pruebas",
+    // v1.21.0 — la mecánica ya existe: /labs/duelo-equipos. El marcador vive
+    // en tu dispositivo; el ELO global sigue intocado (regla nº 2).
+    url: "/labs/duelo-equipos",
     expira: "2026-11-04",
     metricas: ["entered", "used", "abandoned", "crashed"],
   },

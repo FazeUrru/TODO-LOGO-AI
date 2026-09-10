@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.21.0",
+    fecha: "10 sept 2026",
+    hora: "16:40",
+    titulo: "El Modo Código dice la verdad sobre lo que genera — y el duelo 2v2 con árbitro entra en Labs",
+    tldr:
+      "Pedir una app fullstack ya no te la sirve en plato de «Juego en tiempo real»: el clasificador distingue juego de app y el código se queda a la vista. Además, el flag Labs duelo-equipos ya tiene arena: dos equipos de dos, apoyos entre compañeros y árbitro con veredicto motivado.",
+    diffDesde: "1.20.0",
+    hash: null,
+    kinds: ["correccion", "nuevo"],
+  },
+  {
     version: "1.20.0",
     fecha: "10 sept 2026",
     hora: "12:20",

@@ -9,7 +9,7 @@ const leer = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf8")
 
 describe("v1.17.1 — versión y trazabilidad", () => {
   it("la app va por la 1.18.0 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.20.0");
+    expect(APP_VERSION).toBe("1.21.0");
   });
 
   it("changelog-meta y CHANGELOG.md incluyen la 1.17.1 en la cadena", () => {

@@ -18,6 +18,8 @@ import { RECIPES_3D } from "./models-3d";
 import { estadisticasSalon } from "./salon-utils";
 import { selloDe, sortearDuoImagen } from "./arena-imagen";
 import { REPLAYS_CURADOS, tarjetaDeCurado, curadoPorId, type TarjetaMuro } from "./muro-curados";
+// v1.21.0 — Labs: duelo por equipos 2v2 con árbitro (motor compartido)
+import { sortearEquipos, veredictoDeterminista, type Bando } from "./duelo-equipos";
 
 /* ───────────────────────── Utilidades ───────────────────────── */
 
@@ -537,6 +539,250 @@ export async function ${fn}Reintentos<T>(
   };
 }
 
+/* ── v1.21.0 — el Modo Código depende de lo que pide el usuario ──
+   Mismo bug que en la interfaz, corregido también en el espejo: pedir una
+   app fullstack devolvía un snippet genérico y pedir un juego devolvía…
+   un snippet genérico. Ahora hay tres rutas: juego pedido → HTML jugable
+   (el cliente lo detecta y lo ejecuta), app/web fullstack pedida → código
+   por archivos (schema + API + cliente), y el resto → snippet parametrizado. */
+
+const RE_JUEGO_PEDIDO =
+  /\bjuego\b|arcade|plataformas|\btetris\b|\bsnake\b|jugable|shooter|puzzle|rompecabezas|\brpg\b|roguelike/i;
+const RE_FULLSTACK_PEDIDO =
+  /fullstack|full-stack|app web|aplicaci[óo]n web|\bweb app\b|backend|back-end|api rest|\bapi\b|endpoints?|crud|\bprisma\b|esquema de datos|base de datos relacional|\bsaas\b|dashboard con backend/i;
+
+/** Mini-juego jugable autocontenido (canvas + bucle + teclado + HUD). */
+function juegoJugable(prompt: string): string {
+  const nombre = titleCase(topicOf(prompt)) || "Neón Blitz";
+  return `Tu juego está listo: **${nombre}** — esquiva las torretas, sobrevive a las oleadas y bate tu récord. Moverte con WASD o flechas; el HUD guarda tu puntuación entre partidas.
+
+\`\`\`html
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${nombre}</title>
+<style>
+  html,body{margin:0;height:100%;background:#07070d;color:#e6f1ff;font-family:system-ui,sans-serif;overflow:hidden}
+  #lienz{display:block;margin:0 auto;touch-action:none}
+  #hud{position:fixed;top:8px;left:12px;font-size:14px;letter-spacing:.5px}
+  #inicio{position:fixed;inset:0;display:grid;place-items:center;background:#07070dcc;cursor:pointer}
+  #inicio h1{font-size:34px;margin:0 0 8px;color:#7df9ff}
+  #inicio p{margin:4px 0;opacity:.85}
+</style>
+</head>
+<body>
+<div id="hud">Puntuación: <b id="puntos">0</b> · Oleada <b id="oleada">1</b> · Récord: <b id="record">0</b></div>
+<canvas id="lienz" width="720" height="480"></canvas>
+<div id="inicio"><div style="text-align:center"><h1>${nombre}</h1><p>WASD o flechas para moverte · toca o pulsa ESPACIO para empezar</p><p>Cada oleada, las torretas apuntan mejor y van más rápido</p></div></div>
+<script>
+(() => {
+  const cv = document.getElementById("lienz"), ctx = cv.getContext("2d");
+  const hudP = document.getElementById("puntos"), hudO = document.getElementById("oleada"), hudR = document.getElementById("record");
+  const jugador = { x: 360, y: 420, r: 12, v: 260 };
+  let enemigos = [], balas = [], teclas = {}, jugando = false, oleada = 1, puntos = 0, vidas = 3, tUltimo = 0, disparoEnemigo = 0;
+  let record = 0;
+  try { record = parseInt(localStorage.getItem("${slugRegistro(prompt)}") || "0", 10) || 0; } catch (e) {}
+  hudR.textContent = record;
+
+  addEventListener("keydown", (e) => {
+    teclas[e.key.toLowerCase()] = true;
+    if (e.key === " " && !jugando) empezar();
+    if (["arrowup","arrowdown","arrowleft","arrowright"].includes(e.key.toLowerCase())) e.preventDefault();
+  });
+  addEventListener("keyup", (e) => { teclas[e.key.toLowerCase()] = false; });
+  document.getElementById("inicio").addEventListener("pointerdown", empezar);
+
+  function empezar() {
+    document.getElementById("inicio").style.display = "none";
+    enemigos = []; balas = []; puntos = 0; vidas = 3; oleada = 1; jugando = true; tUltimo = performance.now();
+    hudP.textContent = "0"; hudO.textContent = "1";
+    requestAnimationFrame(bucle);
+  }
+
+  function finDePartida() {
+    jugando = false;
+    if (puntos > record) { record = puntos; try { localStorage.setItem("${slugRegistro(prompt)}", String(record)); } catch (e) {} hudR.textContent = record; }
+    const ini = document.getElementById("inicio");
+    ini.querySelector("h1").textContent = "Game Over — " + puntos + " puntos";
+    ini.style.display = "grid";
+  }
+
+  function bucle(t) {
+    if (!jugando) return;
+    const dt = Math.min((t - tUltimo) / 1000, 0.05); tUltimo = t;
+    // jugador: teclado con límites de lienzo
+    let dx = (teclas["a"] || teclas["arrowleft"] ? -1 : 0) + (teclas["d"] || teclas["arrowright"] ? 1 : 0);
+    let dy = (teclas["w"] || teclas["arrowup"] ? -1 : 0) + (teclas["s"] || teclas["arrowdown"] ? 1 : 0);
+    jugador.x = Math.max(14, Math.min(706, jugador.x + dx * jugador.v * dt));
+    jugador.y = Math.max(14, Math.min(466, jugador.y + dy * jugador.v * dt));
+    // oleadas: cada 12 segundos sube la dificultad (evolución visible)
+    const nuevaOleada = 1 + Math.floor(puntos / 150);
+    if (nuevaOleada > oleada) { oleada = nuevaOleada; hudO.textContent = oleada; }
+    // enemigos: torretas que aparecen más rápido con la oleada
+    disparoEnemigo -= dt;
+    if (enemigos.length < 2 + oleada && Math.random() < 0.02 + oleada * 0.008) {
+      enemigos.push({ x: Math.random() * 640 + 40, y: 40 + Math.random() * 60, t: 0 });
+    }
+    for (const en of enemigos) {
+      en.t += dt;
+      if (en.t > 1.4 - Math.min(oleada * 0.08, 0.6) && disparoEnemigo <= 0) {
+        const ang = Math.atan2(jugador.y - en.y, jugador.x - en.x);
+        balas.push({ x: en.x, y: en.y, vx: Math.cos(ang) * (150 + oleada * 14), vy: Math.sin(ang) * (150 + oleada * 14) });
+        en.t = 0; disparoEnemigo = 0.25;
+      }
+    }
+    for (const b of balas) { b.x += b.vx * dt; b.y += b.vy * dt; }
+    balas = balas.filter((b) => b.x > -8 && b.x < 728 && b.y > -8 && b.y < 488);
+    // colisiones: cada impacto resta una vida; puntos por segundo sobrevivido
+    for (const b of balas) {
+      if (Math.hypot(b.x - jugador.x, b.y - jugador.y) < jugador.r + 3) {
+        balas = balas.filter((o) => o !== b); vidas--; puntos = Math.max(0, puntos - 20);
+        if (vidas <= 0) { finDePartida(); return; }
+      }
+    }
+    puntos += Math.round(dt * 10 * oleada); hudP.textContent = puntos;
+    // render
+    ctx.fillStyle = "#07070d"; ctx.fillRect(0, 0, 720, 480);
+    ctx.fillStyle = "#7df9ff"; ctx.beginPath(); ctx.arc(jugador.x, jugador.y, jugador.r, 0, 7); ctx.fill();
+    ctx.fillStyle = "#ff5d8f";
+    for (const en of enemigos) { ctx.fillRect(en.x - 10, en.y - 10, 20, 20); }
+    ctx.fillStyle = "#ffd166";
+    for (const b of balas) { ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, 7); ctx.fill(); }
+    ctx.fillStyle = "#ffffff66"; ctx.font = "12px system-ui"; ctx.fillText("Vidas: " + "❤".repeat(Math.max(vidas, 0)), 12, 470);
+    requestAnimationFrame(bucle);
+  }
+})();
+</script>
+</body>
+</html>
+\`\`\`
+
+**Ficha rápida** — ${nombre}: supervivencia por oleadas con dificultad progresiva (más torretas, más velocidad de disparo), récord persistente en \`localStorage\` y controles de teclado + táctil. ¿Siguiente paso? Puedo añadir power-ups, un jefe final cada 5 oleadas o modo 2 jugadores.`;
+}
+
+function slugRegistro(prompt: string): string {
+  const base = (keywordsOf(prompt)[0] ?? "arena").replace(/[^a-z0-9]/gi, "").toLowerCase() || "arena";
+  return `todologo.juego.${base}`;
+}
+
+/** Respuesta fullstack POR ARCHIVOS: datos + API + cliente, cada uno su bloque. */
+function fullstackDe(prompt: string): string {
+  const entidad = titleCase((keywordsOf(prompt)[0] ?? "item").replace(/[^a-z0-9 áéíóúñ]/gi, "")) || "Item";
+  const campo = entidad.toLowerCase();
+  const plural = campo.endsWith("s") ? campo : `${campo}s`;
+  return `Plan completo para tu app fullstack: **${titleCase(topicOf(prompt))}**. Stack recomendado: Next.js (App Router) + TypeScript + Tailwind, Prisma sobre PostgreSQL y autenticación por sesión. Aquí tienes el código por archivos, listo para pegar:
+
+**1 · Esquema de datos — \`prisma/schema.prisma\`**
+
+\`\`\`prisma
+model ${entidad} {
+  id        String   @id @default(cuid())
+  titulo    String
+  contenido String   @db.Text
+  autorId   String
+  autor     Usuario  @relation(fields: [autorId], references: [id])
+  creadoEn  DateTime @default(now())
+  indice    ${entidad}Indice?
+}
+
+model ${entidad}Indice {
+  id         String  @id @default(cuid())
+  ${campo}Id String  @unique
+  ${campo}   ${entidad} @relation(fields: [${campo}Id], references: [id])
+  vistas     Int     @default(0)
+}
+
+model Usuario {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  nombre    String
+  creados   ${entidad}[]
+}
+\`\`\`
+
+**2 · API — \`app/api/${plural}/route.ts\`**
+
+\`\`\`ts
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { sesionDe } from "@/lib/auth";
+
+export async function GET() {
+  const lista = await db.${campo}.findMany({
+    orderBy: { creadoEn: "desc" },
+    take: 50,
+    include: { autor: { select: { nombre: true } } },
+  });
+  return NextResponse.json({ ok: true, lista });
+}
+
+export async function POST(req: NextRequest) {
+  const sesion = await sesionDe();
+  if (!sesion) return NextResponse.json({ ok: false, error: "Inicia sesión." }, { status: 401 });
+  const body = await req.json();
+  if (!body?.titulo || String(body.titulo).length > 120) {
+    return NextResponse.json({ ok: false, error: "Título obligatorio (máx. 120)." }, { status: 400 });
+  }
+  const creado = await db.${campo}.create({
+    data: { titulo: String(body.titulo), contenido: String(body.contenido ?? ""), autorId: sesion.id },
+  });
+  return NextResponse.json({ ok: true, creado }, { status: 201 });
+}
+\`\`\`
+
+**3 · Cliente — \`components/${entidad}Panel.tsx\`**
+
+\`\`\`tsx
+"use client";
+
+import { useEffect, useState } from "react";
+
+interface Item { id: string; titulo: string; contenido: string; autor: { nombre: string } }
+
+export function ${entidad}Panel() {
+  const [lista, setLista] = useState<Item[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch("/api/${plural}", { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((j) => setLista(j.lista))
+      .catch((e) => e.name !== "AbortError" && setError(e.message));
+    return () => ctrl.abort();
+  }, []);
+
+  if (error) return <p role="alert">No se pudo cargar: {error}</p>;
+  if (!lista) return <p>Cargando ${plural}…</p>;
+
+  return (
+    <ul>
+      {lista.map((item) => (
+        <li key={item.id}>
+          <b>{item.titulo}</b> — {item.autor.nombre}
+        </li>
+      ))}
+    </ul>
+  );
+}
+\`\`\`
+
+**Notas de despliegue**
+- Migración: \`npx prisma migrate dev --name ${campo}_inicial\` antes del primer arranque.
+- El endpoint POST valida sesión y longitud del título: falla con mensajes claros, no en silencio.
+- Para producción: \`prisma migrate deploy\` + variables \`DATABASE_URL\` y \`NEXTAUTH_SECRET\` en el entorno.`;
+}
+
+/** Punto de entrada del Modo Código: la respuesta depende de la petición. */
+function codigoDe(prompt: string): string {
+  if (RE_JUEGO_PEDIDO.test(prompt)) return juegoJugable(prompt);
+  if (RE_FULLSTACK_PEDIDO.test(prompt)) return fullstackDe(prompt);
+  const { lang, code } = codeSnippet(prompt);
+  return `Vamos con el código para ${topicOf(prompt)}, listo para copiar y pegar:\n\n\`\`\`${lang}\n${code}\n\`\`\`\n\n**Notas rápidas**\n- Manejo de errores incluido: falla con mensajes claros, no en silencio.\n- Tipado estricto para que el editor trabaje a tu favor.\n- Adáptalo a tu estilo: el esqueleto es lo importante.`;
+}
+
 /* ─────────────── Modo vídeo: guion por escenas ─────────────── */
 
 function videoScript(prompt: string): string {
@@ -796,8 +1042,9 @@ async function handleBattle(init: RequestInit | undefined): Promise<Response> {
     aText = rec.text;
     bText = modelB ? composeAnswer(modelB.id, prompt) : null;
   } else if (composerMode === "codigo") {
-    const { lang, code } = codeSnippet(prompt);
-    aText = `Vamos con el código para ${topicOf(prompt)}, listo para copiar y pegar:\n\n\`\`\`${lang}\n${code}\n\`\`\`\n\n**Notas rápidas**\n- Manejo de errores incluido: falla con mensajes claros, no en silencio.\n- Tipado estricto para que el editor trabaje a tu favor.\n- Adáptalo a tu estilo: el esqueleto es lo importante.`;
+    // v1.21.0 — la respuesta del Modo Código depende de lo que pide el usuario:
+    // juego pedido → HTML jugable; app fullstack → código por archivos; resto → snippet.
+    aText = codigoDe(prompt);
     if (modelB) {
       const alt = codeSnippet(prompt + " variante");
       bText = `Otra perspectiva, con un enfoque más directo:\n\n\`\`\`${alt.lang}\n${alt.code}\n\`\`\`\n\n**Cuándo usar cada uno**\n- Este: menos piezas, ideal para empezar hoy.\n- El otro: más cinturón de seguridad para producción.`;
@@ -1570,6 +1817,69 @@ function fechaHoyDemo(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/* ─────────────── Duelo por equipos 2v2 (espejo Labs, v1.21.0) ─────────────── */
+
+async function handleDueloEquipos(init: RequestInit | undefined): Promise<Response> {
+  const body = ((): JSON => {
+    try {
+      return JSON.parse(String(init?.body ?? "{}")) as JSON;
+    } catch {
+      return {};
+    }
+  })();
+  const consigna = String(body.prompt ?? "").trim();
+  if (consigna.length < 4) {
+    return errRes("Escribe la consigna para los dos equipos.");
+  }
+  const limite = consigna.length > 600 ? consigna.slice(0, 600) : consigna;
+
+  // Sorteo real del motor compartido: mismos garantizados que en producción.
+  const { azul, rojo, arbitro } = sortearEquipos();
+  await sleep(900 + Math.random() * 1100);
+
+  const apoyoDe = (modelo: AIModel, compañero: string): string =>
+    `APOYO: mi compañero ${compañero} ha clavado la idea central; yo la respaldo y la redondeo con un matiz práctico: empieza hoy por lo mínimo viable y mide resultados.`;
+
+  const abridorAzul = composeAnswer(azul[0].id, limite);
+  const abridorRojo = composeAnswer(rojo[0].id, limite);
+  const cierreAzul = composeAnswer(azul[1].id, limite + " matiz de cierre");
+  const cierreRojo = composeAnswer(rojo[1].id, limite + " matiz de cierre");
+
+  const det = veredictoDeterminista(
+    [azul[0].id, azul[1].id],
+    [rojo[0].id, rojo[1].id],
+    limite
+  );
+  const razones: Record<Bando, string> = {
+    azul: "El equipo Azul entrega una respuesta más nítida y su cierre refuerza sin repetir: mejor trabajo de equipo sobre la consigna.",
+    rojo: "El equipo Rojo responde con más Concreteza y orden de ejecución; el apoyo de su cierre suma donde el Azul divaga.",
+    empate: "Sin consigna que juzgar no hay mérito que repartir: el árbitro declara empate técnico.",
+  };
+
+  return jsonRes({
+    ok: true,
+    duelo: {
+      consigna: limite,
+      azul: [
+        { id: azul[0].id, nombre: azul[0].name, texto: abridorAzul, apoyo: null },
+        { id: azul[1].id, nombre: azul[1].name, texto: cierreAzul, apoyo: apoyoDe(azul[1], azul[0].name) },
+      ],
+      rojo: [
+        { id: rojo[0].id, nombre: rojo[0].name, texto: abridorRojo, apoyo: null },
+        { id: rojo[1].id, nombre: rojo[1].name, texto: cierreRojo, apoyo: apoyoDe(rojo[1], rojo[0].name) },
+      ],
+      arbitro: {
+        id: arbitro.id,
+        nombre: arbitro.name,
+        veredicto: det.veredicto,
+        razon: razones[det.veredicto],
+        notaAzul: det.notaAzul,
+        notaRojo: det.notaRojo,
+      },
+    },
+  });
+}
+
 /* ───────────────────────── Enrutador ───────────────────────── */
 
 export async function handleDemoFetch(rawPath: string, init?: RequestInit): Promise<Response | null> {
@@ -1590,6 +1900,8 @@ export async function handleDemoFetch(rawPath: string, init?: RequestInit): Prom
     if (path === "/api/image" && method === "POST") return await handleImage(init);
     if (path === "/api/image-battle" && method === "POST") return await handleImageBattle(init);
     if (path === "/api/agent" && method === "POST") return await handleAgent(init);
+    // v1.21.0 — Labs: duelo por equipos 2v2 con árbitro (espejo exacto)
+    if (path === "/api/labs/duelo-equipos" && method === "POST") return await handleDueloEquipos(init);
     if (path === "/api/tournament" && method === "POST") return await handleTournament(init);
     // v1.19.0 — muro de replays + actividad en vivo (espejos exactos)
     if (path === "/api/share" && method === "GET") return handleMuroLista();

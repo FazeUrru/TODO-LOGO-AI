@@ -6,7 +6,7 @@ import { MODELS } from "../src/lib/models-data";
 
 describe("v1.15.0 — versión y trazabilidad", () => {
   it("la app va por la 1.18.0 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.20.0");
+    expect(APP_VERSION).toBe("1.21.0");
   });
 
   it("la entrada 1.16.0 sigue en la cadena y enlaza a su diff", () => {

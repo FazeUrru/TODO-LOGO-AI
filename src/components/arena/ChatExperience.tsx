@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
+  clasificarHtml,
+  extraerBloqueHtml,
+  quitarBloqueHtml,
+} from "@/lib/clasificador-html";
+import {
   ArrowUp,
   Paperclip,
   SquareTerminal,
@@ -89,7 +94,7 @@ const GamePanel = dynamic(() => import("./GamePanel"), {
   ssr: false,
   loading: () => (
     <div className="flex h-[200px] w-full items-center justify-center rounded-xl border border-border bg-card text-[13px] text-muted-foreground">
-      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando el juego…
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparando la vista previa…
     </div>
   ),
 });
@@ -124,8 +129,10 @@ interface Turn {
   sources?: WebSource[];
   /** v1.17.0 — imágenes adjuntas por el usuario en este turno (miniaturas). */
   images?: string[];
-  /** v1.17.0 — turno con juego jugable generado por la IA (GamePanel). */
-  kind?: "juego";
+  /** v1.17.0 — turno con artefacto HTML generado por la IA (GamePanel).
+   * v1.21.0 — «juego» y «app» se distinguen: una app fullstack ya no se
+   * disfraza de juego. */
+  kind?: "juego" | "app";
 }
 
 interface Attachment {
@@ -340,28 +347,12 @@ async function imagenADataUrl(f: File): Promise<string> {
   return cv.toDataURL("image/jpeg", 0.85);
 }
 
-/* ── v1.17.0 — detección de juegos jugables en la respuesta ──
-   Extrae el primer bloque ```html (completo o en construcción) y decide si
-   el turno es un juego: lo es en Modo Juego, o en cualquier modo si el HTML
-   trae canvas/documento completo y tiene enjundia (>1500 caracteres). */
-const RE_FENCE_ABIERTO = /```html[ \t]*\r?\n([\s\S]*?)(?:```|$)/i;
-const RE_FENCE_CERRADO = /```html[ \t]*\r?\n[\s\S]*?```/i;
-
-function extraerJuego(txt: string): { code: string; completo: boolean } | null {
-  const m = RE_FENCE_ABIERTO.exec(txt);
-  if (!m) return null;
-  const code = m[1].trim();
-  if (code.length < 60) return null;
-  return { code, completo: RE_FENCE_CERRADO.test(txt) };
-}
-
-function esJugable(code: string): boolean {
-  return code.length > 1500 && /<canvas[\s>]|<!doctype\s+html|<html[\s>]/i.test(code);
-}
-
-function quitarBloqueHtml(txt: string): string {
-  return txt.replace(RE_FENCE_ABIERTO, "").trim();
-}
+/* ── v1.17.0 · refinado v1.21.0 — detección de artefactos HTML en la respuesta.
+   Antes, CUALQUIER documento HTML completo se etiquetaba como «juego»: pedías
+   una app fullstack en Modo Código y la interfaz la presentaba en el marco de
+   «Juego en tiempo real», con el código escondido. Ahora el clasificador
+   (src/lib/clasificador-html.ts) separa juego real (canvas/bucle/teclado/
+   vocabulario) de app/web, y el marco dice la verdad. */
 
 /* ───────────────────────── Componente ───────────────────────── */
 
@@ -782,12 +773,16 @@ export default function ChatExperience() {
     // distingue el cuelgue de red del «error» explícito del servidor.
     let vigilanteDisparado = false;
 
-    /** Convierte los acumuladores en el turno final (post-proceso como siempre). */
-    const kindDe = (txt: string): "juego" | undefined => {
+    /** Convierte los acumuladores en el turno final (post-proceso como siempre).
+     * v1.21.0 — el tipo depende de lo que hay dentro: en Modo Juego siempre es
+     * juego; en el resto, el clasificador exige señales reales de juego y
+     * clasifica el HTML completo que no es juego como «app». */
+    const kindDe = (txt: string): "juego" | "app" | undefined => {
       if (activeMode === "video") return undefined;
-      const j = extraerJuego(txt);
+      const j = extraerBloqueHtml(txt);
       if (!j) return undefined;
-      return activeMode === "juego" || esJugable(j.code) ? "juego" : undefined;
+      if (activeMode === "juego") return "juego";
+      return clasificarHtml(j.code) ?? undefined;
     };
     const finalizeTurns = () => {
       const splitA = splitThinking(accA, activeMode);
@@ -2528,21 +2523,25 @@ function ChatPanel({
           ) : (
             <div key={i} className="fade-up">
               {t.thinking && <ThinkingBlock text={t.thinking} />}
-              {/* v1.17.0 — el juego jugable va delante del texto: nace en vivo
-                  y al terminar queda grande, con pantalla completa. */}
-              {t.kind === "juego" && extraerJuego(t.content) && (
-                <ErrorBoundary label="el juego">
+              {/* v1.17.0 · v1.21.0 — el artefacto va delante del texto: nace en vivo
+                  y al terminar queda grande, con pantalla completa. Una app no se
+                  presenta como juego: el marco y el badge dependen del tipo. */}
+              {(t.kind === "juego" || t.kind === "app") && extraerBloqueHtml(t.content) && (
+                <ErrorBoundary label={t.kind === "juego" ? "el juego" : "la app"}>
                   <GamePanel
-                    code={extraerJuego(t.content)!.code}
-                    completo={extraerJuego(t.content)!.completo}
+                    code={extraerBloqueHtml(t.content)!.code}
+                    completo={extraerBloqueHtml(t.content)!.completo}
                     streaming={streaming}
+                    tipo={t.kind}
                   />
                 </ErrorBoundary>
               )}
               <div className={fontClass}>
                 <ErrorBoundary label="la respuesta">
                   <Markdown streaming={streaming}>
-                    {t.kind === "juego" && extraerJuego(t.content)
+                    {/* Solo en el juego se retira el bloque HTML (el panel lo ejecuta).
+                        En una app el código SE QUEDA: es justo lo que se pidió. */}
+                    {t.kind === "juego" && extraerBloqueHtml(t.content)
                       ? quitarBloqueHtml(t.content)
                       : t.content}
                   </Markdown>
