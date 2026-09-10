@@ -10,6 +10,7 @@ import { esGranFinal, totalRondas } from "@/lib/copa-utils";
 import { serializarCopa, deserializarCopa } from "@/lib/copas-persistir";
 import { ipDeHeader, acumular, GEN_LIMITE, VOTO_LIMITE, segundosRestantes } from "@/lib/rate-limit";
 import { CARTA_VERDAD } from "@/lib/ai-conducta";
+import { conReintentos, autocorreccion } from "@/lib/reintentos";
 
 export const maxDuration = 60;
 
@@ -146,17 +147,25 @@ async function genContender(
     modelId
   )} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 200 palabras (el código no cuenta en el límite). Nunca reveles tu nombre ni el de tu proveedor: eres un contendiente anónimo hasta la revelación final y tu estilo debe hablar por ti.`;
 
-  const attempt = async (timeoutMs: number): Promise<string | null> => {
+  const t0 = Date.now();
+
+  const attempt = async (timeoutMs: number, n: number): Promise<string | null> => {
+    // v1.19.1 — escalera de autocorrección: los reintentos no repiten el
+    // mismo error a ciegas (menos temperature, sin thinking, prompt acotado).
+    const aj = autocorreccion(n);
+    const promptAjustado =
+      aj.recortePrompt && prompt.length > aj.recortePrompt ? prompt.slice(0, aj.recortePrompt) : prompt;
+    const temp = Math.max(0.2, temperature * aj.factorTemperatura);
     // v1.12.0 — voz de proveedor real si hay clave API configurada
     const voz = model ? vozExternaPara(model.provider) : null;
-    if (voz) {
+    if (voz && aj.thinking && n <= 2) {
       const r = await chatExterno(
         voz,
         [
           { role: "assistant", content: sys },
-          { role: "user", content: prompt },
+          { role: "user", content: promptAjustado },
         ],
-        temperature,
+        temp,
         timeoutMs
       );
       if (r) return r.text;
@@ -166,10 +175,10 @@ async function genContender(
         zai.chat.completions.create({
           messages: [
             { role: "assistant", content: sys },
-            { role: "user", content: prompt },
+            { role: "user", content: promptAjustado },
           ] as never,
-          temperature,
-          thinking: { type: "disabled" },
+          temperature: temp,
+          thinking: { type: aj.thinking ? "enabled" : "disabled" },
         }),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
       ]);
@@ -185,13 +194,18 @@ async function genContender(
     }
   };
 
-  const t0 = Date.now();
-  const first = await attempt(44_000);
-  if (first) return first;
-  const remaining = 52_000 - (Date.now() - t0);
-  if (remaining < 8_000) return fallbackResponse(label, prompt);
-  const second = await attempt(remaining);
-  return second ?? fallbackResponse(label, prompt);
+  // v1.19.1 — motor de reintentos: HASTA 50 INTENTOS con autocorrección y
+  // presupuesto de reloj (52 s). Un contendiente nunca se queda mudo por un
+  // upstream caído: se regenera hasta lograr texto o hasta que la ventana
+  // serverless se agota (entonces responde la reserva honesta).
+  const texto = await conReintentos<string>(`copa-${label}`, async (n) => {
+    const restante = 52_000 - (Date.now() - t0);
+    if (restante < 8_000) return undefined; // presupuesto agotado → salir
+    const timeoutMs = Math.max(8_000, Math.min(20_000, restante));
+    return attempt(timeoutMs, n);
+  }, { presupuestoMs: 52_000 });
+
+  return texto ?? fallbackResponse(label, prompt);
 }
 
 /** Genera en paralelo todas las respuestas de una ronda. */

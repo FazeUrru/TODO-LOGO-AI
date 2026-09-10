@@ -393,6 +393,8 @@ export default function ChatExperience() {
   const [oraculo, setOraculo] = useState<"A" | "B" | "tie" | null>(null);
   const [rachaOraculo, setRachaOraculo] = useState(0);
   const [fiestaRevelacion, setFiestaRevelacion] = useState(false);
+  /* v1.19.1 — Recuperación de streaming: badge «intento N/50» mientras se repara */
+  const [recuperando, setRecuperando] = useState<{ n: number; max: number; motivo: string } | null>(null);
   const [followDismissed, setFollowDismissed] = useState(false);
   const [promoDismissed, setPromoDismissed] = useState(false);
 
@@ -774,6 +776,7 @@ export default function ChatExperience() {
     let thinkB: string | undefined;
     let finalSources: WebSource[] | undefined;
     let aborted = false;
+    let recibioFin = false;
 
     /** Convierte los acumuladores en el turno final (post-proceso como siempre). */
     const kindDe = (txt: string): "juego" | undefined => {
@@ -818,11 +821,39 @@ export default function ChatExperience() {
     };
 
     try {
-      const res = await fetch("/api/battle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      /* v1.19.1 — BUCLE DE RECUPERACIÓN DE RED: hasta 50 intentos. El servidor
+       * ya reintenta por dentro con su motor (hasta 50 con autocorrección);
+       * este bucle exterior cubre la muerte de la CONEXIÓN antes de recibir
+       * contenido: repinta los paneles vacíos y vuelve a pedir la batalla. */
+      const MAX_INTENTOS_RED = 50;
+      let generado = false;
+
+      for (let intentoRed = 1; intentoRed <= MAX_INTENTOS_RED; intentoRed++) {
+      if (intentoRed > 1) {
+        setRecuperando({ n: intentoRed, max: MAX_INTENTOS_RED, motivo: "conexión perdida" });
+        setTurnsA([...nextA, { role: "assistant", content: "" }]);
+        if (!isDirect) setTurnsB([...nextB, { role: "assistant", content: "" }]);
+        await new Promise((r) => setTimeout(r, Math.min(300 * Math.pow(1.3, intentoRed - 2), 3000)));
+      }
+      setRecuperando(null);
+      recibioFin = false;
+      accA = "";
+      accB = "";
+      thinkA = undefined;
+      thinkB = undefined;
+
+      let res: Response;
+      try {
+        res = await fetch("/api/battle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      } catch {
+        // conexión caída antes de responder: reintento con pausa creciente
+        if (intentoRed < MAX_INTENTOS_RED) continue;
+        throw new Error("Sin conexión con la arena tras 50 intentos.");
+      }
       const ctype = res.headers.get("content-type") ?? "";
       if (!res.ok) {
         let msg = "La arena no pudo generar las respuestas.";
@@ -832,6 +863,8 @@ export default function ChatExperience() {
         } catch {
           /* sin cuerpo JSON */
         }
+        // 429/5xx: el upstream está saturado o caído — reintentar, no rendirse
+        if ((res.status === 429 || res.status >= 500) && intentoRed < MAX_INTENTOS_RED) continue;
         throw new Error(msg);
       }
 
@@ -930,10 +963,29 @@ export default function ChatExperience() {
         } else if (type === "tB") {
           thinkB = (thinkB ?? "") + (payload.v as string);
           schedule();
+        } else if (type === "reintento") {
+          // v1.19.1 — el servidor se está autorreparando: mostrar «intento N/50»
+          setRecuperando({
+            n: (payload.n as number) ?? 1,
+            max: (payload.max as number) ?? 50,
+            motivo: (payload.motivo as string) ?? "upstream caído",
+          });
+        } else if (type === "limpiar") {
+          // v1.19.1 — el reintento repinta desde cero: borrar el panel afectado
+          if (payload.lado === "A") {
+            accA = "";
+            thinkA = undefined;
+          } else {
+            accB = "";
+            thinkB = undefined;
+          }
+          schedule();
         } else if (type === "error") {
           aborted = true;
+        } else if (type === "end") {
+          recibioFin = true;
         }
-        /* "end": el cierre del lector dispara la finalización */
+        /* el cierre del lector dispara la finalización */
       };
 
       while (true) {
@@ -957,11 +1009,23 @@ export default function ChatExperience() {
         flushTimer = null;
       }
 
-      if (aborted && !accA.trim() && !accB.trim()) {
-        rollback();
-        throw new Error("La arena no pudo generar las respuestas. Inténtalo de nuevo.");
+      // v1.19.1 — veredicto del intento: sin «end» y sin contenido, el stream
+      // murió en silencio → limpiar y reintentar (hasta 50). Con contenido
+      // parcial o fin normal, lo que llegó se queda.
+      const conContenido = Boolean(accA.trim() || accB.trim());
+      if (!recibioFin && !conContenido && !aborted && intentoRed < MAX_INTENTOS_RED) {
+        continue;
       }
-      if (aborted) {
+      generado = true;
+      break;
+      } /* ← cierre del bucle de recuperación */
+
+      if (!generado) {
+        rollback();
+        throw new Error("La arena no pudo conectar tras 50 intentos. Revísala más tarde.");
+      }
+      setRecuperando(null);
+      if (aborted || !recibioFin) {
         if (accA.trim()) accA = `${accA}\n\n_(generación interrumpida)_`;
         if (accB.trim()) accB = `${accB}\n\n_(generación interrumpida)_`;
       }
@@ -978,6 +1042,7 @@ export default function ChatExperience() {
     } finally {
       setThinking(false);
       setStreaming({ A: false, B: false });
+      setRecuperando(null);
     }
   }
 
@@ -2040,6 +2105,19 @@ export default function ChatExperience() {
                   streaming={streaming.B}
                 />
               )}
+            </div>
+          )}
+
+          {/* v1.19.1 — Badge de recuperación: el streaming se cayó y se está reparando */}
+          {recuperando && (streaming.A || streaming.B) && (
+            <div className="fade-up mx-auto mt-2 max-w-[820px]">
+              <div className="copa-pulse flex items-center justify-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[12.5px] text-amber-800">
+                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                <span className="font-medium">Recuperando señal · intento {recuperando.n}/{recuperando.max}</span>
+                <span className="hidden truncate text-muted-foreground sm:inline">
+                  — {recuperando.motivo}; la arena se autocorrige sola
+                </span>
+              </div>
             </div>
           )}
 

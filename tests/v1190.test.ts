@@ -10,14 +10,17 @@ import { LABS_FEATURES, featurePorId } from "../src/lib/labs";
 const leer = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf8");
 
 describe("v1.19.0 — versión y trazabilidad", () => {
-  it("la app declara la versión 1.19.0", () => {
-    expect(APP_VERSION).toBe("1.19.0");
+  it("la app va por la 1.19.1 o superior (la cadena sigue viva)", () => {
+    const [mayor, menor, parche] = APP_VERSION.split(".").map((n) => parseInt(n, 10));
+    expect(mayor).toBe(1);
+    expect(menor).toBe(19);
+    expect(parche).toBeGreaterThanOrEqual(1);
   });
 
-  it("changelog-meta y CHANGELOG.md incluyen la 1.19.0 como más reciente", () => {
-    expect(VERSIONS[0].version).toBe("1.19.0");
-    expect(VERSIONS[0].diffDesde).toBe("1.18.0");
-    expect(VERSIONS[0].kinds).toContain("nuevo");
+  it("changelog-meta y CHANGELOG.md incluyen la 1.19.0 en la cadena", () => {
+    expect(VERSIONS.some((v) => v.version === "1.19.0")).toBe(true);
+    expect(VERSIONS[0].diffDesde).toBe("1.19.0");
+    expect(VERSIONS[0].kinds).toContain("mejora");
     const md = leer("CHANGELOG.md");
     expect(md).toContain("La arena de imagen ya es de verdad");
   });

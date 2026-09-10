@@ -5,6 +5,7 @@ import path from "path";
 import crypto from "crypto";
 import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
 import { sortearDuoImagen, selloDe } from "@/lib/arena-imagen";
+import { conReintentos } from "@/lib/reintentos";
 
 export const maxDuration = 60;
 
@@ -72,20 +73,27 @@ export async function POST(req: NextRequest) {
   try {
     const zai = await ZAI.create();
 
-    const generar = async (modelId: string): Promise<string | null> => {
-      const promptFinal = `${prompt}. ${selloDe(modelId)}`.trim();
-      const res = (await Promise.race([
-        zai.images.generations.create({ prompt: promptFinal, size }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 50_000)),
-      ])) as { data?: { base64?: string }[] } | null;
-      const b64 = res?.data?.[0]?.base64;
-      if (!b64) return null;
-      const dir = path.join(process.cwd(), "public", "generated");
-      fs.mkdirSync(dir, { recursive: true });
-      const name = `duelo_${Date.now().toString(36)}_${crypto.randomBytes(3).toString("hex")}.png`;
-      fs.writeFileSync(path.join(dir, name), Buffer.from(b64, "base64"));
-      return `/generated/${name}`;
-    };
+    /** Genera con el motor de reintentos (v1.19.1): hasta 50 intentos con
+     *  autocorrección (prompt acotado, sello retirado) dentro del presupuesto
+     *  de reloj — una imagen nunca se queda sin autor por un upstream caído. */
+    const generar = async (modelId: string): Promise<string | null> =>
+      conReintentos<string>(`imagen-${modelId}`, async (n) => {
+        const aj = n >= 4;
+        const cuerpo = n >= 2 ? prompt.slice(0, 600) : prompt;
+        const promptFinal = `${cuerpo}${aj ? "" : `. ${selloDe(modelId)}`}`.trim();
+        const timeoutMs = n === 1 ? 25_000 : 15_000;
+        const res = (await Promise.race([
+          zai.images.generations.create({ prompt: promptFinal, size }),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+        ])) as { data?: { base64?: string }[] } | null;
+        const b64 = res?.data?.[0]?.base64;
+        if (!b64) return null;
+        const dir = path.join(process.cwd(), "public", "generated");
+        fs.mkdirSync(dir, { recursive: true });
+        const name = `duelo_${Date.now().toString(36)}_${crypto.randomBytes(3).toString("hex")}.png`;
+        fs.writeFileSync(path.join(dir, name), Buffer.from(b64, "base64"));
+        return `/generated/${name}`;
+      }, { presupuestoMs: 48_000 });
 
     // Ambos generadores en paralelo: la espera es la del más lento
     const [urlA, urlB] = await Promise.all([generar(modeloA.id), generar(modeloB.id)]);

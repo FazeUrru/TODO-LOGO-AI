@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
+import { conReintentos } from "@/lib/reintentos";
 
 export const maxDuration = 60;
 
@@ -46,25 +47,33 @@ export async function POST(req: NextRequest) {
     }
 
     const zai = await ZAI.create();
-    const res = (await Promise.race([
-      zai.images.generations.create({ prompt, size }),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 50_000)),
-    ])) as { data?: { base64?: string }[] } | null;
 
-    const b64 = res?.data?.[0]?.base64;
-    if (!b64) {
+    // v1.19.1 — motor de reintentos: hasta 50 intentos con autocorrección
+    // (prompt acotado a partir del 2º) dentro del presupuesto de reloj.
+    const url = await conReintentos<string>("imagen-estudio", async (n) => {
+      const cuerpo = n >= 2 ? prompt.slice(0, 600) : prompt;
+      const timeoutMs = n === 1 ? 25_000 : 15_000;
+      const res = (await Promise.race([
+        zai.images.generations.create({ prompt: cuerpo, size }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+      ])) as { data?: { base64?: string }[] } | null;
+      const b64 = res?.data?.[0]?.base64;
+      if (!b64) return null;
+      const dir = path.join(process.cwd(), "public", "generated");
+      fs.mkdirSync(dir, { recursive: true });
+      const name = `img_${Date.now().toString(36)}_${crypto.randomBytes(3).toString("hex")}.png`;
+      fs.writeFileSync(path.join(dir, name), Buffer.from(b64, "base64"));
+      return `/generated/${name}`;
+    }, { presupuestoMs: 50_000 });
+
+    if (!url) {
       return NextResponse.json(
         { ok: false, error: "El generador de imágenes no respondió a tiempo. Prueba otra vez." },
         { status: 504 }
       );
     }
 
-    const dir = path.join(process.cwd(), "public", "generated");
-    fs.mkdirSync(dir, { recursive: true });
-    const name = `img_${Date.now().toString(36)}_${crypto.randomBytes(3).toString("hex")}.png`;
-    fs.writeFileSync(path.join(dir, name), Buffer.from(b64, "base64"));
-
-    return NextResponse.json({ ok: true, url: `/generated/${name}`, prompt, size });
+    return NextResponse.json({ ok: true, url, prompt, size });
   } catch {
     return NextResponse.json(
       { ok: false, error: "No se pudo generar la imagen. Inténtalo de nuevo." },

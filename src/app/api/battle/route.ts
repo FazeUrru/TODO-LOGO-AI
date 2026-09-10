@@ -6,6 +6,12 @@ import { personaFor } from "@/lib/personas";
 import { chatExterno, vozExternaPara, type VozExterna } from "@/lib/voices-externas";
 import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
 import { CARTA_VERDAD, CAPACIDADES_UNIVERSALES } from "@/lib/ai-conducta";
+import {
+  conReintentos,
+  autocorreccion,
+  vigilanteDeLectura,
+  REINTENTOS_MAX,
+} from "@/lib/reintentos";
 
 export const maxDuration = 60;
 
@@ -144,46 +150,61 @@ async function generateSide(
   voz: VozExterna | null = null,
   images: string[] = []
 ): Promise<GeneratedSide> {
-  const msgs = buildMessages(systemPrompt, prompt, history, images);
-  // v1.12.0 — voz de proveedor real si hay clave (el razonamiento profundo
-  // se queda en el motor propio, que devuelve reasoning estructurado).
-  // v1.17.0 — con imágenes el turno SIEMPRE va al motor interno: es el que
-  // tiene visión (VLM) y entiende las imágenes de verdad.
-  if (voz && !think && images.length === 0) {
-    // Sin imágenes todo el contenido es string: la cast es segura y las voces
-    // externas (solo texto) jamás reciben el formato de visión.
-    const r = await chatExterno(voz, msgs as { role: string; content: string }[], temperature);
-    if (r) return { text: r.text, thinking: null, voz: voz.proveedor };
-  }
-  try {
-    const completion = await Promise.race([
-      zai.chat.completions.create({
-        messages: msgs as never,
-        temperature,
-        thinking: { type: think ? "enabled" : "disabled" },
-      }),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 55_000)),
-    ]);
-    const choice =
-      completion && "choices" in completion ? completion.choices?.[0] : undefined;
-    const msg = choice?.message as
-      | { content?: unknown; reasoning_content?: unknown; reasoning?: unknown }
-      | undefined;
-    const content = typeof msg?.content === "string" ? msg.content : null;
-    const rawThink =
-      typeof msg?.reasoning_content === "string"
-        ? msg.reasoning_content
-        : typeof msg?.reasoning === "string"
-          ? msg.reasoning
-          : null;
-    return {
-      text: content && content.trim().length > 0 ? content.trim() : null,
-      thinking: rawThink ? rawThink.slice(0, 2000) : null,
-      voz: null,
-    };
-  } catch {
-    return { text: null, thinking: null, voz: null };
-  }
+  // v1.19.1 — motor de reintentos: hasta 50 intentos con autocorrección en
+  // cascada y presupuesto de reloj. Un upstream mudo o caído nunca deja el
+  // lado vacío si hay una sola ventana para regenerar.
+  const resultado = await conReintentos<{ text: string | null; thinking: string | null; voz: string | null }>(
+    "battle-json",
+    async (n) => {
+      const aj = autocorreccion(n);
+      const hist = aj.recorteHistorial ? history.slice(-aj.recorteHistorial) : history;
+      const promptAjustado =
+        aj.recortePrompt && prompt.length > aj.recortePrompt ? prompt.slice(0, aj.recortePrompt) : prompt;
+      const temp = Math.max(0.2, temperature * aj.factorTemperatura);
+      const thinkAjustado = think && aj.thinking;
+      const msgs = buildMessages(systemPrompt, promptAjustado, hist, images);
+
+      // v1.12.0 — voz de proveedor real si hay clave (el razonamiento profundo
+      // se queda en el motor propio, que devuelve reasoning estructurado).
+      // v1.17.0 — con imágenes el turno SIEMPRE va al motor interno: es el que
+      // tiene visión (VLM) y entiende las imágenes de verdad.
+      if (voz && !thinkAjustado && images.length === 0 && n <= 2) {
+        // Sin imágenes todo el contenido es string: la cast es segura y las voces
+        // externas (solo texto) jamás reciben el formato de visión.
+        const r = await chatExterno(voz, msgs as { role: string; content: string }[], temp);
+        if (r) return { text: r.text, thinking: null, voz: voz.proveedor };
+      }
+      const completion = await Promise.race([
+        zai.chat.completions.create({
+          messages: msgs as never,
+          temperature: temp,
+          thinking: { type: thinkAjustado ? "enabled" : "disabled" },
+        }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 55_000)),
+      ]);
+      const choice =
+        completion && "choices" in completion ? completion.choices?.[0] : undefined;
+      const msg = choice?.message as
+        | { content?: unknown; reasoning_content?: unknown; reasoning?: unknown }
+        | undefined;
+      const content = typeof msg?.content === "string" ? msg.content : null;
+      const rawThink =
+        typeof msg?.reasoning_content === "string"
+          ? msg.reasoning_content
+          : typeof msg?.reasoning === "string"
+            ? msg.reasoning
+            : null;
+      if (!content || content.trim().length === 0) return null; // upstream mudo → reintento
+      return {
+        text: content.trim(),
+        thinking: rawThink ? rawThink.slice(0, 2000) : null,
+        voz: null,
+      };
+    },
+    { presupuestoMs: 55_000 }
+  );
+  if (resultado) return resultado;
+  return { text: null, thinking: null, voz: null };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -254,7 +275,16 @@ async function* upstreamDeltas(
   }
 }
 
-/** Genera un lado con streaming: reenvía cada delta vía send() y acumula el texto final. */
+/** Genera un lado con streaming: reenvía cada delta vía send() y acumula el
+ *  texto final.
+ *
+ *  v1.19.1 — motor de reintentos con autocorrección: hasta REINTENTOS_MAX
+ *  intentos dentro del presupuesto de reloj. Cada intento lleva VIGILANTE
+ *  DE SILENCIO (un upstream mudo antes del primer chunk o entre chunks se
+ *  da por caído y se regenera). Si un intento murió a medias, se emite
+ *  {t:"limpiar", lado} para que el cliente borre el panel y el reintento
+ *  repinta desde cero; cada fallo emite {t:"reintento", lado, n, motivo}
+ *  para que la UI muestre «Recuperando señal · intento N/50». */
 async function streamSide(
   zai: Awaited<ReturnType<typeof ZAI.create>>,
   side: "A" | "B",
@@ -265,7 +295,8 @@ async function streamSide(
   think: boolean,
   send: (ev: Record<string, unknown>) => void,
   voz: VozExterna | null = null,
-  images: string[] = []
+  images: string[] = [],
+  presupuestoMs: number = STREAM_TOTAL_DEADLINE_MS
 ): Promise<StreamSideResult> {
   const deltaKey = side === "A" ? "dA" : "dB";
   const thinkKey = side === "A" ? "tA" : "tB";
@@ -275,30 +306,43 @@ async function streamSide(
   const push = (kind: string, v: string) => {
     send({ t: kind, v });
   };
+  // v1.19.1 — señales de recuperación para el cliente
+  const informarReintento = (n: number, motivo: string) =>
+    send({ t: "reintento", lado: side, n, max: REINTENTOS_MAX, motivo });
+  const limpiarPanel = () => send({ t: "limpiar", lado: side });
 
-  // v1.12.0 — voz de proveedor real si hay clave: respuesta de una pieza
-  // (el razonamiento profundo se queda en el motor propio). Con imágenes
-  // (v1.17.0) el turno va SIEMPRE al motor interno con visión.
-  if (voz && !think && images.length === 0) {
-    // Sin imágenes todo el contenido es string: la cast es segura y las voces
-    // externas (solo texto) jamás reciben el formato de visión.
-    const r = await chatExterno(
-      voz,
-      buildMessages(systemPrompt, prompt, history) as { role: string; content: string }[],
-      temperature
-    );
-    if (r) {
-      push(deltaKey, r.text);
-      return { text: r.text, thinking: "", empty: false, voz: voz.proveedor };
+  /** Un intento completo: voz externa (temprana) o motor propio vigilado. */
+  const intentoUnico = async (n: number): Promise<boolean> => {
+    const aj = autocorreccion(n);
+    const hist = aj.recorteHistorial ? history.slice(-aj.recorteHistorial) : history;
+    const promptAjustado =
+      aj.recortePrompt && prompt.length > aj.recortePrompt ? prompt.slice(0, aj.recortePrompt) : prompt;
+    const temp = Math.max(0.2, temperature * aj.factorTemperatura);
+    const thinkAjustado = think && aj.thinking;
+
+    // v1.12.0 — voz de proveedor real si hay clave: respuesta de una pieza
+    // (el razonamiento profundo se queda en el motor propio). Con imágenes
+    // (v1.17.0) el turno va SIEMPRE al motor interno con visión.
+    if (voz && !thinkAjustado && images.length === 0 && n <= 2) {
+      // Sin imágenes todo el contenido es string: la cast es segura y las voces
+      // externas (solo texto) jamás reciben el formato de visión.
+      const r = await chatExterno(
+        voz,
+        buildMessages(systemPrompt, promptAjustado, hist) as { role: string; content: string }[],
+        temp
+      );
+      if (r && r.text.trim()) {
+        text = r.text;
+        push(deltaKey, r.text);
+        return true;
+      }
     }
-  }
 
-  try {
     const started = await Promise.race([
       zai.chat.completions.create({
-        messages: buildMessages(systemPrompt, prompt, history, images) as never,
-        temperature,
-        thinking: { type: think ? "enabled" : "disabled" },
+        messages: buildMessages(systemPrompt, promptAjustado, hist, images) as never,
+        temperature: temp,
+        thinking: { type: thinkAjustado ? "enabled" : "disabled" },
         stream: true,
       }),
       new Promise<null>((resolve) =>
@@ -307,8 +351,12 @@ async function streamSide(
     ]);
 
     if (started && typeof (started as ReadableStream).getReader === "function") {
-      const deadline = Date.now() + STREAM_TOTAL_DEADLINE_MS;
-      for await (const d of upstreamDeltas(started as ReadableStream<Uint8Array>)) {
+      const deadline = Date.now() + presupuestoMs;
+      // v1.19.1 — vigilante de silencio: un stream mudo muere y se reintenta
+      for await (const d of vigilanteDeLectura(
+        upstreamDeltas(started as ReadableStream<Uint8Array>),
+        { primerChunkMs: STREAM_CONNECT_TIMEOUT_MS, entreChunkMs: 12_000 }
+      )) {
         if (Date.now() > deadline) break;
         if (d.reasoning) {
           thinking += d.reasoning;
@@ -338,11 +386,32 @@ async function streamSide(
         push(deltaKey, msg.content);
       }
     }
-  } catch {
-    /* cae a la respuesta de reserva */
-  }
 
-  return { text, thinking, empty: text.trim().length === 0, voz: null };
+    return text.trim().length > 0;
+  };
+
+  // v1.19.1 — bucle de reintentos con autocorrección y aviso al cliente
+  const resultado = await conReintentos<StreamSideResult>(
+    `stream-${side}`,
+    async (n, motivo) => {
+      if (n > 1) {
+        informarReintento(n, motivo ?? "upstream mudo");
+        // Si el intento anterior pintó algo a medias, el panel se limpia:
+        // el reintento repinta desde cero, sin texto fantasma cortado.
+        if (text.length > 0 || thinking.length > 0) {
+          limpiarPanel();
+          text = "";
+          thinking = "";
+        }
+      }
+      const ok = await intentoUnico(n);
+      return ok ? { text, thinking, empty: false, voz: null } : null;
+    },
+    { presupuestoMs }
+  );
+
+  if (resultado) return resultado;
+  return { text: "", thinking: "", empty: text.trim().length === 0, voz: null };
 }
 
 /** Búsqueda web real vía el SDK; nunca rompe el flujo si falla (1 reintento). */

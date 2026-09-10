@@ -22,6 +22,21 @@
 - Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
 - Primera graduación masiva de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
 
+## [1.19.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.19.0...v1.19.1) · 10 sept 2026, 11:00 — *Que no se atasquen: motor de reintentos con autocorrección hasta 50 intentos*
+
+> 💡 **En una frase:** si un upstream se cae, calla o se queda a medias, la arena lo detecta sola y lo regenera hasta 50 veces con parámetros autocorregidos — y tú ves «Recuperando señal · intento N/50» en vez de un panel congelado.
+
+### Añadido
+- **Motor de reintentos con autocorrección** 🔁: nueva capa transversal (`reintentos.ts`) que blindan todas las generaciones — batalla SSE, modo JSON, copa, estudio de imagen y arena de imagen. Hasta **50 intentos** por generación con pausa exponencial con jitter, siempre dentro del presupuesto de reloj de la ruta (en serverless manda `maxDuration`; el techo de 50 es el límite duro).
+- **Escalera de autocorrección** 🪜: ningún reintento repite el error a ciegas — cada intento ajusta parámetros según el número: baja la temperatura, desactiva el thinking, recorta el historial a las últimas jugadas, acota el prompt y, en el tramo final, cambia a modo directo. La causa del atasco deja de importar: el intento N nunca es idéntico al N−1.
+- **Vigilante de silencio para el streaming** 🚨: un upstream que se queda mudo —antes del primer chunk o ENTRE chunks— se da por caído en segundos (no al minute y medio), el stream muerto se cancela y la generación se reinicia. Si el intento anterior había pintado algo a medias, el panel se limpia y el reintento repinta desde cero: nunca hay texto fantasma cortado.
+- **Badge «Recuperando señal»** 📡: cada reintento del servidor viaja al cliente como evento SSE (`reintento` con lado, intento y motivo) y el cliente lo muestra en vivo sobre los paneles. El cliente añade además su PROPIO bucle exterior de recuperación (hasta 50) para conexiones muertas antes de recibir contenido y para 429/5xx: doble capa, servidor y cliente.
+
+### Mejorado
+- **La copa no se rinde** 🏆: `genContender` pasa de 2 intentos a 50 con la misma escalera — un contendiente solo responde con la reserva honesta si la ventana serverless entera se agotó intentándolo.
+- **Imagen con chaleco** 🖼️: `/api/image` y `/api/image-battle` reintentan hasta agotar presupuesto (prompt acotado desde el 2º intento, sello de estilo retirado desde el 4º) — el duelo de imagen ya no se pierde por un upstream lento.
+- **Telemetría honesta** 🧾: cada reintento queda registrado en el log estructurado (`reintentos.fallo` con etiqueta, intento y motivo) — los atascos dejan rastro para diagnosticarlos.
+
 ## [1.19.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.18.0...v1.19.0) · 10 sept 2026, 10:30 — *La arena de imagen ya es de verdad: ELO separado, espectadores y muro de replays*
 
 > 💡 **En una frase:** la imagen estrena duelo ciego con ranking propio (empieza en 1000 y jamás se mezcla con el de texto), las copas se pueden ver en directo con la grada votando sola, y todos los replays compartidos tienen su muro público.

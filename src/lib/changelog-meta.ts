@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.19.1",
+    fecha: "10 sept 2026",
+    hora: "11:00",
+    titulo: "Que no se atasquen: motor de reintentos con autocorrección hasta 50 intentos",
+    tldr:
+      "Si un upstream se cae, calla o se queda a medias, la arena lo detecta sola y lo regenera hasta 50 veces con parámetros autocorregidos — y ves «Recuperando señal · intento N/50» en vez de un panel congelado.",
+    diffDesde: "1.19.0",
+    hash: null,
+    kinds: ["mejora"],
+  },
+  {
     version: "1.19.0",
     fecha: "10 sept 2026",
     hora: "10:30",
