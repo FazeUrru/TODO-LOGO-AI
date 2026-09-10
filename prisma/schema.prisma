@@ -116,6 +116,26 @@ model CopaSesion {
   @@index([updatedAt])
 }
 
+// Duelo o copa compartidos por URL permanente (v1.18.0): snapshot completo
+// para el replay público en /duelo/[id]. Para copas, `copaId` apunta a la
+// CopaSesion cuyo JSON canónico se sirve en el GET.
+model DueloGuardado {
+  id           String   @id // id público corto (d_xxx)
+  tipo         String   @default("duelo") // "duelo" | "copa"
+  prompt       String
+  category     String   @default("global")
+  composerMode String   @default("texto")
+  modelAId     String
+  modelBId     String?
+  textoA       String
+  textoB       String?
+  ganador      String? // 'A' | 'B' | 'tie' | 'bad'; null si se compartió sin voto
+  copaId       String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 // Canal Todólogo Labs (v1.14.0): features experimentales con ciclo de vida
 // finito (máx. 8 semanas → graduación o descarte) y telemetría estructurada.
 // El registro fuente de verdad vive en src/lib/labs.ts (viaja en el bundle);

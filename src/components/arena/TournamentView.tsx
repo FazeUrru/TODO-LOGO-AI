@@ -10,12 +10,14 @@ import {
   CircleCheck,
   ArrowDown,
   Users,
+  Share2,
 } from "lucide-react";
 import { useArena } from "@/components/shell/arena-context";
 import Markdown from "./Markdown";
 import ProviderLogo from "./ProviderLogo";
 import SalonFama from "./SalonFama";
 import { markUsed } from "@/lib/badges";
+import { isStaticDemo } from "@/lib/static-mode";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -278,6 +280,32 @@ export default function TournamentView() {
     setError(null);
   };
 
+  /** v1.18.0 — comparte la copa por URL permanente: replay público del cuadro. */
+  const compartirCopa = async () => {
+    if (!copa) return;
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo: "copa", copaId: copa.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "No se pudo compartir la copa.");
+      const url = `${window.location.origin}${data.url}`;
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Replay de la copa creado y enlace copiado",
+        description: `Cualquiera puede repasar el cuadro entero en ${url}`,
+      });
+    } catch (e) {
+      toast({
+        title: "No se pudo compartir la copa",
+        description: e instanceof Error ? e.message : undefined,
+        variant: "destructive",
+      });
+    }
+  };
+
   /* ── Portada de la copa ── */
   if (!copa) {
     return (
@@ -462,6 +490,15 @@ export default function TournamentView() {
             </div>
           </div>
 
+          {!isStaticDemo() && (
+            <button
+              onClick={compartirCopa}
+              className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-[14px] font-medium hover:bg-accent"
+            >
+              <Share2 className="h-4 w-4" />
+              Compartir replay de la copa
+            </button>
+          )}
           <button
             onClick={reset}
             className="mt-8 flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-[14px] font-medium text-background hover:opacity-90"

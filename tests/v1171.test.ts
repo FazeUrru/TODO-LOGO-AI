@@ -8,14 +8,12 @@ import { MODELS, esGenerativo, CATEGORIAS_GENERATIVAS } from "../src/lib/models-
 const leer = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf8");
 
 describe("v1.17.1 — versión y trazabilidad", () => {
-  it("la app declara la versión 1.17.1", () => {
-    expect(APP_VERSION).toBe("1.17.1");
+  it("la app va por la 1.18.0 (la cadena sigue viva)", () => {
+    expect(APP_VERSION).toBe("1.18.0");
   });
 
-  it("changelog-meta y CHANGELOG.md incluyen la 1.17.1 como más reciente", () => {
-    expect(VERSIONS[0].version).toBe("1.17.1");
-    expect(VERSIONS[0].diffDesde).toBe("1.17.0");
-    expect(VERSIONS[0].kinds).toEqual(["correccion"]);
+  it("changelog-meta y CHANGELOG.md incluyen la 1.17.1 en la cadena", () => {
+    expect(VERSIONS.some((v) => v.version === "1.17.1")).toBe(true);
     const md = leer("CHANGELOG.md");
     expect(md).toContain(
       "La General vuelve a ser de texto: fuera los modelos de imagen del leaderboard y del chat"

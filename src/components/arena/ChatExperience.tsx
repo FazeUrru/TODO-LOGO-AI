@@ -27,6 +27,7 @@ import {
   Check,
   Copy,
   RotateCcw,
+  Share2,
   Loader2,
   CircleArrowLeft,
   CircleArrowRight,
@@ -68,6 +69,7 @@ import ProviderLogo from "./ProviderLogo";
 import TournamentView from "./TournamentView";
 import LaboratorioGenerativo from "./LaboratorioGenerativo";
 import { detectModel3D, ALL_3D_IDS } from "@/lib/models-3d";
+import { isStaticDemo } from "@/lib/static-mode";
 import { ExternalLink, Brain } from "lucide-react";
 import ErrorBoundary from "./ErrorBoundary";
 
@@ -1205,6 +1207,53 @@ export default function ChatExperience() {
     }
   }
 
+  /** v1.18.0 — comparte este duelo por URL permanente con replay completo. */
+  async function compartirDuelo() {
+    if (!battle?.aId) return;
+    const textoA = turnsA
+      .filter((t) => t.role === "assistant")
+      .map((t) => t.content)
+      .join("\n\n")
+      .slice(0, 60_000);
+    const textoB = turnsB
+      .filter((t) => t.role === "assistant")
+      .map((t) => t.content)
+      .join("\n\n")
+      .slice(0, 60_000);
+    const promptOriginal = turnsA.find((t) => t.role === "user")?.content ?? "";
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tipo: "duelo",
+          prompt: promptOriginal,
+          category,
+          composerMode: cMode,
+          modelAId: battle.aId,
+          modelBId: battle.bId,
+          textoA,
+          textoB: battle.bId ? textoB : null,
+          ganador: battle.winner ?? null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error);
+      const url = `${window.location.origin}${data.url}`;
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Replay creado y enlace copiado",
+        description: `Cualquiera puede ver este duelo en ${url}`,
+      });
+    } catch (e) {
+      toast({
+        title: "No se pudo compartir el duelo",
+        description: e instanceof Error ? e.message : undefined,
+        variant: "destructive",
+      });
+    }
+  }
+
   /* ───────────────────────── UI ───────────────────────── */
 
   const canSend = prompt.trim().length > 1 && !thinking;
@@ -2013,6 +2062,15 @@ export default function ChatExperience() {
                 <RotateCcw className="h-3.5 w-3.5" />
                 Nueva batalla
               </button>
+              {!isStaticDemo() && (
+                <button
+                  onClick={compartirDuelo}
+                  className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[12.5px] font-medium hover:bg-accent"
+                >
+                  <Share2 className="h-3.5 w-3.5" />
+                  Compartir replay
+                </button>
+              )}
               <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
                 Transparencia: las respuestas las genera el motor único de Todólogo encarnando la
                 personalidad de cada modelo; el ELO sí es real y nace de votos como el tuyo.

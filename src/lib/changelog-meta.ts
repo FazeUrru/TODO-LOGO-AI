@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.18.0",
+    fecha: "10 sept 2026",
+    hora: "09:21",
+    titulo: "Duelos y copas compartibles: replay permanente por URL",
+    tldr:
+      "Tras cada batalla o copa, un botón «Compartir» crea una URL permanente /duelo/… donde cualquiera repasa el prompt, las respuestas completas con identidades reveladas y el veredicto.",
+    diffDesde: "1.17.1",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.17.1",
     fecha: "10 sept 2026",
     hora: "07:55",

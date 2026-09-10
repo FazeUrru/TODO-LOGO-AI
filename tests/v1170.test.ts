@@ -8,8 +8,10 @@ import { VERSIONS } from "../src/lib/changelog-meta";
 const leer = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf8");
 
 describe("v1.17.0 — reentrenamiento transversal de todas las IA", () => {
-  it("la app declara versión 1.17.x (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toMatch(/^1\.17\./);
+  it("la app va por la 1.18.0 o superior (la cadena sigue viva)", () => {
+    const [mayor, menor] = APP_VERSION.split(".").map((n) => parseInt(n, 10));
+    expect(mayor).toBe(1);
+    expect(menor).toBeGreaterThanOrEqual(18);
   });
 
   it("CAPACIDADES_UNIVERSALES entrena juegos jugables y visión para TODAS las IA", () => {

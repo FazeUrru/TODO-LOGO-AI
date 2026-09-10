@@ -192,6 +192,28 @@ async function createSchema(): Promise<void> {
       `CREATE INDEX IF NOT EXISTS "LabsEvent_tipo_idx" ON "LabsEvent"("tipo");`
     );
 
+    // Duelos y copas compartidas por URL permanente (v1.18.0)
+    await crearTabla(
+      "DueloGuardado",
+      `CREATE TABLE IF NOT EXISTS "DueloGuardado" (
+        "id"           TEXT PRIMARY KEY,
+        "tipo"         TEXT NOT NULL DEFAULT 'duelo',
+        "prompt"       TEXT NOT NULL,
+        "category"     TEXT NOT NULL DEFAULT 'global',
+        "composerMode" TEXT NOT NULL DEFAULT 'texto',
+        "modelAId"     TEXT NOT NULL,
+        "modelBId"     TEXT,
+        "textoA"       TEXT NOT NULL,
+        "textoB"       TEXT,
+        "ganador"      TEXT,
+        "copaId"       TEXT,
+        "createdAt"    ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "DueloGuardado_createdAt_idx" ON "DueloGuardado"("createdAt");`
+    );
+
 
     // Columnas de perfil (v1.9.2) para bases creadas antes de esa versión
     const B = PG ? "BOOLEAN" : "BOOLEAN";

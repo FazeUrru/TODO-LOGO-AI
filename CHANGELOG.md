@@ -11,15 +11,29 @@
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.18.0
-- Compartir duelos y copas por URL permanente con replay de las respuestas y del veredicto.
+### Planeado para v1.19.0
 - Arena de imágenes con voto y ranking ELO separado del de texto — el flag experimental ya está abierto en Todólogo Labs (`arena-imagenes`, cohorte Explorer).
 - Modo espectador de torneos: observa una copa en directo y predice quién pasará la ronda (ligado al flag `streaming-ws` de Labs).
+- Descubre replays: muro público con los duelos y copas más compartidos recientemente.
 
 ### Explorando
 - Internacionalización es/en/pt (next-intl, con la comunidad traduciendo).
 - Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
 - Primera graduación de features de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
+
+## [1.18.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.17.1...v1.18.0) · 10 sept 2026, 09:21 — *Duelos y copas compartibles: replay permanente por URL*
+
+> 💡 **En una frase:** tras cada batalla y cada copa tienes un botón «Compartir» que crea una URL permanente `/duelo/…` donde cualquiera repasa el prompt, las dos respuestas completas con identidades reveladas y el veredicto — sin cuenta y sin lío.
+
+### Añadido
+- **Compartir duelo por URL permanente** 🔗: al revelarse el ganador de una batalla estrena «Compartir replay» — guarda el snapshot completo (prompt original, categoría, modo del composer, ambas respuestas completas y el veredicto con su swing de ELO) y copia al portapapeles la URL pública del replay.
+- **Página de replay `/duelo/[id]`** 🎬: vista pública que repasa el duelo como si lo hubieras presenciado — prompt original arriba, panel de cada modelo con su logo, proveedor, ELO y corona de ganador, fecha y categoría. Con CTA para correr tu propio duelo y botón de copiar enlace.
+- **Compartir copa completa** 🏆: la vista campeón de la Copa Todólogo añade «Compartir replay de la copa» — el cuadro entero (todas las rondas, contendientes anónimos con sus labels, textos completos y ganadores) queda publicado en su propia URL permanente, coronado por el campeón.
+- **Tabla `DueloGuardado`** 🗄️: nuevo modelo Prisma (SQLite y Postgres) con auto-creación en el arranque serverless — los replays sobreviven reinicios e instancias, como las copas desde v1.13.0.
+
+### Mejorado
+- **Replay coherente con la v1.17.1** 🛡️: la API de compartir valida que los modelos del snapshot existen y conversan (un replay de texto no puede traer un modelo generativo), limita cada respuesta a 60 KB y reutiliza el rate-limit del arena.
+- **Demo estática honesta** 📄: en GitHub Pages los botones de compartir se ocultan (no hay backend donde guardar el replay) y la página de replay, si alguien abre una URL huérfana, lo explica y enlaza a la instancia oficial.
 
 ## [1.17.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.17.0...v1.17.1) · 10 sept 2026, 07:55 — *La General vuelve a ser de texto: fuera los modelos de imagen del leaderboard y del chat*
 
