@@ -21,6 +21,17 @@
 - Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
 - Primera graduación de features de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
 
+## [1.17.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.17.0...v1.17.1) · 10 sept 2026, 07:55 — *La General vuelve a ser de texto: fuera los modelos de imagen del leaderboard y del chat*
+
+> 💡 **En una frase:** la categoría General (y todas las arenas de texto) ya no lista modelos de imagen como GPT-Image-2.5 Sunburst, y al escribir código o chat nunca responde un modelo generativo elegido por sorteo o por error.
+
+### Corregido
+- **Leaderboard General sin generativos** 🏆: la arena General (y Código, Razonamiento, Escritura, Agente, Matemáticas, Datos y SQL, Traducción, Educación y Negocios) solo clasifica modelos que conversan — un modelo de imagen como GPT-Image-2.5 Sunburst aparecía en la tabla general por un filtro a medias: las arenas generativas filtraban sus modelos, pero las de texto no excluyeron nunca a los generativos. Ahora la exclusión es simétrica, también en el motor demo de GitHub Pages.
+- **El chat ya responde con un modelo que conversa** 💬: al escribir código (o cualquier mensaje), el sorteo anónimo de Batalla podía elegir un modelo de imagen del catálogo y ponerlo a «responder» — no tiene sentido. El sorteo (`pickRandom`) ahora solo contempla modelos de texto/código, y los IDs fijados por el cliente se validan en el servidor: si llega un generativo, cae al sorteo sano en lugar de intentar conversar.
+- **Copa Torneo solo de texto** 🏅: el sorteo del bracket (`pickN` en el servidor y `pickFour` en el motor demo) excluía antes solo por tramo de ELO, y un generativo podía colarse en semifinales para «responder» con texto. Ya no puede.
+- **Selector de modelos coherente** 🎛️: el desplegable de modelos del chat (Batalla, Lado a Lado y Directo) ya no ofrece modelos de imagen, vídeo o audio — siguen accesibles en sus arenas específicas y en el laboratorio generativo, que es donde tienen sentido.
+- **Buscador honesto con los generativos** 🔍: al buscar un modelo generativo en el command palette, la tarjeta de detalle ya no ofrece «Chatear ahora» — explica que compite en la arena de imagen/vídeo/audio del leaderboard y enlaza a ella.
+
 ## [1.17.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.16.0...v1.17.0) · 9 sept 2026, 22:25 — *Juegos en tiempo real con todas las IA y visión VLM integrada*
 
 > 💡 **En una frase:** cualquiera de las 56 IA ya construye juegos jugables mientras escribe —en un panel grande con pantalla completa, en cualquier modo— y ahora entiende de verdad las imágenes que adjuntas gracias a la visión VLM integrada.

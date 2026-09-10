@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
-import { MODELS, getModel } from "@/lib/models-data";
+import { MODELS, getModel, esGenerativo } from "@/lib/models-data";
 import { db } from "@/lib/db";
 import { expectedScore } from "@/lib/elo";
 import { applyEloDuel } from "@/lib/elo-global";
@@ -106,9 +106,10 @@ async function cargarCopa(id: string): Promise<Copa | null> {
 
 /* ───────────────────────── Sorteo ───────────────────────── */
 
-/** N modelos distintos del tramo alto del ranking (sorteo aleatorio). */
+/** N modelos distintos del tramo alto del ranking (sorteo aleatorio).
+ *  v1.17.1 — la copa es de texto: los generativos no entran al bracket. */
 function pickN(n: number): string[] {
-  const sorted = [...MODELS].sort((a, b) => b.elo - a.elo);
+  const sorted = [...MODELS.filter((m) => !esGenerativo(m))].sort((a, b) => b.elo - a.elo);
   const pool = sorted.slice(0, Math.ceil(sorted.length * 0.7));
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

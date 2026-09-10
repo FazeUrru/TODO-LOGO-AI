@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { MODELS, PROVIDERS, CATEGORIAS_GENERATIVAS } from "@/lib/models-data";
+import { MODELS, PROVIDERS, CATEGORIAS_GENERATIVAS, esGenerativo } from "@/lib/models-data";
 import { categoryElo, eloDeltaFromVotes, type LeaderRow } from "@/lib/elo";
 import { getGlobalEloMap } from "@/lib/elo-global";
 
@@ -39,10 +39,14 @@ export async function GET(req: NextRequest) {
 
   // Arenas generativas (v1.15.0): solo compiten los modelos de esa modalidad —
   // un LLM de texto no aparece en la arena de vídeo por mucho offset que toque.
+  // v1.17.1 — y a la inversa: las arenas de texto (General, Código,…) son solo
+  // de modelos que conversan. Un modelo de imagen (p. ej. GPT-Image-2.5
+  // Sunburst) no compite en la General: no genera texto, no recibe votos de
+  // texto y su presencia allí era un error de categoría.
   const soloGenerativos = (CATEGORIAS_GENERATIVAS as readonly string[]).includes(category);
   const candidatos = soloGenerativos
     ? MODELS.filter((m) => m.categories.includes(category as never))
-    : MODELS;
+    : MODELS.filter((m) => !esGenerativo(m));
 
   const rows: LeaderRow[] = candidatos.map((m) => {
     const stats = winMap[m.id] ?? { wins: 0, losses: 0, ties: 0, bads: 0 };

@@ -5,8 +5,8 @@ import { VERSIONS, enlaceTraza } from "../src/lib/changelog-meta";
 import { MODELS } from "../src/lib/models-data";
 
 describe("v1.15.0 — versión y trazabilidad", () => {
-  it("la app va por la 1.17.0 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.17.0");
+  it("la app va por la 1.17.1 (la cadena sigue viva)", () => {
+    expect(APP_VERSION).toBe("1.17.1");
   });
 
   it("la entrada 1.16.0 sigue en la cadena y enlaza a su diff", () => {

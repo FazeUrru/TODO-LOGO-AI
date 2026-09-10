@@ -16,7 +16,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import { useUsed, NewBadge } from "@/lib/badges";
-import { MODELS, PROVIDERS, getModel } from "@/lib/models-data";
+import { MODELS, PROVIDERS, getModel, esGenerativo } from "@/lib/models-data";
 import { useArena, type ArenaMode, MODE_META } from "./arena-context";
 import ProviderLogo from "@/components/arena/ProviderLogo";
 import FloatingPanel from "./FloatingPanel";
@@ -47,14 +47,18 @@ function ModelSelect({
   const model = getModel(value);
 
   const results = useMemo(() => {
+    // v1.17.1 — el chat es de texto: aquí solo se eligen modelos que conversan.
+    // Los generativos (imagen/vídeo/audio) se usan desde sus arenas específicas
+    // y el laboratorio generativo, no como contendientes del chat.
+    const conversan = MODELS.filter((m) => !esGenerativo(m));
     const q = query.trim().toLowerCase();
     const list = q
-      ? MODELS.filter(
+      ? conversan.filter(
           (m) =>
             m.name.toLowerCase().includes(q) ||
             (PROVIDERS[m.provider]?.name ?? m.provider).toLowerCase().includes(q)
         )
-      : MODELS;
+      : conversan;
     return [...list].sort((a, b) => b.elo - a.elo).slice(0, 60);
   }, [query]);
 

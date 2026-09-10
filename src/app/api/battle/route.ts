@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
-import { getModel, MODELS } from "@/lib/models-data";
+import { getModel, MODELS, esGenerativo } from "@/lib/models-data";
 import { ALL_3D_IDS } from "@/lib/models-3d";
 import { personaFor } from "@/lib/personas";
 import { chatExterno, vozExternaPara, type VozExterna } from "@/lib/voices-externas";
@@ -57,12 +57,24 @@ const CATEGORY_FRAMING: Record<string, string> = {
     "La pregunta es de negocio: responde como consultor senior, con estructura, opciones y recomendación accionable.",
 };
 
-/** Sorteo aleatorio ponderado hacia la parte alta del ranking. */
+/**
+ * Sorteo aleatorio ponderado hacia la parte alta del ranking.
+ * v1.17.1 — solo sortea modelos que conversan (texto/código/razonamiento):
+ * los generativos (imagen/vídeo/audio) no saben responder en el chat y no
+ * pueden salir elegidos en una batalla de texto.
+ */
 function pickRandom(exclude?: string): string {
-  const pool = MODELS.filter((m) => m.id !== exclude);
+  const pool = MODELS.filter((m) => m.id !== exclude && !esGenerativo(m));
   const sorted = [...pool].sort((a, b) => b.elo - a.elo);
   const top = sorted.slice(0, Math.ceil(sorted.length * 0.6));
   return top[Math.floor(Math.random() * top.length)].id;
+}
+
+/** v1.17.1 — un ID fijado por el cliente solo vale si existe y no es generativo. */
+function esContendienteValido(id?: string): boolean {
+  if (!id) return false;
+  const m = getModel(id);
+  return Boolean(m && !esGenerativo(m));
 }
 
 function fallbackResponse(label: string, prompt: string): string {
@@ -414,12 +426,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Asignación de modelos: fijos (lado a lado / directo) o sorteo anónimo
-  const aId = body.modelAId && getModel(body.modelAId) ? body.modelAId : pickRandom();
+  // Asignación de modelos: fijos (lado a lado / directo) o sorteo anónimo.
+  // v1.17.1 — los IDs del cliente se validan: un modelo de imagen seleccionado
+  // en la interfaz (o enviado a mano) cae al sorteo de modelos de texto.
+  const aId = esContendienteValido(body.modelAId) ? body.modelAId! : pickRandom();
   let bId: string | null = null;
   const single = Boolean(body.single);
   if (!single) {
-    bId = body.modelBId && getModel(body.modelBId) ? body.modelBId : pickRandom(aId);
+    bId =
+      esContendienteValido(body.modelBId) && body.modelBId !== aId
+        ? body.modelBId!
+        : pickRandom(aId);
     if (bId === aId) bId = pickRandom(aId);
   }
 

@@ -8,8 +8,8 @@ import { VERSIONS } from "../src/lib/changelog-meta";
 const leer = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf8");
 
 describe("v1.17.0 — reentrenamiento transversal de todas las IA", () => {
-  it("la app declara la versión 1.17.0", () => {
-    expect(APP_VERSION).toBe("1.17.0");
+  it("la app declara versión 1.17.x (la cadena sigue viva)", () => {
+    expect(APP_VERSION).toMatch(/^1\.17\./);
   });
 
   it("CAPACIDADES_UNIVERSALES entrena juegos jugables y visión para TODAS las IA", () => {
@@ -89,9 +89,8 @@ describe("v1.17.0 — pruebas y changelog sincronizados", () => {
     expect(src.match(/id: "/g)?.length).toBe(10);
   });
 
-  it("changelog-meta y CHANGELOG.md incluyen la 1.17.0 como más reciente", () => {
-    expect(VERSIONS[0].version).toBe("1.17.0");
-    expect(VERSIONS[0].diffDesde).toBe("1.16.0");
+  it("changelog-meta y CHANGELOG.md incluyen la 1.17.0 en la cadena", () => {
+    expect(VERSIONS.some((v) => v.version === "1.17.0")).toBe(true);
     const md = leer("CHANGELOG.md");
     expect(md).toContain("Juegos en tiempo real con todas las IA y visión VLM integrada");
   });

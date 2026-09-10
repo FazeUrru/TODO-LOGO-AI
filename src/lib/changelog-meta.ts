@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.17.1",
+    fecha: "10 sept 2026",
+    hora: "07:55",
+    titulo: "La General vuelve a ser de texto: fuera los modelos de imagen del leaderboard y del chat",
+    tldr:
+      "La categoría General (y todas las arenas de texto) ya no lista modelos de imagen como GPT-Image-2.5 Sunburst, y al escribir código nunca responde un modelo generativo por sorteo o error.",
+    diffDesde: "1.17.0",
+    hash: null,
+    kinds: ["correccion"],
+  },
+  {
     version: "1.17.0",
     fecha: "9 sept 2026",
     hora: "22:25",

@@ -11,7 +11,7 @@
  * modo, y la propia app lo indica con una píldora «Demo estática».
  */
 
-import { MODELS, PROVIDERS, getModel, type AIModel } from "./models-data";
+import { MODELS, PROVIDERS, getModel, CATEGORIAS_GENERATIVAS, esGenerativo, type AIModel } from "./models-data";
 import { categoryElo, eloDeltaFromVotes, expectedScore, type LeaderRow, type Winner } from "./elo";
 import { RECIPES_3D } from "./models-3d";
 import { estadisticasSalon } from "./salon-utils";
@@ -643,7 +643,9 @@ function gameBlueprint(prompt: string, seed = 0): string {
 /* ─────────────── Batalla (espejo de POST /api/battle) ─────────────── */
 
 function drawDuel(): [AIModel, AIModel] {
-  const sorted = [...MODELS].sort((a, b) => b.elo - a.elo);
+  // v1.17.1 — solo modelos que conversan: los generativos (imagen/vídeo/audio)
+  // no responden en el chat y no pueden salir en una batalla de texto.
+  const sorted = [...MODELS.filter((m) => !esGenerativo(m))].sort((a, b) => b.elo - a.elo);
   const pool = sorted.slice(0, Math.ceil(sorted.length * 0.7));
   const a = pick(pool);
   let b = pick(pool);
@@ -699,17 +701,26 @@ async function handleBattle(init: RequestInit | undefined): Promise<Response> {
   const historyA = Array.isArray(body.historyA) ? (body.historyA as unknown[]) : [];
   const historyB = Array.isArray(body.historyB) ? (body.historyB as unknown[]) : [];
 
+  // v1.17.1 — el chat es de texto: un ID generativo enviado por el cliente
+  // (o fijado antes de la corrección) cae al sorteo de modelos que conversan.
+  const contendienteDe = (id: string): AIModel | null => {
+    const m = getModel(id);
+    return m && !esGenerativo(m) ? m : null;
+  };
   let modelA: AIModel;
   let modelB: AIModel | null = null;
   if (single) {
-    modelA = getModel(String(body.modelAId ?? "")) ?? drawDuel()[0];
+    modelA = contendienteDe(String(body.modelAId ?? "")) ?? drawDuel()[0];
   } else if (body.modelAId && body.modelBId) {
-    modelA = getModel(String(body.modelAId)) ?? drawDuel()[0];
-    modelB = getModel(String(body.modelBId)) ?? drawDuel()[1];
+    modelA = contendienteDe(String(body.modelAId)) ?? drawDuel()[0];
+    modelB = contendienteDe(String(body.modelBId)) ?? drawDuel()[1];
   } else if (body.modelAId) {
-    modelA = getModel(String(body.modelAId)) ?? drawDuel()[0];
+    modelA = contendienteDe(String(body.modelAId)) ?? drawDuel()[0];
     modelB = drawDuel()[1];
-    if (modelB.id === modelA.id) modelB = MODELS[(MODELS.indexOf(modelA) + 7) % MODELS.length];
+    if (modelB.id === modelA.id) {
+      const poolTexto = MODELS.filter((m) => !esGenerativo(m));
+      modelB = poolTexto[(poolTexto.indexOf(modelA) + 7) % poolTexto.length];
+    }
   } else {
     [modelA, modelB] = drawDuel();
   }
@@ -825,7 +836,14 @@ async function handleVote(init: RequestInit | undefined): Promise<Response> {
 
 function handleLeaderboard(path: string): Response {
   const category = new URLSearchParams(path.split("?")[1] ?? "").get("category") ?? "global";
-  const rows: LeaderRow[] = MODELS.map((m) => {
+  // v1.17.1 — espejo exacto de /api/leaderboard: las arenas generativas solo
+  // listan sus modelos; las de texto (General, Código,…) excluyen los
+  // generativos — GPT-Image-2.5 Sunburst ya no aparece en la General.
+  const soloGenerativos = (CATEGORIAS_GENERATIVAS as readonly string[]).includes(category);
+  const pool = soloGenerativos
+    ? MODELS.filter((m) => m.categories.includes(category as never))
+    : MODELS.filter((m) => !esGenerativo(m));
+  const rows: LeaderRow[] = pool.map((m) => {
     const t = tallyFor(m.id);
     const delta = eloDeltaFromVotes(t.wins, t.losses, t.ties);
     const decided = t.wins + t.losses;
@@ -1053,7 +1071,8 @@ interface Copa {
 const copaStore = new Map<string, Copa>();
 
 function pickFour(): string[] {
-  const sorted = [...MODELS].sort((a, b) => b.elo - a.elo);
+  // v1.17.1 — la copa es de texto: los generativos no entran al bracket.
+  const sorted = [...MODELS.filter((m) => !esGenerativo(m))].sort((a, b) => b.elo - a.elo);
   const pool = sorted.slice(0, Math.ceil(sorted.length * 0.7));
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

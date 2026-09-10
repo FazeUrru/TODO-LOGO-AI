@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, ArrowRight, Zap } from "lucide-react";
-import { MODELS, PROVIDERS, formatContext } from "@/lib/models-data";
+import { MODELS, PROVIDERS, formatContext, esGenerativo } from "@/lib/models-data";
 import { useArena } from "./arena-context";
 import ProviderLogo from "@/components/arena/ProviderLogo";
 import { cn } from "@/lib/utils";
@@ -146,19 +146,51 @@ export default function SearchDialog() {
                   </span>
                 ))}
               </div>
-              <button
-                onClick={() => {
-                  arena.setModelDirectId(detail.id);
-                  arena.setMode("direct");
-                  arena.setSearchOpen(false);
-                  router.push("/");
-                }}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                <Zap className="h-4 w-4" />
-                Chatear ahora con {detail.name}
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              {esGenerativo(detail) ? (
+                /* v1.17.1 — los generativos no chatean: sin «Chatear ahora».
+                   Su sitio es su arena específica del leaderboard (imagen,
+                   vídeo o audio), no el chat de texto ni el modo Directo. */
+                <div className="mt-4">
+                  <p className="rounded-lg bg-secondary px-3 py-2.5 text-[13px] leading-relaxed text-foreground/85">
+                    <span className="font-medium">{detail.name}</span> es un modelo generativo:
+                    no conversa por texto. Compite y recibe votos en la arena de{" "}
+                    <span className="font-medium">
+                      {detail.categories.includes("video")
+                        ? "vídeo"
+                        : detail.categories.includes("audio")
+                          ? "audio"
+                          : "imagen"}
+                    </span>{" "}
+                    del leaderboard, y se usa para generar desde su modo específico
+                    (imagen, vídeo o voz del composer).
+                  </p>
+                  <button
+                    onClick={() => {
+                      arena.setSearchOpen(false);
+                      router.push("/leaderboard");
+                    }}
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-card py-2.5 text-[14px] font-medium hover:bg-accent"
+                  >
+                    <Zap className="h-4 w-4" />
+                    Ver su arena en el leaderboard
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    arena.setModelDirectId(detail.id);
+                    arena.setMode("direct");
+                    arena.setSearchOpen(false);
+                    router.push("/");
+                  }}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  <Zap className="h-4 w-4" />
+                  Chatear ahora con {detail.name}
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              )}
             </div>
           ) : (
             <>
