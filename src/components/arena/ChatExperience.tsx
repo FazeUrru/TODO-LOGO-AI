@@ -59,6 +59,7 @@ import { BATTLE_CATEGORIES, NEW_CATEGORIES } from "@/lib/elo";
 import { useArena } from "@/components/shell/arena-context";
 import FloatingPanel from "@/components/shell/FloatingPanel";
 import { useSettings, playDoneChime } from "@/lib/settings";
+import Confeti from "./Confeti";
 import { markUsed, useUsed, NewBadge } from "@/lib/badges";
 import { useRouter } from "next/navigation";
 import { saveChat, requestLoadChat, consumePendingChat, type SavedChat } from "@/lib/history";
@@ -388,8 +389,22 @@ export default function ChatExperience() {
   });
   const [chatId, setChatId] = useState("");
   const [pendingVote, setPendingVote] = useState<"A" | "B" | "tie" | "bad" | null>(null);
+  /* v1.19.0 — Modo Oráculo: predice al ganador antes de votar y acumula racha */
+  const [oraculo, setOraculo] = useState<"A" | "B" | "tie" | null>(null);
+  const [rachaOraculo, setRachaOraculo] = useState(0);
+  const [fiestaRevelacion, setFiestaRevelacion] = useState(false);
   const [followDismissed, setFollowDismissed] = useState(false);
   const [promoDismissed, setPromoDismissed] = useState(false);
+
+  // v1.19.0 — la racha del Oráculo sobrevive recargas (localStorage)
+  useEffect(() => {
+    try {
+      const cruda = window.localStorage.getItem("todologo.oraculo.v1");
+      if (cruda) setRachaOraculo(Math.max(0, parseInt(cruda, 10) || 0));
+    } catch {
+      /* sin almacenamiento: racha en sesión */
+    }
+  }, []);
 
   // Composer v1.4.0: modos, adjuntos y skills
   const [cMode, setCMode] = useState<ComposerMode>("texto");
@@ -1190,6 +1205,35 @@ export default function ChatExperience() {
         eloTotalA: eloA?.total,
         eloTotalB: eloB?.total,
       });
+      if (settings.soundOnDone) playDoneChime();
+      // v1.19.0 — Modo Oráculo: ¿acertó la predicción? Racha conmemorada.
+      if (oraculo) {
+        const acierto = oraculo === winner;
+        const nuevaRacha = acierto ? rachaOraculo + 1 : 0;
+        setRachaOraculo(nuevaRacha);
+        try {
+          window.localStorage.setItem("todologo.oraculo.v1", String(nuevaRacha));
+        } catch {
+          /* sin almacenamiento: la racha vive solo en la sesión */
+        }
+        if (acierto) {
+          setFiestaRevelacion(true);
+          window.setTimeout(() => setFiestaRevelacion(false), 3400);
+          toast({
+            title: "¡Ojo de águila! Predicción acertada",
+            description:
+              nuevaRacha > 1
+                ? `Racha de ${nuevaRacha} aciertos seguidos. La grada te aplaude.`
+                : "Primer acierto del Oráculo: la grada quiere más.",
+          });
+        } else {
+          toast({
+            title: "El Oráculo se equivocó esta vez",
+            description: "La racha vuelve a cero: la grada suspira.",
+          });
+        }
+        setOraculo(null);
+      }
       const winId = winner === "A" ? battle.aId : winner === "B" ? battle.bId : null;
       toast({
         title: data.message,
@@ -2002,6 +2046,39 @@ export default function ChatExperience() {
           {/* Barra de voto */}
           {showVoteBar && (
             <div className="fade-up mx-auto mt-4 max-w-[820px]">
+              {/* v1.19.0 — Modo Oráculo: predicción opcional antes del voto */}
+              <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2">
+                <span className="text-[12px] font-medium text-foreground/80">
+                  🔮 Modo Oráculo — ¿quién ganará?
+                </span>
+                <div className="flex items-center gap-1">
+                  {(
+                    [
+                      ["A", "A"],
+                      ["B", "B"],
+                      ["tie", "Empate"],
+                    ] as const
+                  ).map(([v, label]) => (
+                    <button
+                      key={v}
+                      onClick={() => setOraculo(oraculo === v ? null : v)}
+                      className={cn(
+                        "rounded-lg border px-2.5 py-1 text-[12px] font-medium transition-colors",
+                        oraculo === v
+                          ? "border-foreground bg-card font-semibold"
+                          : "border-transparent text-muted-foreground hover:bg-accent"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {rachaOraculo > 0 && (
+                  <span className="ml-auto font-mono text-[11.5px] text-emerald-700" title="Aciertos consecutivos del Oráculo">
+                    racha {rachaOraculo}🔥
+                  </span>
+                )}
+              </div>
               <div className="rounded-xl border border-border bg-card p-3">
                 <p className="mb-2.5 text-center text-[13px] text-muted-foreground">
                   ¿Cuál responde mejor? Tu voto actualiza el ELO en vivo.
@@ -2041,7 +2118,10 @@ export default function ChatExperience() {
 
           {/* Revelación */}
           {mode === "battle" && battle?.revealed && (
-            <div className="fade-up mx-auto mt-3 max-w-[820px] rounded-xl border border-border bg-secondary/60 px-4 py-3 text-center text-[13.5px]">
+            <div className="fade-up relative mx-auto mt-3 max-w-[820px] rounded-xl border border-border bg-secondary/60 px-4 py-3 text-center text-[13.5px]">
+              {fiestaRevelacion && battle.winner !== "bad" && (
+                <Confeti piezas={22} className="z-10 rounded-xl" />
+              )}
               <span className="font-medium">
                 {battle.winner === "tie"
                   ? "Empate registrado"

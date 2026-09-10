@@ -15,6 +15,8 @@ import { MODELS, PROVIDERS, getModel, CATEGORIAS_GENERATIVAS, esGenerativo, type
 import { categoryElo, eloDeltaFromVotes, expectedScore, type LeaderRow, type Winner } from "./elo";
 import { RECIPES_3D } from "./models-3d";
 import { estadisticasSalon } from "./salon-utils";
+import { selloDe, sortearDuoImagen } from "./arena-imagen";
+import { REPLAYS_CURADOS, tarjetaDeCurado, curadoPorId, type TarjetaMuro } from "./muro-curados";
 
 /* ───────────────────────── Utilidades ───────────────────────── */
 
@@ -55,6 +57,7 @@ const K_VOTES = "todologo_demo_votes_v1";
 const K_USERS = "todologo_demo_users_v1";
 const K_SESSION = "todologo_demo_session_v1";
 const K_SALON = "todologo_demo_salon_v1"; // Salón de la Fama (v1.12.0)
+const K_ELO_ARENA = "todologo_demo_eloarena_v1"; // ELO de arenas generativas (v1.19.0)
 
 interface CampeonSalon {
   copaId: string;
@@ -100,11 +103,20 @@ function addVote(v: DemoVote) {
   lsSet(K_VOTES, votes);
 }
 
-/** Deltas por modelo a partir de los votos locales (igual que el servidor). */
-function tallyFor(id: string) {
+/** Deltas por modelo a partir de los votos locales (igual que el servidor).
+ *  v1.19.0 — consciente de la arena: en generativas solo cuentan los votos
+ *  de esa modalidad; en texto se excluyen los generativos. */
+function tallyFor(id: string, arena?: string) {
   let wins = 0, losses = 0, ties = 0, bads = 0;
   for (const v of getVotes()) {
     if (v.modelAId !== id && v.modelBId !== id) continue;
+    if (arena) {
+      // Arena generativa: solo votos de ESA modalidad
+      if (v.category !== arena) continue;
+    } else if ((CATEGORIAS_GENERATIVAS as readonly string[]).includes(v.category)) {
+      // Arena de texto: los votos generativos no contaminan el delta
+      continue;
+    }
     if (v.winner === "tie") ties++;
     else if (v.winner === "bad") bads++;
     else {
@@ -114,6 +126,53 @@ function tallyFor(id: string) {
     }
   }
   return { wins, losses, ties, bads };
+}
+
+/* ───────── ELO de arenas generativas (v1.19.0, espejo de EloArena) ───────── */
+
+const ELO_BASE_ARENA = 1000;
+const K_ARENA = 24;
+
+interface FilaEloArena {
+  elo: number;
+  wins: number;
+  losses: number;
+  ties: number;
+  battles: number;
+}
+
+type MapaEloArena = Record<string, FilaEloArena>; // modelId → fila, por arena
+
+function getMapaArena(arena: string): MapaEloArena {
+  return lsGet<MapaEloArena>(`${K_ELO_ARENA}:${arena}`, {});
+}
+
+/** Aplica un duelo al ELO SEPARADO de la arena generativa (matemática idéntica). */
+function applyArenaDuelDemo(arena: string, aId: string, bId: string, winner: "A" | "B" | "tie") {
+  const mapa = getMapaArena(arena);
+  const ra = mapa[aId]?.elo ?? ELO_BASE_ARENA;
+  const rb = mapa[bId]?.elo ?? ELO_BASE_ARENA;
+  const expA = 1 / (1 + Math.pow(10, (rb - ra) / 400));
+  const scoreA = winner === "A" ? 1 : winner === "B" ? 0 : 0.5;
+  const newA = Math.round((ra + K_ARENA * (scoreA - expA)) * 10) / 10;
+  const newB = Math.round((rb + K_ARENA * (1 - scoreA - (1 - expA))) * 10) / 10;
+  const fila = (which: "A" | "B", elo: number): FilaEloArena => ({
+    elo,
+    wins: winner === which ? 1 : 0,
+    losses: winner !== which && winner !== "tie" ? 1 : 0,
+    ties: winner === "tie" ? 1 : 0,
+    battles: 1,
+  });
+  const previo = (id: string, elo: number, which: "A" | "B"): FilaEloArena => {
+    const p = mapa[id];
+    const f = fila(which, elo);
+    return p
+      ? { elo: f.elo, wins: p.wins + f.wins, losses: p.losses + f.losses, ties: p.ties + f.ties, battles: p.battles + 1 }
+      : f;
+  };
+  mapa[aId] = previo(aId, newA, "A");
+  mapa[bId] = previo(bId, newB, "B");
+  lsSet(`${K_ELO_ARENA}:${arena}`, mapa);
 }
 
 /* ───────────────────────── Cuentas demo ───────────────────────── */
@@ -799,14 +858,31 @@ async function handleVote(init: RequestInit | undefined): Promise<Response> {
   if (!A || !B) return errRes("Modelo desconocido.", 404);
 
   const battleId = String(body.battleId ?? "") || rid("btl");
-  addVote({ battleId, modelAId, modelBId, winner, category: String(body.category ?? "global") });
+  const category = String(body.category ?? "global");
+  addVote({ battleId, modelAId, modelBId, winner, category });
 
-  const tA = tallyFor(modelAId);
-  const tB = tallyFor(modelBId);
+  // v1.19.0 — ELO SEPARADO en la demo: los votos generativos mueven SU arena
+  // (localStorage, espejo de EloArena); los de texto no tocan esa dimensión.
+  const enArena = (CATEGORIAS_GENERATIVAS as readonly string[]).includes(category);
+  if (enArena && winner !== "bad") {
+    applyArenaDuelDemo(category, modelAId, modelBId, winner);
+  }
+
+  const tA = tallyFor(modelAId, enArena ? category : undefined);
+  const tB = tallyFor(modelBId, enArena ? category : undefined);
   const deltaA = eloDeltaFromVotes(tA.wins, tA.losses, tA.ties);
   const deltaB = eloDeltaFromVotes(tB.wins, tB.losses, tB.ties);
-  const newA = A.elo + deltaA;
-  const newB = B.elo + deltaB;
+  // En arena generativa el total visible es el ELO de la arena (ya aplicado);
+  // en texto, ficha estática + delta, idéntico al servidor.
+  let baseA = A.elo;
+  let baseB = B.elo;
+  if (enArena) {
+    const mapa = getMapaArena(category);
+    baseA = Math.round(mapa[modelAId]?.elo ?? ELO_BASE_ARENA) - deltaA;
+    baseB = Math.round(mapa[modelBId]?.elo ?? ELO_BASE_ARENA) - deltaB;
+  }
+  const newA = baseA + deltaA;
+  const newB = baseB + deltaB;
 
   let swing = 0;
   if (winner === "A" || winner === "B") {
@@ -819,8 +895,8 @@ async function handleVote(init: RequestInit | undefined): Promise<Response> {
     ok: true,
     battleId,
     elo: {
-      [modelAId]: { base: A.elo, delta: deltaA, total: newA },
-      [modelBId]: { base: B.elo, delta: deltaB, total: newB },
+      [modelAId]: { base: baseA, delta: deltaA, total: newA },
+      [modelBId]: { base: baseB, delta: deltaB, total: newB },
     },
     swing,
     message:
@@ -839,21 +915,25 @@ function handleLeaderboard(path: string): Response {
   // v1.17.1 — espejo exacto de /api/leaderboard: las arenas generativas solo
   // listan sus modelos; las de texto (General, Código,…) excluyen los
   // generativos — GPT-Image-2.5 Sunburst ya no aparece en la General.
+  // v1.19.0 — ELO separado: en generativas el rating es el de la arena
+  // (espejo local de EloArena) y el recuento solo mira votos de ESA modalidad.
   const soloGenerativos = (CATEGORIAS_GENERATIVAS as readonly string[]).includes(category);
   const pool = soloGenerativos
     ? MODELS.filter((m) => m.categories.includes(category as never))
     : MODELS.filter((m) => !esGenerativo(m));
+  const mapaArena = soloGenerativos ? getMapaArena(category) : {};
   const rows: LeaderRow[] = pool.map((m) => {
-    const t = tallyFor(m.id);
+    const t = tallyFor(m.id, soloGenerativos ? category : undefined);
     const delta = eloDeltaFromVotes(t.wins, t.losses, t.ties);
     const decided = t.wins + t.losses;
+    const filaArena = soloGenerativos ? mapaArena[m.id] : undefined;
     return {
       id: m.id,
       name: m.name,
       provider: m.provider,
       providerName: PROVIDERS[m.provider]?.name ?? m.provider,
       license: m.license,
-      elo: categoryElo(m, category) + delta,
+      elo: filaArena ? Math.round(filaArena.elo) : categoryElo(m, category) + delta,
       delta,
       ci: 2 + ((m.elo + m.id.length * 7) % 4),
       votes: t.wins + t.losses + t.ties + t.bads,
@@ -863,6 +943,8 @@ function handleLeaderboard(path: string): Response {
       speed: m.speed,
       isNew: Boolean(m.isNew),
       categories: m.categories as string[],
+      eloArena: filaArena ? Math.round(filaArena.elo) : null,
+      eloArenaBattles: filaArena?.battles ?? 0,
     };
   });
   rows.sort((a, b) => b.elo - a.elo);
@@ -923,6 +1005,162 @@ async function handleImage(init: RequestInit | undefined): Promise<Response> {
   const size = String(body.size ?? "1024x1024");
   await sleep(900 + Math.random() * 900);
   return jsonRes({ ok: true, url: svgArt(prompt, size), prompt, size });
+}
+
+/* ───────── Arena de imagen (espejo de POST /api/image-battle, v1.19.0) ───────── */
+
+async function handleImageBattle(init: RequestInit | undefined): Promise<Response> {
+  const body = ((): JSON => {
+    try {
+      return JSON.parse(String(init?.body ?? "{}")) as JSON;
+    } catch {
+      return {};
+    }
+  })();
+  const prompt = String(body.prompt ?? "").trim();
+  if (prompt.length < 4) {
+    return errRes("Describe la escena que competirán los dos generadores (mínimo 4 caracteres).");
+  }
+  const size = String(body.size ?? "1024x1024");
+  const [modeloA, modeloB] = sortearDuoImagen();
+  await sleep(1100 + Math.random() * 900);
+  // En la demo cada generador produce arte SVG con su sello: la semilla
+  // incluye el ID del modelo, así que los dos cuadros nunca salen gemelos.
+  return jsonRes({
+    ok: true,
+    battleId: rid("bti"),
+    prompt,
+    size,
+    aId: modeloA.id,
+    bId: modeloB.id,
+    aUrl: svgArt(`${prompt} ${selloDe(modeloA.id)} #${modeloA.id}`, size),
+    bUrl: svgArt(`${prompt} ${selloDe(modeloB.id)} #${modeloB.id}`, size),
+  });
+}
+
+/* ───────── Muro de replays (espejo de GET/PATCH /api/share, v1.19.0) ───────── */
+
+const K_MURO = "todologo_demo_muro_v1";
+
+interface ContadoresMuro {
+  shares: number;
+  views: number;
+}
+
+function contadoresMuro(id: string, base: ContadoresMuro): ContadoresMuro {
+  const mapa = lsGet<Record<string, ContadoresMuro>>(K_MURO, {});
+  return mapa[id] ?? base;
+}
+
+function sumarMuro(id: string, base: ContadoresMuro, campo: "shares" | "views"): ContadoresMuro {
+  const mapa = lsGet<Record<string, ContadoresMuro>>(K_MURO, {});
+  const previo = mapa[id] ?? base;
+  const nuevo = { ...previo, [campo]: previo[campo] + 1 };
+  mapa[id] = nuevo;
+  lsSet(K_MURO, mapa);
+  return nuevo;
+}
+
+function handleMuroLista(): Response {
+  const tarjetas: TarjetaMuro[] = REPLAYS_CURADOS.map((c) => {
+    const t = tarjetaDeCurado(c);
+    const cont = contadoresMuro(c.id, { shares: t.shares, views: t.views });
+    return { ...t, shares: cont.shares, views: cont.views };
+  });
+  tarjetas.sort((a, b) => b.shares - a.shares || b.views - a.views);
+  return jsonRes({
+    ok: true,
+    replays: tarjetas.slice(0, 24),
+    stats: {
+      totalCompartidos: tarjetas.reduce((s, t) => s + t.shares, 0),
+      totalVistas: tarjetas.reduce((s, t) => s + t.views, 0),
+      total: tarjetas.length,
+    },
+  });
+}
+
+function handleMuroDetalle(id: string): Response {
+  const c = curadoPorId(id);
+  if (!c) return errRes("Replay no encontrado.", 404);
+  if (c.tipo === "copa") {
+    return jsonRes({ ok: true, tipo: "copa", id: c.id, prompt: c.prompt, copa: c.copa, createdAt: c.createdAt });
+  }
+  return jsonRes({
+    ok: true,
+    tipo: "duelo",
+    id: c.id,
+    prompt: c.prompt,
+    category: c.category,
+    composerMode: c.composerMode,
+    modelAId: c.modelAId,
+    modelBId: c.modelBId,
+    textoA: c.textoA,
+    textoB: c.textoB,
+    ganador: c.ganador,
+    createdAt: c.createdAt,
+  });
+}
+
+function handleMuroContadores(id: string, init: RequestInit | undefined): Response {
+  const body = ((): JSON => {
+    try {
+      return JSON.parse(String(init?.body ?? "{}")) as JSON;
+    } catch {
+      return {};
+    }
+  })();
+  const accion = String(body.accion ?? "");
+  if (accion !== "vista" && accion !== "compartir") {
+    return errRes("Acción inválida.");
+  }
+  const c = curadoPorId(id);
+  if (!c) return errRes("Replay no encontrado.", 404);
+  const cont = sumarMuro(id, { shares: c.shares, views: c.views }, accion === "vista" ? "views" : "shares");
+  return jsonRes({ ok: true, shares: cont.shares, views: cont.views });
+}
+
+/* ───────── Actividad en vivo (espejo de GET /api/actividad, v1.19.0) ───────── */
+
+function handleActividad(): Response {
+  // La demo prioriza los votos locales; sin ellos, el ticker no se queda
+  // mudo: tres duelos sintéticos del catálogo (ficcia demo, como todo aquí).
+  const votos = getVotes().slice(-8).reverse();
+  const base = votos
+    .map((v) => {
+      const A = getModel(v.modelAId);
+      const B = getModel(v.modelBId);
+      if (!A || !B) return null;
+      return {
+        categoria: v.category,
+        ganador: v.winner === "A" ? A.id : v.winner === "B" ? B.id : null,
+        perdedor: v.winner === "A" ? B.id : v.winner === "B" ? A.id : null,
+        empate: v.winner === "tie",
+        nombreA: A.name,
+        nombreB: B.name,
+        at: new Date(Date.now() - Math.floor(Math.random() * 5 + 1) * 60_000).toISOString(),
+      };
+    })
+    .filter(Boolean);
+  if ((base as unknown[]).length > 0) {
+    return jsonRes({ ok: true, eventos: base, total: getVotes().length + 2 });
+  }
+  const texto = MODELS.filter((m) => !esGenerativo(m));
+  const semilla = Math.floor(Date.now() / 60_000);
+  const eventosSinteticos = [0, 1, 2].map((i) => {
+    const a = texto[(semilla * 7 + i * 13) % texto.length];
+    let b = texto[(semilla * 11 + i * 17 + 5) % texto.length];
+    if (b.id === a.id) b = texto[(semilla + i + 9) % texto.length];
+    return {
+      categoria: ["global", "codigo", "escritura"][i % 3],
+      ganador: i === 1 ? null : a.id,
+      perdedor: i === 1 ? null : b.id,
+      empate: i === 1,
+      nombreA: a.name,
+      nombreB: b.name,
+      at: new Date(Date.now() - (i + 1) * 3 * 60_000).toISOString(),
+    };
+  });
+  return jsonRes({ ok: true, eventos: eventosSinteticos, total: getVotes().length + 2 });
 }
 
 /* ─────────────── Agente (espejo de POST /api/agent) ─────────────── */
@@ -1258,8 +1496,17 @@ export async function handleDemoFetch(rawPath: string, init?: RequestInit): Prom
     if (path === "/api/vote" && method === "POST") return await handleVote(init);
     if (path === "/api/leaderboard") return handleLeaderboard(rawPath);
     if (path === "/api/image" && method === "POST") return await handleImage(init);
+    if (path === "/api/image-battle" && method === "POST") return await handleImageBattle(init);
     if (path === "/api/agent" && method === "POST") return await handleAgent(init);
     if (path === "/api/tournament" && method === "POST") return await handleTournament(init);
+    // v1.19.0 — muro de replays + actividad en vivo (espejos exactos)
+    if (path === "/api/share" && method === "GET") return handleMuroLista();
+    if (path === "/api/actividad") return handleActividad();
+    if (path.startsWith("/api/share/")) {
+      const id = path.slice("/api/share/".length);
+      if (method === "PATCH") return handleMuroContadores(id, init);
+      if (method === "GET") return handleMuroDetalle(id);
+    }
     if (path === "/api/hall-of-fame") {
       const lista = lsGet<CampeonSalon[]>(K_SALON, []);
       return jsonRes({

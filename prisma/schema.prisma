@@ -36,6 +36,26 @@ model EloState {
   @@index([elo])
 }
 
+// ELO de las arenas generativas (v1.19.0): cada modalidad (imagen, vídeo,
+// audio) lleva su propia tabla con ratings INDEPENDIENTES del ELO de texto.
+// Un modelo de imagen arranca en 1000 dentro de su arena aunque su ficha
+// global diga otra cosa: las batallas de imagen solo mueven esta tabla y las
+// de texto solo EloState — ninguna fuga cruzada entre dimensiones.
+model EloArena {
+  id        String   @id @default(cuid())
+  modelId   String
+  arena     String // "imagen" | "video" | "audio"
+  elo       Float    @default(1000)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  ties      Int      @default(0)
+  battles   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([modelId, arena])
+  @@index([arena, elo])
+}
+
 // Ejecución guardada del Modo Agente
 model AgentRun {
   id          String   @id @default(cuid())
@@ -131,9 +151,12 @@ model DueloGuardado {
   textoB       String?
   ganador      String? // 'A' | 'B' | 'tie' | 'bad'; null si se compartió sin voto
   copaId       String?
+  shares       Int      @default(0) // veces que alguien re-comparte el replay (v1.19.0)
+  views        Int      @default(0) // visitas al replay público (v1.19.0)
   createdAt    DateTime @default(now())
 
   @@index([createdAt])
+  @@index([shares])
 }
 
 // Canal Todólogo Labs (v1.14.0): features experimentales con ciclo de vida

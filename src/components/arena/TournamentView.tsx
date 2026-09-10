@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Trophy,
   Loader2,
@@ -11,12 +11,18 @@ import {
   ArrowDown,
   Users,
   Share2,
+  Radio,
+  Hand,
+  Popcorn,
+  Gauge,
 } from "lucide-react";
 import { useArena } from "@/components/shell/arena-context";
 import Markdown from "./Markdown";
 import ProviderLogo from "./ProviderLogo";
 import SalonFama from "./SalonFama";
-import { markUsed } from "@/lib/badges";
+import Confeti from "./Confeti";
+import { NewBadge, markUsed } from "@/lib/badges";
+import { reportarEventoLabs } from "@/lib/use-labs";
 import { isStaticDemo } from "@/lib/static-mode";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +56,21 @@ interface Copa {
 
 const SIZES = [4, 8, 16] as const;
 
+/**
+ * v1.19.0 — Consignas del modo espectador: la grada se sienta a ver una copa
+ * jugarse sola, así que el sorteo elige una consigna con sabor a final.
+ */
+const PROMPTS_ESPECTADOR = [
+  "Defiende en 60 segundos que las bibliotecas son la infraestructura más infravalorada del siglo XXI",
+  "Convierte un lunes gris en una historia épica de tres párrafos",
+  "Diseña el lema y el argumentario de una marca de paraguas que solo abre con sol",
+  "Explica la entropía a un capitán de barco del siglo XVIII",
+  "Inventa una tradición navideña nueva que sobreviva a la primera generación",
+  "Vende un botón rojo sin decir para qué sirve",
+  "Escribe el primer mensaje que la humanidad envía a una civilización vecina",
+  "Reescribe el cuento de la Caperucita desde el punto de vista del bosque",
+];
+
 const EXAMPLES = [
   "Explícale a un niño de 10 años por qué el cielo es azul, con una analogía memorable",
   "Diseña el plan de lanzamiento de una cafetería especializada en un barrio universitario",
@@ -57,31 +78,31 @@ const EXAMPLES = [
   "¿Qué lenguaje de programación conviene aprender en 2026 y por qué?",
 ];
 
-const CONFETTI_COLORS = ["#F4C406", "#2E2B29", "#B45309", "#15803D", "#7C3AED", "#DC2626"];
-
-/** Piezas de confeti con valores deterministas (sin hidratación errática). */
-function Confetti() {
+/** v1.19.0 — lluvia de palomitas del modo espectador (determinista). */
+function Palomitas() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      {Array.from({ length: 26 }).map((_, i) => {
-        const left = ((i * 37) % 100) + (i % 3);
-        const delay = ((i * 13) % 30) / 10;
-        const dur = 2.6 + ((i * 7) % 18) / 10;
-        const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
-        const w = 6 + (i % 3) * 2;
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+      {Array.from({ length: 14 }).map((_, i) => {
+        const left = ((i * 53) % 100) + (i % 2);
+        const delay = ((i * 17) % 30) / 10;
+        const dur = 3.4 + ((i * 7) % 20) / 10;
+        const size = 16 + (i % 3) * 6;
         return (
           <span
             key={i}
-            className="copa-confetti-piece"
+            className="copa-confetti-piece flex items-center justify-center"
             style={{
               left: `${left}%`,
-              width: w,
-              height: w + 5,
-              background: color,
+              width: size,
+              height: size,
+              fontSize: size - 2,
+              background: "transparent",
               animationDelay: `${delay}s`,
               animationDuration: `${dur}s`,
             }}
-          />
+          >
+            🍿
+          </span>
         );
       })}
     </div>
@@ -227,6 +248,17 @@ export default function TournamentView() {
   const [votingDuel, setVotingDuel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  /* ── Modo espectador (v1.19.0): la grada ve la copa jugarse sola ── */
+  const [espectador, setEspectador] = useState(false);
+  const [velocidad, setVelocidad] = useState<1 | 2 | 4>(1);
+  const [aplausos, setAplausos] = useState(0);
+  const [palomitas, setPalomitas] = useState(false);
+  const [fraseGrada, setFraseGrada] = useState<string | null>(null);
+  const espectadorActivo = useRef(false);
+  useEffect(() => {
+    espectadorActivo.current = espectador;
+  }, [espectador]);
+
   const startCopa = async () => {
     const p = prompt.trim();
     if (p.length < 2) {
@@ -278,7 +310,72 @@ export default function TournamentView() {
     setCopa(null);
     setPrompt("");
     setError(null);
+    setEspectador(false);
+    setPalomitas(false);
+    setAplausos(0);
+    setFraseGrada(null);
   };
+
+  /**
+   * v1.19.0 — Entrar como espectador: sortea una copa con consigna de la
+   * casa y la deja en manos de la grada. Tú solo aplaudes (o comes palomitas).
+   */
+  const verCopaEnDirecto = async () => {
+    const consigna = PROMPTS_ESPECTADOR[Math.floor(Math.random() * PROMPTS_ESPECTADOR.length)];
+    setPrompt(consigna);
+    setStarting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/tournament", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "start", prompt: consigna, size: 4 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "No se pudo iniciar la copa en directo.");
+      markUsed("modo-torneo");
+      markUsed("espectador");
+      reportarEventoLabs("streaming-ws", "used");
+      setEspectador(true);
+      setAplausos(0);
+      setCopa(data.copa as Copa);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error inesperado";
+      setError(msg);
+      toast({ title: "Modo espectador", description: msg, variant: "destructive" });
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  /** Bucle de la grada: vota cada duelo pendiente con pausa dramática. */
+  useEffect(() => {
+    if (!espectador || !copa || copa.revealed) return;
+    const ultimo = copa.rounds[copa.rounds.length - 1] ?? [];
+    const pendiente = ultimo.find((d) => d.a.text && !d.winner);
+    if (!pendiente) return; // sin textos aún (ronda generándose) o ya decidida
+    let cancelado = false;
+    const pausa = (3500 + Math.random() * 2500) / velocidad;
+    const t = setTimeout(async () => {
+      if (cancelado || !espectadorActivo.current) return;
+      setFraseGrada("La grada delibera…");
+      await new Promise((r) => setTimeout(r, 1200 / velocidad));
+      if (cancelado || !espectadorActivo.current) return;
+      const elegido: "a" | "b" = Math.random() < 0.5 ? "a" : "b";
+      setFraseGrada(`La grada vota: gana el contendiente ${(elegido === "a" ? pendiente.a : pendiente.b).label || (elegido === "a" ? "A" : "B")}`);
+      try {
+        await vote(pendiente.key, elegido);
+        setAplausos((a) => a + 2 + Math.floor(Math.random() * 9));
+      } catch {
+        /* el voto fallido solo retrasa el espectáculo */
+      }
+      setFraseGrada(null);
+    }, pausa);
+    return () => {
+      cancelado = true;
+      clearTimeout(t);
+    };
+  }, [espectador, copa, velocidad]);
 
   /** v1.18.0 — comparte la copa por URL permanente: replay público del cuadro. */
   const compartirCopa = async () => {
@@ -431,6 +528,29 @@ export default function TournamentView() {
               Primera ronda en paralelo (~15-50 s). Después votas ronda a ronda hasta la
               gran final.
             </p>
+
+            {/* v1.19.0 — Modo espectador: ver una copa jugarse en directo */}
+            <button
+              onClick={verCopaEnDirecto}
+              disabled={starting}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-[13.5px] font-medium transition-colors hover:bg-accent disabled:opacity-60"
+            >
+              {starting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Preparando el estadio…
+                </>
+              ) : (
+                <>
+                  <Radio className="h-4 w-4 text-red-600" />
+                  Ver una copa en directo (modo espectador)
+                  <NewBadge k="espectador" />
+                </>
+              )}
+            </button>
+            <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
+              La grada sortea una copa de 4, la juega sola y tú aplaudes. Puedes tomar el
+              control cuando quieras.
+            </p>
           </div>
           <SalonFama />
         </div>
@@ -444,7 +564,7 @@ export default function TournamentView() {
     const all = (copa.rounds[0] ?? []).flatMap((d) => [d.a, d.b]);
     return (
       <div className="relative flex flex-1 flex-col items-center overflow-y-auto scrollbar-thin px-4">
-        <Confetti />
+        <Confeti piezas={26} />
         <div className="flex w-full max-w-[780px] flex-1 flex-col items-center py-12">
           <div className="copa-pop flex h-16 w-16 items-center justify-center rounded-full bg-highlight">
             <Trophy className="h-8 w-8" strokeWidth={2.2} />
@@ -462,6 +582,13 @@ export default function TournamentView() {
             {champ?.elo ? `ELO base ${champ.elo}` : ""} · {copa.rounds.length} duelos ganados ·
             votos registrados en el ranking real y el ELO global
           </p>
+          {espectador && (
+            <p className="copa-pulse mt-2 flex items-center justify-center gap-1.5 text-[13px] font-medium text-red-600">
+              <Hand className="h-4 w-4" />
+              La grada enloqueció: {aplausos} aplausos para el campeón
+            </p>
+          )}
+          {palomitas && <Palomitas />}
 
           {/* Revelación de identidades */}
           <div className="mt-8 w-full max-w-[680px] rounded-2xl border border-border bg-card p-4">
@@ -540,6 +667,62 @@ export default function TournamentView() {
               Abandonar
             </button>
           </div>
+
+          {/* v1.19.0 — Barra EN DIRECTO del modo espectador */}
+          {espectador && (
+            <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-red-500/30 bg-card px-4 py-2.5">
+              <span className="copa-pulse flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-wide text-red-600">
+                <span className="h-2 w-2 rounded-full bg-red-500" /> En directo
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[12.5px] text-muted-foreground">
+                {fraseGrada ?? "La grada vota cada duelo: tú solo disfrutas (y aplaudes)"}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setAplausos((a) => a + 1)}
+                  className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[12px] font-medium hover:bg-accent"
+                  title="Aplaudir"
+                >
+                  <Hand className="h-3.5 w-3.5" /> {aplausos}
+                </button>
+                <button
+                  onClick={() => setPalomitas((p) => !p)}
+                  className={cn(
+                    "flex items-center gap-1 rounded-lg border px-2 py-1 text-[12px] font-medium hover:bg-accent",
+                    palomitas ? "border-amber-500 bg-amber-500/10 text-amber-700" : "border-border"
+                  )}
+                  title="Palomitas (lluvia de 🍿)"
+                >
+                  <Popcorn className="h-3.5 w-3.5" /> Palomitas
+                </button>
+                <span className="flex items-center gap-0.5 rounded-lg border border-border p-0.5" title="Velocidad de la grada">
+                  <Gauge className="mx-1 h-3.5 w-3.5 text-muted-foreground" />
+                  {([1, 2, 4] as const).map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setVelocidad(v)}
+                      className={cn(
+                        "rounded px-1.5 py-0.5 font-mono text-[11.5px]",
+                        velocidad === v ? "bg-secondary font-semibold" : "text-muted-foreground hover:bg-accent"
+                      )}
+                    >
+                      x{v}
+                    </button>
+                  ))}
+                </span>
+                <button
+                  onClick={() => {
+                    setEspectador(false);
+                    setFraseGrada(null);
+                    toast({ title: "Control tomado", description: "La copa sigue en juego: ahora votas tú." });
+                  }}
+                  className="rounded-lg bg-foreground px-2.5 py-1 text-[12px] font-medium text-background hover:opacity-90"
+                >
+                  Tomar el control
+                </button>
+              </div>
+            </div>
+          )}
 
           {copa.rounds.map((round, ri) => {
             const isFinalRound = ri === lastIdx;

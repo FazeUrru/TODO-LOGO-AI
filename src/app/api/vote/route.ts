@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getModel } from "@/lib/models-data";
+import { getModel, CATEGORIAS_GENERATIVAS } from "@/lib/models-data";
 import { eloDeltaFromVotes, expectedScore, type Winner } from "@/lib/elo";
-import { applyEloDuel } from "@/lib/elo-global";
+import { applyEloDuel, applyArenaDuel, esArenaGenerativa, ELO_BASE } from "@/lib/elo-global";
 import { ipDeHeader, acumular, VOTO_LIMITE, segundosRestantes } from "@/lib/rate-limit";
 
 interface VoteRequest {
@@ -48,18 +48,40 @@ export async function POST(req: NextRequest) {
     battleId = `btl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
-  // Recalcula deltas en vivo para los dos modelos implicados
+  // Recalcula deltas en vivo para los dos modelos implicados.
+  // v1.19.0 — el recuento es consciente de la arena: en imagen/vídeo/audio
+  // solo cuentan los votos de ESA modalidad; en texto se excluyen los votos
+  // de categorías generativas (antes se colaban en todas las categorías).
+  const enArenaGenerativa = esArenaGenerativa(category);
   const computeDelta = async (id: string) => {
+    const filtroCategoria = enArenaGenerativa ? { equals: category } : { notIn: [...CATEGORIAS_GENERATIVAS] };
     const [winsA, winsB, tiesA, tiesB] = await Promise.all([
-      db.vote.count({ where: { OR: [{ modelAId: id, winner: "A" }, { modelBId: id, winner: "B" }] } }),
-      db.vote.count({ where: { OR: [{ modelAId: id, winner: "B" }, { modelBId: id, winner: "A" }] } }),
-      db.vote.count({ where: { OR: [{ modelAId: id, winner: "tie" }, { modelBId: id, winner: "tie" }] } }),
-      db.vote.count({ where: { OR: [{ modelAId: id, winner: "bad" }, { modelBId: id, winner: "bad" }] } }),
+      db.vote.count({ where: { OR: [{ modelAId: id, winner: "A" }, { modelBId: id, winner: "B" }], category: filtroCategoria } }),
+      db.vote.count({ where: { OR: [{ modelAId: id, winner: "B" }, { modelBId: id, winner: "A" }], category: filtroCategoria } }),
+      db.vote.count({ where: { OR: [{ modelAId: id, winner: "tie" }, { modelBId: id, winner: "tie" }], category: filtroCategoria } }),
+      db.vote.count({ where: { OR: [{ modelAId: id, winner: "bad" }, { modelBId: id, winner: "bad" }], category: filtroCategoria } }),
     ]);
     return {
       delta: eloDeltaFromVotes(winsA, winsB, tiesA),
       battles: winsA + winsB + tiesA + tiesB,
     };
+  };
+
+  /** ELO de arena persistido (post-voto) — base coherente = total − delta. */
+  const basesDeArena = async (
+    arena: string,
+    idA: string,
+    idB: string
+  ): Promise<[number, number]> => {
+    try {
+      const [ra, rb] = await Promise.all([
+        db.eloArena.findUnique({ where: { modelId_arena: { modelId: idA, arena } } }),
+        db.eloArena.findUnique({ where: { modelId_arena: { modelId: idB, arena } } }),
+      ]);
+      return [Math.round(ra?.elo ?? ELO_BASE), Math.round(rb?.elo ?? ELO_BASE)];
+    } catch {
+      return [ELO_BASE, ELO_BASE];
+    }
   };
 
   try {
@@ -68,13 +90,16 @@ export async function POST(req: NextRequest) {
     const existing = await db.vote.findFirst({ where: { battleId } });
     if (existing) {
       const [statA0, statB0] = await Promise.all([computeDelta(modelAId), computeDelta(modelBId)]);
+      const [totA0, totB0] = enArenaGenerativa
+        ? await basesDeArena(category, modelAId, modelBId)
+        : [A.elo + statA0.delta, B.elo + statB0.delta];
       return NextResponse.json({
         ok: true,
         duplicate: true,
         note: "Esta batalla ya había recibido un voto; no se ha registrado dos veces.",
         elo: {
-          [modelAId]: { total: A.elo + statA0.delta, delta: statA0.delta, battles: statA0.battles },
-          [modelBId]: { total: B.elo + statB0.delta, delta: statB0.delta, battles: statB0.battles },
+          [modelAId]: { total: totA0, delta: statA0.delta, battles: statA0.battles },
+          [modelBId]: { total: totB0, delta: statB0.delta, battles: statB0.battles },
         },
         swing: 0,
       });
@@ -89,10 +114,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // ELO global persistente (v1.9.0): el voto mueve un ELO real en la BD
+    // ELO global persistente (v1.9.0): el voto mueve un ELO real en la BD.
+    // v1.19.0 — separación por dimensión: los votos de las arenas generativas
+    // (category = imagen/video/audio) escriben en EloArena, SU propia tabla;
+    // los de texto siguen en EloState. Nunca se cruzan.
     if (winner !== "bad") {
       try {
-        await applyEloDuel(modelAId, modelBId, winner);
+        if (esArenaGenerativa(category)) {
+          await applyArenaDuel(category, modelAId, modelBId, winner);
+        } else {
+          await applyEloDuel(modelAId, modelBId, winner);
+        }
       } catch {
         /* la batalla continúa aunque el ELO global falle */
       }
@@ -106,8 +138,19 @@ export async function POST(req: NextRequest) {
 
   const [statA, statB] = await Promise.all([computeDelta(modelAId), computeDelta(modelBId)]);
 
-  const newA = A.elo + statA.delta;
-  const newB = B.elo + statB.delta;
+  // En arenas generativas el rating visible es el ELO de la arena (EloArena,
+  // ya actualizado con este voto); en texto, ficha estática + delta, como
+  // siempre desde la v1.9.0.
+  let baseA = A.elo;
+  let baseB = B.elo;
+  if (enArenaGenerativa) {
+    const [totA, totB] = await basesDeArena(category, modelAId, modelBId);
+    baseA = totA - statA.delta;
+    baseB = totB - statB.delta;
+  }
+
+  const newA = baseA + statA.delta;
+  const newB = baseB + statB.delta;
 
   // ELO matemático del enfrentamiento (para el toast informativo)
   let swing = 0;
@@ -121,8 +164,8 @@ export async function POST(req: NextRequest) {
     ok: true,
     battleId,
     elo: {
-      [modelAId]: { base: A.elo, delta: statA.delta, total: newA },
-      [modelBId]: { base: B.elo, delta: statB.delta, total: newB },
+      [modelAId]: { base: baseA, delta: statA.delta, total: newA },
+      [modelBId]: { base: baseB, delta: statB.delta, total: newB },
     },
     swing,
     message:

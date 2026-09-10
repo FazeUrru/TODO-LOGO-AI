@@ -116,6 +116,28 @@ async function createSchema(): Promise<void> {
     );
     await db.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "EloState_elo_idx" ON "EloState"("elo");`);
 
+    // ELO de las arenas generativas (v1.19.0): dimensión por modalidad
+    await crearTabla(
+      "EloArena",
+      `CREATE TABLE IF NOT EXISTS "EloArena" (
+        "id"        TEXT PRIMARY KEY,
+        "modelId"   TEXT NOT NULL,
+        "arena"     TEXT NOT NULL,
+        "elo"       ${PG ? "DOUBLE PRECISION" : "REAL"} NOT NULL DEFAULT 1000,
+        "wins"      INTEGER NOT NULL DEFAULT 0,
+        "losses"    INTEGER NOT NULL DEFAULT 0,
+        "ties"      INTEGER NOT NULL DEFAULT 0,
+        "battles"   INTEGER NOT NULL DEFAULT 0,
+        "updatedAt" ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "EloArena_modelId_arena_key" ON "EloArena"("modelId", "arena");`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "EloArena_arena_elo_idx" ON "EloArena"("arena", "elo");`
+    );
+
     await crearTabla(
       "CopaCampeon",
       `CREATE TABLE IF NOT EXISTS "CopaCampeon" (
@@ -212,6 +234,12 @@ async function createSchema(): Promise<void> {
     );
     await db.$executeRawUnsafe(
       `CREATE INDEX IF NOT EXISTS "DueloGuardado_createdAt_idx" ON "DueloGuardado"("createdAt");`
+    );
+    // Contadores del muro de replays (v1.19.0) para bases creadas antes
+    await addColumnSiFalta("DueloGuardado", "shares", "INTEGER NOT NULL DEFAULT 0");
+    await addColumnSiFalta("DueloGuardado", "views", "INTEGER NOT NULL DEFAULT 0");
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "DueloGuardado_shares_idx" ON "DueloGuardado"("shares");`
     );
 
 

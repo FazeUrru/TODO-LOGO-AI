@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Trophy, Swords, RotateCcw, Copy, Check, Crown, CalendarDays } from "lucide-react";
+import { Trophy, Swords, RotateCcw, Copy, Check, Crown, CalendarDays, Share2, Eye } from "lucide-react";
 import { useParams } from "next/navigation";
 import Markdown from "@/components/arena/Markdown";
 import ProviderLogo from "@/components/arena/ProviderLogo";
@@ -59,6 +59,7 @@ export default function DueloReplayClient() {
   const [data, setData] = useState<ReplayData | null>(null);
   const [error, setError] = useState<string>("");
   const [copiado, setCopiado] = useState(false);
+  const [contadores, setContadores] = useState<{ shares: number; views: number } | null>(null);
 
   useEffect(() => {
     const id = params.id ?? "";
@@ -68,7 +69,26 @@ export default function DueloReplayClient() {
         if (!r.ok || !d.ok) throw new Error(d.error ?? "Replay no encontrado.");
         return d as ReplayData;
       })
-      .then(setData)
+      .then((d) => {
+        setData(d);
+        // v1.19.0 — contadores del muro: +1 vista por visita (una por sesión
+        // de navegador); los compartidos llegan al volver a difundir el enlace.
+        const clave = `todologo.vista.${id}`;
+        const primeraVez = !window.sessionStorage.getItem(clave);
+        if (primeraVez) {
+          window.sessionStorage.setItem(clave, "1");
+          fetch(`/api/share/${encodeURIComponent(id)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ accion: "vista" }),
+          })
+            .then(async (r) => {
+              const d2 = await r.json();
+              if (r.ok && d2.ok) setContadores({ shares: d2.shares, views: d2.views });
+            })
+            .catch(() => {});
+        }
+      })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : "Replay no encontrado."));
   }, []);
 
@@ -78,6 +98,17 @@ export default function DueloReplayClient() {
       .then(() => {
         setCopiado(true);
         setTimeout(() => setCopiado(false), 2000);
+        // v1.19.0 — cada difusión suma al muro de replays
+        fetch(`/api/share/${encodeURIComponent(params.id ?? "")}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accion: "compartir" }),
+        })
+          .then(async (r) => {
+            const d = await r.json();
+            if (r.ok && d.ok) setContadores({ shares: d.shares, views: d.views });
+          })
+          .catch(() => {});
       })
       .catch(() => {});
   }
@@ -96,13 +127,25 @@ export default function DueloReplayClient() {
             <Swords className="h-4.5 w-4.5" /> todólogo<span className="text-amber-500">.ai</span>
           </Link>
           {data && (
-            <button
-              onClick={compartir}
-              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[13px] font-medium hover:bg-accent"
-            >
-              {copiado ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-              {copiado ? "Enlace copiado" : "Compartir replay"}
-            </button>
+            <div className="flex items-center gap-2">
+              {contadores && (
+                <span className="hidden items-center gap-2 font-mono text-[11.5px] text-muted-foreground sm:flex">
+                  <span className="flex items-center gap-1">
+                    <Share2 className="h-3 w-3" /> {contadores.shares.toLocaleString("es-ES")}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Eye className="h-3 w-3" /> {contadores.views.toLocaleString("es-ES")}
+                  </span>
+                </span>
+              )}
+              <button
+                onClick={compartir}
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[13px] font-medium hover:bg-accent"
+              >
+                {copiado ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                {copiado ? "Enlace copiado" : "Compartir replay"}
+              </button>
+            </div>
           )}
         </div>
       </header>

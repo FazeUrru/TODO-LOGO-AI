@@ -3,8 +3,15 @@ import { db } from "@/lib/db";
 import { getModel } from "@/lib/models-data";
 import { deserializarCopa } from "@/lib/copas-persistir";
 import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
+import {
+  REPLAYS_CURADOS,
+  tarjetaDeCurado,
+  type TarjetaMuro,
+} from "@/lib/muro-curados";
 
 export const dynamic = "force-dynamic";
+
+const LIMITE = 24;
 
 /** Límite de tamaño por respuesta almacenada (60 KB ≈ 15k tokens). */
 const MAX_TEXTO = 60_000;
@@ -122,4 +129,99 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No se pudo guardar el replay." }, { status: 500 });
   }
   return NextResponse.json({ ok: true, id, url: `/duelo/${id}` });
+}
+
+/**
+ * v1.19.0 — Muro de replays: GET /api/share.
+ *
+ * Lista los duelos y copas más compartidos: filas reales de la BD
+ * (ordenadas por compartidos → vistas → fecha) fusionadas con la selección
+ * fundacional de /lib/muro-curados (sin duplicar IDs). Una instancia recién
+ * estrenada nunca muestra un muro vacío.
+ */
+export async function GET(req: NextRequest) {
+  const limite = Math.min(
+    Number(req.nextUrl.searchParams.get("limit")) || LIMITE,
+    48
+  );
+
+  const tarjetas: TarjetaMuro[] = [];
+  const vistos = new Set<string>();
+
+  try {
+    const filas = await db.dueloGuardado.findMany({
+      orderBy: [{ shares: "desc" }, { views: "desc" }, { createdAt: "desc" }],
+      take: limite,
+    });
+    for (const f of filas) {
+      vistos.add(f.id);
+      if (f.tipo === "copa" && f.copaId) {
+        let championModelId: string | null = null;
+        let copaSize: number | null = null;
+        try {
+          const sesion = await db.copaSesion.findUnique({ where: { id: f.copaId } });
+          const copa = sesion ? deserializarCopa(sesion.datos) : null;
+          if (copa) {
+            championModelId = copa.championModelId ?? null;
+            copaSize = copa.size;
+          }
+        } catch {
+          /* tarjeta sin campeón: el resto de la tarjeta sigue válida */
+        }
+        tarjetas.push({
+          id: f.id,
+          tipo: "copa",
+          prompt: f.prompt,
+          category: f.category,
+          modelAId: null,
+          modelBId: null,
+          ganador: null,
+          championModelId,
+          copaSize,
+          shares: f.shares,
+          views: f.views,
+          createdAt: f.createdAt.toISOString(),
+          oficial: false,
+        });
+      } else {
+        tarjetas.push({
+          id: f.id,
+          tipo: "duelo",
+          prompt: f.prompt,
+          category: f.category,
+          modelAId: f.modelAId,
+          modelBId: f.modelBId,
+          ganador: f.ganador,
+          championModelId: null,
+          copaSize: null,
+          shares: f.shares,
+          views: f.views,
+          createdAt: f.createdAt.toISOString(),
+          oficial: false,
+        });
+      }
+    }
+  } catch {
+    /* BD ausente (demo serverless): el muro sigue con la selección curada */
+  }
+
+  // Selección fundacional: solo los IDs que la BD aún no conoce
+  for (const c of REPLAYS_CURADOS) {
+    if (vistos.has(c.id)) continue;
+    tarjetas.push(tarjetaDeCurado(c));
+  }
+
+  tarjetas.sort((a, b) => b.shares - a.shares || b.views - a.views);
+
+  const totalCompartidos = tarjetas.reduce((s, t) => s + t.shares, 0);
+  const totalVistas = tarjetas.reduce((s, t) => s + t.views, 0);
+
+  return NextResponse.json(
+    {
+      ok: true,
+      replays: tarjetas.slice(0, limite),
+      stats: { totalCompartidos, totalVistas, total: tarjetas.length },
+    },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

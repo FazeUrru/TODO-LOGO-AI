@@ -12,12 +12,24 @@ import {
   FlaskConical,
   Check,
   Film,
+  Swords,
+  Crown,
+  CircleArrowLeft,
+  CircleArrowRight,
+  Handshake,
+  ThumbsDown,
+  RefreshCw,
 } from "lucide-react";
-import { MODELS } from "@/lib/models-data";
+import { MODELS, getModel, PROVIDERS } from "@/lib/models-data";
+import { MODELOS_IMAGEN, selloDe } from "@/lib/arena-imagen";
+import { NewBadge, markUsed } from "@/lib/badges";
+import { reportarEventoLabs } from "@/lib/use-labs";
+import { useToast } from "@/hooks/use-toast";
+import Confeti from "./Confeti";
 import { cn } from "@/lib/utils";
 
 /**
- * LaboratorioGenerativo (v1.15.0) — los tres modos experimentales del
+ * LaboratorioGenerativo (v1.15.0) — los modos experimentales del
  * Canal Todólogo Labs en un solo estudio:
  *
  *  1. Cine        → vídeo REAL (mp4 con audio) vía /api/video, con
@@ -28,42 +40,17 @@ import { cn } from "@/lib/utils";
  *                   estilos por modelo), para comparar y descargar.
  *  3. Estudio de audio → locución REAL vía /api/tts: guion escrito por IA
  *                   (micro-podcast, anuncio o cuento) narrado con voz.
+ *  4. Arena Imagen (v1.19.0) → duelo CIEGO entre dos generadores: el mismo
+ *                   prompt, dos obras anónimas, un voto — y un ELO de imagen
+ *                   SEPARADO del de texto (tabla EloArena).
  *
  * Telemetría Labs: «entered» al abrir un tab y «used» por generación,
  * best-effort (en la demo estática se queda en local, como todo).
  */
 
-type Tab = "cine" | "estudio" | "audio";
-
-const MODELOS_IMAGEN = MODELS.filter((m) => m.categories.includes("imagen"));
+type Tab = "cine" | "estudio" | "audio" | "arena";
 
 const POR_DEFECTO_ESTUDIO = ["gpt-image-2.5-sunburst", "nano-banana-pro", "seedream-5.0", "flux-2-pro"];
-
-/** Sello de estilo por modelo: hace que cada generador aporte un look distinto. */
-const SELLO_ESTILO: Record<string, string> = {
-  "gpt-image-2.5-sunburst":
-    "premium editorial photography, flawless typography, fine-grained control, high detail",
-  "gpt-image-2.5-flare":
-    "clean default look, balanced composition, natural colors",
-  "gpt-image-2.5-instant":
-    "quick sketch-like clarity, simple bold shapes",
-  "gpt-image-2":
-    "stable API look, crisp product photography",
-  "nano-banana-pro":
-    "poster-perfect lettering, vivid illustration, playful energy",
-  "nano-banana-2":
-    "casual creator aesthetic, warm tones",
-  "seedream-5.0":
-    "expressive polished aesthetics, cinematic glow",
-  "midjourney-v8.2":
-    "painterly light, artistic atmosphere, unmistakable aesthetic",
-  "flux-2-pro":
-    "surgical photorealism, sharp textures, studio lighting",
-  "mai-image-2.6-preview":
-    "clean office-product scene, diagram-friendly",
-  "grok-imagine-2.0":
-    "bold viral energy, punchy contrast",
-};
 
 const FRASES_RODAJE = [
   "Levantando el set…",
@@ -90,15 +77,10 @@ const FORMATOS = [
   { id: "cuento", nombre: "Micro-cuento" },
 ] as const;
 
-/** Telemetría Labs best-effort: nunca bloquea la UI. */
+/** Telemetría Labs best-effort: nunca bloquea la UI (v1.19.0 — fuente común). */
 function labsEvent(featureId: string, tipo: "entered" | "used") {
   try {
-    void fetch("/api/labs/event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ featureId, tipo }),
-      keepalive: true,
-    }).catch(() => {});
+    reportarEventoLabs(featureId, tipo);
   } catch {
     /* demo estática: silencio */
   }
@@ -174,6 +156,7 @@ export default function LaboratorioGenerativo({ abierto, onCerrar }: Props) {
               ["cine", "Cine (vídeo real)", Clapperboard],
               ["estudio", "Estudio de imagen", ImageIcon],
               ["audio", "Estudio de audio", AudioLines],
+              ["arena", "Arena Imagen", Swords],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
@@ -187,6 +170,7 @@ export default function LaboratorioGenerativo({ abierto, onCerrar }: Props) {
               )}
             >
               <Icon className="h-4 w-4" /> {label}
+              {id === "arena" && <NewBadge k="lab-arena" />}
             </button>
           ))}
         </div>
@@ -196,6 +180,7 @@ export default function LaboratorioGenerativo({ abierto, onCerrar }: Props) {
           {tab === "cine" && <ModoCine />}
           {tab === "estudio" && <ModoEstudio />}
           {tab === "audio" && <ModoAudio />}
+          {tab === "arena" && <ArenaImagen />}
         </div>
       </div>
     </div>
@@ -402,7 +387,7 @@ function ModoEstudio() {
     const resultados: typeof fotos = [];
     for (const id of elegidos) {
       const modelo = MODELS.find((m) => m.id === id);
-      const sello = SELLO_ESTILO[id] ?? "";
+      const sello = selloDe(id);
       try {
         const res = await fetch("/api/image", {
           method: "POST",
@@ -682,6 +667,288 @@ function ModoAudio() {
               {audio.texto}
             </p>
           </details>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════ ARENA IMAGEN (v1.19.0) ══════════════════════ */
+
+/**
+ * Duelo CIEGO entre dos generadores de imagen: el mismo prompt viaja a dos
+ * modelos anónimos, la comunidad vota, y el ELO de imagen se mueve en SU
+ * propia dimensión (tabla EloArena) — jamás mezclado con el de texto.
+ * Espejo de la promesa del leaderboard: «la arena de imagen ya no es solo
+ * un ranking: es un arena de verdad».
+ */
+
+type FaseArena = "home" | "generando" | "votando" | "revelado";
+
+interface BatallaImagen {
+  battleId: string;
+  aId: string;
+  bId: string;
+  aUrl: string;
+  bUrl: string;
+  prompt: string;
+}
+
+const EJEMPLOS_ARENA = [
+  "Una biblioteca infinita flotando entre nubes al atardecer",
+  "Retrato de un astronauta-panadero amasando masa estelar",
+  "Un mercado nocturno de Kioto bajo la lluvia, carteles de neón reflejados",
+  "Ciudad barroca dentro de una botella de cristal, luz dorada",
+];
+
+function ArenaImagen() {
+  const { toast } = useToast();
+  const [prompt, setPrompt] = useState("");
+  const [fase, setFase] = useState<FaseArena>("home");
+  const [batalla, setBatalla] = useState<BatallaImagen | null>(null);
+  const [ganador, setGanador] = useState<"A" | "B" | "tie" | "bad" | null>(null);
+  const [elos, setElos] = useState<{ a: number | null; b: number | null }>({ a: null, b: null });
+  const [swings, setSwings] = useState<{ a: number | null; b: number | null }>({ a: null, b: null });
+  const [error, setError] = useState("");
+
+  async function iniciar() {
+    if (prompt.trim().length < 4 || fase === "generando") return;
+    setFase("generando");
+    setError("");
+    try {
+      const res = await fetch("/api/image-battle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: prompt.trim(), size: "1024x1024" }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "El duelo no pudo empezar.");
+      setBatalla(data as BatallaImagen);
+      setGanador(null);
+      setElos({ a: null, b: null });
+      setSwings({ a: null, b: null });
+      setFase("votando");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error inesperado";
+      setError(msg);
+      setFase("home");
+      toast({ title: "Arena Imagen", description: msg, variant: "destructive" });
+    }
+  }
+
+  async function votar(w: "A" | "B" | "tie" | "bad") {
+    if (!batalla) return;
+    try {
+      const res = await fetch("/api/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          battleId: batalla.battleId,
+          modelAId: batalla.aId,
+          modelBId: batalla.bId,
+          winner: w,
+          category: "imagen",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "El voto no se pudo registrar.");
+      const eloA = data.elo[batalla.aId];
+      const eloB = data.elo[batalla.bId];
+      setElos({ a: eloA?.total ?? null, b: eloB?.total ?? null });
+      setSwings({ a: eloA?.delta ?? null, b: eloB?.delta ?? null });
+      setGanador(w);
+      setFase("revelado");
+      markUsed("arena-imagen");
+      labsEvent("arena-imagenes", "used");
+      toast({
+        title:
+          w === "tie"
+            ? "Empate registrado en la arena de imagen"
+            : w === "bad"
+              ? "Feedback registrado"
+              : "Voto registrado: el ELO de imagen ya es suyo",
+        description:
+          w === "A" || w === "B"
+            ? `El ELO de imagen es una dimensión propia: nada de este voto toca el ranking de texto.`
+            : undefined,
+      });
+    } catch (e) {
+      toast({
+        title: "No se pudo registrar el voto",
+        description: e instanceof Error ? e.message : undefined,
+        variant: "destructive",
+      });
+    }
+  }
+
+  /* ── Portada del duelo ── */
+  if (fase === "home" || fase === "generando") {
+    return (
+      <div className="space-y-4">
+        <p className="text-[13.5px] leading-relaxed text-foreground/85">
+          <strong>Duelo ciego de generadores</strong>: escribe una escena y dos modelos anónimos
+          del catálogo la pintarán cada uno a su manera. Tú votas sin saber quién es quién; tu
+          voto mueve el <strong>ELO de imagen</strong>, una dimensión separada por completo del
+          ranking de texto. Las identidades se revelan al votar.
+        </p>
+
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          rows={2}
+          maxLength={4000}
+          placeholder="Ej.: una ballena de cristal nadando sobre los tejados de una ciudad dormida…"
+          className="w-full resize-none rounded-xl border border-border bg-background p-3 text-[14px] outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-foreground/20"
+        />
+
+        <div className="flex flex-wrap gap-1.5">
+          {EJEMPLOS_ARENA.map((ex) => (
+            <button
+              key={ex}
+              onClick={() => setPrompt(ex)}
+              className="max-w-full truncate rounded-full border border-border px-2.5 py-1 text-[11.5px] text-muted-foreground hover:bg-accent"
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-end gap-3">
+          <span className="text-[11.5px] text-muted-foreground">
+            Generación doble: ~10-30 s por duelo
+          </span>
+          <button
+            onClick={iniciar}
+            disabled={fase === "generando" || prompt.trim().length < 4}
+            className="flex items-center gap-2 rounded-lg bg-foreground px-4 py-2 text-[13.5px] font-medium text-background disabled:opacity-40"
+          >
+            {fase === "generando" ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Sorteando dúo y revelando negativos…
+              </>
+            ) : (
+              <>
+                <Swords className="h-4 w-4" /> Iniciar duelo ciego
+              </>
+            )}
+          </button>
+        </div>
+
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13.5px] text-red-800">
+            {error}
+          </div>
+        )}
+
+        <p className="text-[11.5px] leading-relaxed text-muted-foreground">
+          Transparencia: las imágenes las genera el motor único de Todólogo con el sello de estilo
+          de cada modelo; el ELO de imagen sí es real y nace de votos como el tuyo — empieza en
+          1000 para todos y solo se mueve con la arena de imagen.
+        </p>
+      </div>
+    );
+  }
+
+  if (!batalla) return null;
+
+  const mA = getModel(batalla.aId);
+  const mB = getModel(batalla.bId);
+
+  /* ── Duelo y revelación ── */
+  return (
+    <div className="space-y-4">
+      <p className="text-center text-[12.5px] text-muted-foreground">
+        «{batalla.prompt.length > 120 ? `${batalla.prompt.slice(0, 120)}…` : batalla.prompt}»
+      </p>
+
+      <div className="relative grid grid-cols-2 gap-3">
+        {fase === "revelado" && ganador && ganador !== "bad" && ganador !== "tie" && (
+          <Confeti piezas={20} className="z-10" />
+        )}
+        {(
+          [
+            ["a", batalla.aUrl, mA, ganador === "A"],
+            ["b", batalla.bUrl, mB, ganador === "B"],
+          ] as const
+        ).map(([lado, url, m, gana]) => (
+          <figure
+            key={lado}
+            className={cn(
+              "overflow-hidden rounded-xl border bg-card",
+              fase === "revelado" && gana
+                ? "border-emerald-600/60 ring-1 ring-emerald-600/30"
+                : "border-border"
+            )}
+          >
+            <img src={url} alt={`Obra anónima del modelo ${lado.toUpperCase()}`} className="aspect-square w-full object-cover" />
+            <figcaption className="px-3 py-2">
+              {fase === "votando" ? (
+                <p className="text-center text-[12.5px] font-medium">
+                  Modelo {lado.toUpperCase()} · anónimo
+                </p>
+              ) : (
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 text-[12.5px] font-medium">
+                    <span className="truncate font-mono">{m?.name ?? "—"}</span>
+                    {gana && <Crown className="h-3.5 w-3.5 shrink-0 text-emerald-600" />}
+                  </p>
+                  <p className="font-mono text-[10.5px] text-muted-foreground">
+                    {PROVIDERS[m?.provider ?? ""]?.name ?? "—"}
+                    {elos[lado] !== null ? ` · ELO imagen ${elos[lado]}` : " · ELO imagen 1000"}
+                  </p>
+                  {swings[lado] !== null && swings[lado] !== 0 && (
+                    <p
+                      className={cn(
+                        "font-mono text-[10px]",
+                        (swings[lado] ?? 0) > 0 ? "text-emerald-600" : "text-red-500"
+                      )}
+                    >
+                      {(swings[lado] ?? 0) > 0 ? "+" : ""}
+                      {swings[lado]} en este duelo
+                    </p>
+                  )}
+                </div>
+              )}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+
+      {fase === "votando" ? (
+        <div className="rounded-xl border border-border bg-card p-3">
+          <p className="mb-2.5 text-center text-[12.5px] text-muted-foreground">
+            ¿Cuál pinta mejor tu escena? Tu voto revela identidades y mueve el ELO de imagen.
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {(
+              [
+                ["A", "A es mejor", CircleArrowLeft],
+                ["B", "B es mejor", CircleArrowRight],
+                ["tie", "Empate", Handshake],
+                ["bad", "Ambos malos", ThumbsDown],
+              ] as const
+            ).map(([w, label, Icon]) => (
+              <button
+                key={w}
+                onClick={() => votar(w)}
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-[13px] font-medium transition-colors hover:bg-accent"
+              >
+                <Icon className="h-4 w-4 shrink-0" /> {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            onClick={() => setFase("home")}
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-[13.5px] font-medium hover:bg-accent"
+          >
+            <RefreshCw className="h-4 w-4" /> Otro duelo
+          </button>
+          <p className="w-full text-center text-[11px] text-muted-foreground">
+            Descubre el ranking resultante en la pestaña Imagen del leaderboard.
+          </p>
         </div>
       )}
     </div>

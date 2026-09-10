@@ -99,7 +99,9 @@ export const LABS_FEATURES: LabsFeature[] = [
     descripcion:
       "Comparar generadores de imagen con tu mismo prompt y votar: ranking ELO de imagen separado por completo del de texto.",
     cohorte: "explorer",
-    estado: "en-pruebas",
+    // v1.19.0 — graduada: el duelo ciego con ELO separado (tabla EloArena)
+    // vive ya en el Laboratorio generativo y en el leaderboard.
+    estado: "graduado",
     expira: "2026-11-04",
     metricas: ["entered", "used", "abandoned", "crashed"],
   },

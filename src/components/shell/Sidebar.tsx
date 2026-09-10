@@ -33,6 +33,7 @@ import {
   Trash2,
   LogOut,
   UserRound,
+  BrickWall,
 } from "lucide-react";
 import { useArena, type ArenaMode } from "./arena-context";
 import FloatingPanel from "./FloatingPanel";
@@ -426,6 +427,7 @@ export default function Sidebar() {
           )}
 
           {navItem(pathname === "/leaderboard", "/leaderboard", "Leaderboard", Trophy)}
+          {navItem(pathname === "/muro", "/muro", "Muro de replays", BrickWall, "muro")}
           {open
             ? navItem(false, null, "Buscar", Search, undefined, () => arena.setSearchOpen(true))
             : navItem(false, null, "Buscar", Search, undefined, () => arena.setSearchOpen(true))}

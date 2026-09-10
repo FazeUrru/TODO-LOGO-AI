@@ -7,22 +7,24 @@ import { VERSIONS } from "../src/lib/changelog-meta";
 const leer = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf8");
 
 describe("v1.18.0 — versión y trazabilidad", () => {
-  it("la app declara la versión 1.18.0", () => {
-    expect(APP_VERSION).toBe("1.18.0");
+  it("la app va por la 1.19.0 o superior (la cadena sigue viva)", () => {
+    const [mayor, menor] = APP_VERSION.split(".").map((n) => parseInt(n, 10));
+    expect(mayor).toBe(1);
+    expect(menor).toBeGreaterThanOrEqual(19);
   });
 
-  it("changelog-meta y CHANGELOG.md incluyen la 1.18.0 como más reciente", () => {
-    expect(VERSIONS[0].version).toBe("1.18.0");
-    expect(VERSIONS[0].diffDesde).toBe("1.17.1");
+  it("changelog-meta y CHANGELOG.md incluyen la 1.18.0 en la cadena", () => {
+    expect(VERSIONS.some((v) => v.version === "1.18.0")).toBe(true);
+    expect(VERSIONS[0].diffDesde).toBe("1.18.0");
     expect(VERSIONS[0].kinds).toContain("nuevo");
     const md = leer("CHANGELOG.md");
     expect(md).toContain("Duelos y copas compartibles: replay permanente por URL");
   });
 
-  it("el roadmap apunta a la v1.19.0 con lo pendiente", () => {
+  it("el roadmap ya apunta a la v1.20.0 (la 1.19.0 salió)", () => {
     const md = leer("CHANGELOG.md");
-    expect(md).toContain("Planeado para v1.19.0");
-    expect(md).toContain("Arena de imágenes con voto y ranking ELO separado");
+    expect(md).toContain("Planeado para v1.20.0");
+    expect(md).toContain("Copas de 32 y 64 modelos");
   });
 });
 

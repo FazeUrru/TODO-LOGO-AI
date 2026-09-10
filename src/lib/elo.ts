@@ -103,4 +103,7 @@ export interface LeaderRow {
   /** ELO global persistente en BD (v1.9.0); null si aún no tiene batallas. */
   eloGlobal?: number | null;
   eloGlobalBattles?: number;
+  /** ELO persistente de la arena generativa (v1.19.0), solo en imagen/vídeo/audio. */
+  eloArena?: number | null;
+  eloArenaBattles?: number;
 }

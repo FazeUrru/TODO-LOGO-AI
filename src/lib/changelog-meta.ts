@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.19.0",
+    fecha: "10 sept 2026",
+    hora: "10:30",
+    titulo: "La arena de imagen ya es de verdad: ELO separado, espectadores y muro de replays",
+    tldr:
+      "La imagen estrena duelo ciego con ranking propio que empieza en 1000 y jamás se mezcla con el de texto; las copas se pueden ver en directo con la grada votando sola; y los replays compartidos tienen su muro público con contadores.",
+    diffDesde: "1.18.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.18.0",
     fecha: "10 sept 2026",
     hora: "09:21",

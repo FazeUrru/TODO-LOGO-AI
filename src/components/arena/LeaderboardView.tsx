@@ -30,7 +30,7 @@ import {
   AudioLines,
   type LucideIcon,
 } from "lucide-react";
-import { PROVIDERS } from "@/lib/models-data";
+import { PROVIDERS, getModel } from "@/lib/models-data";
 import { NEW_CATEGORIES } from "@/lib/elo";
 import { NewBadge, markUsed } from "@/lib/badges";
 import ProviderLogo from "./ProviderLogo";
@@ -55,6 +55,9 @@ interface LeaderRow {
   categories: string[];
   eloGlobal?: number | null;
   eloGlobalBattles?: number;
+  /** ELO persistente de la arena generativa (v1.19.0), solo en imagen/vídeo/audio. */
+  eloArena?: number | null;
+  eloArenaBattles?: number;
 }
 
 const TABS: { id: string; label: string; icon: LucideIcon }[] = [
@@ -96,12 +99,47 @@ const CAT_DESC: Record<string, string> = {
   negocios:
     "Arena exclusivo de todólogo.ai: estrategia, finanzas, marketing y consultoría empresarial con criterio de directivos reales.",
   video:
-    "Arena de vídeo: los generadores más recientes del mercado (Seedance 2.5, Veo 3.1, Sora 2, Kling 3.0 Turbo, Runway Gen-4.5, Wan 3.0, Grok Imagine) cara a cara. Evalúa realismo, movimiento de cámara y coherencia de audio.",
+    "Arena de vídeo con ELO PROPIO: los generadores más recientes del mercado (Seedance 2.5, Veo 3.1, Sora 2, Kling 3.0 Turbo, Runway Gen-4.5, Wan 3.0, Grok Imagine) cara a cara. Sus votos jamás mezclan con el ranking de texto. Evalúa realismo, movimiento de cámara y coherencia de audio.",
   imagen:
-    "Arena de imagen: la nueva generación completa (GPT-Image-2.5 Sunburst/Flare/Instant, Nano Banana Pro, Seedream 5.0, Midjourney V8.2, FLUX.2). Evalúa fidelidad al prompt, tipografía y edición.",
+    "Arena de imagen con ELO SEPARADO del de texto: la nueva generación completa (GPT-Image-2.5 Sunburst/Flare/Instant, Nano Banana Pro, Seedream 5.0, Midjourney V8.2, FLUX.2) compite a ciegas y su rating arranca en 1000, independiente para siempre. Evalúa fidelidad al prompt, tipografía y edición.",
   audio:
-    "Arena de audio: música y voz generativa (Suno v5.5, ElevenLabs Music, Lyria 3 Pro, MiniMax Music 2.5, Sonauto V3). Evalúa voces naturales, mezcla y estructura musical.",
+    "Arena de audio con dimensión de rating propia: música y voz generativa (Suno v5.5, ElevenLabs Music, Lyria 3 Pro, MiniMax Music 2.5, Sonauto V3). Evalúa voces naturales, mezcla y estructura musical.",
 };
+
+/** Etiquetas de categoría para el ticker de actividad (v1.19.0). */
+const ETIQUETA_CATEGORIA: Record<string, string> = {
+  global: "General",
+  codigo: "Código",
+  razonamiento: "Razonamiento",
+  escritura: "Escritura",
+  agente: "Agente",
+  matematicas: "Matemáticas",
+  datos: "Datos y SQL",
+  traduccion: "Traducción",
+  educacion: "Educación",
+  negocios: "Negocios",
+  imagen: "Imagen",
+  video: "Vídeo",
+  audio: "Audio",
+};
+
+interface EventoActividad {
+  categoria: string;
+  ganador: string | null;
+  perdedor: string | null;
+  empate: boolean;
+  nombreA: string;
+  nombreB: string;
+  at: string;
+}
+
+function haceCuanto(iso: string): string {
+  const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return `hace ${s} s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `hace ${m} min`;
+  return `hace ${Math.round(m / 60)} h`;
+}
 
 type ViewAs = "ranking" | "pareto";
 type License = "todas" | "abierto" | "propietario";
@@ -117,6 +155,33 @@ export default function LeaderboardView() {
   const [entities, setEntities] = useState<Entities>("models");
   const [query, setQuery] = useState("");
   const [showFilters, setShowFilters] = useState(true);
+
+  /* v1.19.0 — Ticker de actividad en vivo: los últimos duelos de la arena */
+  const [actividad, setActividad] = useState<EventoActividad[]>([]);
+  const [idxActividad, setIdxActividad] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    const cargar = () =>
+      fetch("/api/actividad")
+        .then((r) => r.json())
+        .then((d) => {
+          if (alive && d.ok) setActividad(d.eventos ?? []);
+        })
+        .catch(() => {});
+    cargar();
+    const t = setInterval(cargar, 20_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (actividad.length < 2) return;
+    const t = setInterval(() => setIdxActividad((i) => (i + 1) % actividad.length), 4500);
+    return () => clearInterval(t);
+  }, [actividad.length]);
 
   function changeCategory(id: string) {
     setLoading(true);
@@ -348,6 +413,34 @@ export default function LeaderboardView() {
               </span>
             </div>
 
+            {/* v1.19.0 — Ticker de actividad en vivo */}
+            {actividad.length > 0 &&
+              (() => {
+                const ev = actividad[idxActividad % actividad.length];
+                return (
+                  <div
+                    key={idxActividad}
+                    className="fade-up mt-2 flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-[12.5px]"
+                  >
+                    <span className="copa-pulse h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                    <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                      {ev.empate
+                        ? `${ev.nombreA} empató con ${ev.nombreB}`
+                        : `${getModel(ev.ganador ?? "")?.name ?? ev.nombreA} venció a ${
+                            getModel(ev.perdedor ?? "")?.name ?? ev.nombreB
+                          }`}
+                      {" · "}
+                      <span className="font-medium text-foreground/70">
+                        {ETIQUETA_CATEGORIA[ev.categoria] ?? ev.categoria}
+                      </span>
+                    </span>
+                    <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                      {haceCuanto(ev.at)}
+                    </span>
+                  </div>
+                );
+              })()}
+
             {/* Barra de herramientas */}
             <div className="mt-5 flex flex-wrap items-center gap-2">
               {!showFilters && (
@@ -533,7 +626,16 @@ export default function LeaderboardView() {
                                 {r.delta}
                               </p>
                             )}
-                            {typeof r.eloGlobal === "number" && (
+                            {typeof r.eloArena === "number" && (
+                              <p
+                                className="font-mono text-[10px] text-muted-foreground"
+                                title="ELO separado de la arena generativa (v1.19.0): esta dimensión arranca en 1000 y solo mueve con votos de imagen/vídeo/audio"
+                              >
+                                IA {r.eloArena} · {r.eloArenaBattles} batallas de{" "}
+                                {(ETIQUETA_CATEGORIA[category] ?? category).toLowerCase()}
+                              </p>
+                            )}
+                            {typeof r.eloGlobal === "number" && typeof r.eloArena !== "number" && (
                               <p
                                 className="font-mono text-[10px] text-muted-foreground"
                                 title="ELO global persistente en la base de datos (v1.9.0)"

@@ -11,15 +11,34 @@
 
 ## [Sin publicar] — lo que viene
 
-### Planeado para v1.19.0
-- Arena de imágenes con voto y ranking ELO separado del de texto — el flag experimental ya está abierto en Todólogo Labs (`arena-imagenes`, cohorte Explorer).
-- Modo espectador de torneos: observa una copa en directo y predice quién pasará la ronda (ligado al flag `streaming-ws` de Labs).
-- Descubre replays: muro público con los duelos y copas más compartidos recientemente.
+### Planeado para v1.20.0
+- Copas de 32 y 64 modelos (flag `copa-32-64` de Labs): generación paralela a gran escala y UX de cuadro XXL.
+- API pública v2 con claves personales y contrato OpenAPI (graduación del flag `api-publica`).
+- ELO por usuario con historial de votos personales: tu caja de aciertos del Oráculo, contra el mundo.
 
 ### Explorando
 - Internacionalización es/en/pt (next-intl, con la comunidad traduciendo).
+- Streaming bidireccional por WebSocket para copas con audiencia concurrente (flag `streaming-ws`: el modo espectador ya viaja por SSE, el salto real a WS está en pruebas).
 - Límite de tasa multi-instancia en el edge (el v1.13.0 vive en memoria por proceso).
-- Primera graduación de features de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
+- Primera graduación masiva de Labs (la regla de las 8 semanas vence el 4 de nov de 2026).
+
+## [1.19.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.18.0...v1.19.0) · 10 sept 2026, 10:30 — *La arena de imagen ya es de verdad: ELO separado, espectadores y muro de replays*
+
+> 💡 **En una frase:** la imagen estrena duelo ciego con ranking propio (empieza en 1000 y jamás se mezcla con el de texto), las copas se pueden ver en directo con la grada votando sola, y todos los replays compartidos tienen su muro público.
+
+### Añadido
+- **Arena de imagen con ELO separado** 🖼️: nueva pestaña «Arena Imagen» en el Laboratorio generativo — escribe una escena y dos generadores anónimos la pintan cada uno a su manera; votas a ciegas (A / B / empate / ambos malos), las identidades se revelan con su corona y tu voto mueve el **ELO de imagen**, una dimensión con tabla propia (`EloArena`) que arranca en 1000 y solo evoluciona con votos de imagen: jamás toca el ranking de texto, ni al revés. El flag `arena-imagenes` de Labs se gradúa con esta release.
+- **Modo espectador de torneos** 📡: nuevo botón «Ver una copa en directo» en la Copa Todólogo — la grada sortea una copa de 4 con consigna de la casa, delibera y vota cada duelo sola (con pausa dramática), y tú aplaudes, llueves palomitas (🍿 deterministas) y ajustas la velocidad x1/x2/x4 o tomas el control cuando quieras. Primera entrega del flag `streaming-ws`.
+- **Muro público de replays** 🧱: página `/muro` con los duelos y copas más compartidos por la comunidad — tarjetas con prompt, contendientes revelados, corona del ganador y contadores de compartidos y vistas. Contadores reales: cada replay suma una vista por visita y un compartido cada vez que alguien vuelve a difundir su enlace (nuevas columnas `shares`/`views` en `DueloGuardado` y `PATCH /api/share/[id]`).
+- **Selección fundacional del muro** 📜: 9 replays curados (7 duelos y 2 copas completas) garantizan que el muro nunca esté vacío — ni en una instancia recién estrenada ni en la demo estática, donde el motor demo los sirve con los mismos IDs canónicos.
+- **Ticker de actividad en vivo** ⚡: el leaderboard muestra los últimos duelos resueltos de la arena («GLM-5.3 venció a Claude Opus 5 · Código · hace 12 s»), rotando cada pocos segundos con refresco cada 20 — la arena se siente viva porque lo está.
+- **Modo Oráculo con racha** 🔮: antes de votar puedes predecir al ganador (A, B o empate) — si aciertas, confeti y racha de aciertos persistente en tu navegador; si fallas, la grada suspira y la racha vuelve a cero.
+
+### Mejorado
+- **Cero fugas entre dimensiones** 🛡️: `/api/vote` escribe en `EloArena` o en `EloState` según la arena del voto; el delta de cada categoría solo cuenta votos de ESA categoría (antes un voto generativo podía colarse en el recuento de texto); el leaderboard generativo muestra el rating de arena («IA 1000 · N batallas de imagen») junto a la fila.
+- **Confeti unificado** 🎉: el componente del campeón de copa se comparte ahora con la revelación del arena y la arena de imagen — un solo `Confeti.tsx` determinista para todos los momentos de victoria.
+- **Demo espejo al día** 🪞: el motor demo replica todo — duelo de imagen con arte SVG por sello, ELO de arena en localStorage, muro con contadores locales, ticker de actividad y espectador completo — para que GitHub Pages se sienta idéntico a la instancia oficial.
+- **Esquema sin migraciones dolorosas** 🗄️: `EloArena` (clave única modelo+arena) y las columnas del muro se auto-crean en el arranque serverless, en SQLite y en PostgreSQL.
 
 ## [1.18.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.17.1...v1.18.0) · 10 sept 2026, 09:21 — *Duelos y copas compartibles: replay permanente por URL*
 
