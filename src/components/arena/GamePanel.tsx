@@ -192,7 +192,7 @@ export default function GamePanel({
       {!construyendo && !verCodigo && !enFull && (
         <div className="flex items-center justify-between gap-2 bg-white/[0.04] px-3 py-1.5">
           <span className="min-w-0 truncate text-[11px] text-zinc-400">
-            Creado por la IA en el chat · corre en sandbox local, sin descargas
+            Creado por la IA en el chat · corre en sandbox local, sin descargas · su uso es tu responsabilidad
           </span>
           <button
             onClick={() => {

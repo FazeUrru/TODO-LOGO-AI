@@ -34,14 +34,14 @@ const leer = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf8")
 /* ─────────────────── Versión y trazabilidad ─────────────────── */
 
 describe("v1.21.0 — versión y trazabilidad", () => {
-  it("la app va por la 1.21.0 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.21.0");
+  it("la app va por la 1.22.0 (la cadena sigue viva)", () => {
+    expect(APP_VERSION).toBe("1.22.0");
   });
 
   it("changelog-meta y CHANGELOG.md relatan la 1.21.0", () => {
-    expect(VERSIONS[0].version).toBe("1.21.0");
-    expect(VERSIONS[0].diffDesde).toBe("1.20.0");
-    expect(VERSIONS[0].kinds).toContain("correccion");
+    expect(VERSIONS[1].version).toBe("1.21.0");
+    expect(VERSIONS[1].diffDesde).toBe("1.20.0");
+    expect(VERSIONS[1].kinds).toContain("correccion");
     const md = leer("CHANGELOG.md");
     expect(md).toContain("Juego en tiempo real");
     expect(md).toContain("duelo-equipos");

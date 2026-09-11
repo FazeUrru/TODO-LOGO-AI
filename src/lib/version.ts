@@ -1,6 +1,6 @@
 // Versión de la aplicación — se muestra en la barra lateral, ajustes y changelog
-export const APP_VERSION = "1.21.0";
-export const APP_BUILD_DATE = "2026-09-10";
+export const APP_VERSION = "1.22.0";
+export const APP_BUILD_DATE = "2026-09-12";
 
 /**
  * Compara dos versiones semver («1.13.0»): devuelve true si `a` es estrictamente

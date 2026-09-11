@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
-import { CARTA_VERDAD_BREVE } from "@/lib/ai-conducta";
+import { CARTA_VERDAD_BREVE, LADO_OSCURO_BREVE } from "@/lib/ai-conducta";
 import { personaFor } from "@/lib/personas";
 import {
   sortearEquipos,
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
   }
 
   const sysJugador = (nombre: string, modelo: string, equipo: string, extra = "") =>
-    `${CARTA_VERDAD_BREVE} Eres "${nombre}" (modelo ${modelo}), contendiente anónimo del EQUIPO ${equipo} en un duelo 2v2 de la arena todólogo.ai. ${personaFor(modelo)} Responde en español, máximo 150 palabras, aportando la mejor respuesta posible a la consigna. Tu respuesta representa al equipo.${extra}`;
+    `${CARTA_VERDAD_BREVE} ${LADO_OSCURO_BREVE} Eres "${nombre}" (modelo ${modelo}), contendiente anónimo del EQUIPO ${equipo} en un duelo 2v2 de la arena todólogo.ai. ${personaFor(modelo)} Responde en español, máximo 150 palabras, aportando la mejor respuesta posible a la consigna. Tu respuesta representa al equipo.${extra}`;
 
   const turno = (papel: string, texto: string) =>
     `CONSIGNA DEL DUELO: ${consigna}\n\n${papel}: «${texto.slice(0, 900)}»`;

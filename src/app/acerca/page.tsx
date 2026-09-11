@@ -175,6 +175,20 @@ export default function AcercaPage() {
             hola@todologo.ai
           </a>
         </div>
+        {/* Uso responsable — v1.22.0 */}
+        <div className="mt-8 rounded-xl border border-border bg-card px-4 py-3.5">
+          <p className="flex items-center gap-2 text-[13.5px] font-semibold">
+            <ShieldAlert className="h-4 w-4 text-highlight" />
+            Uso responsable
+          </p>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+            Las IA de este arena hablan de todo —incluido el submundo digital— y generan software sin
+            pudor: pentesting, auditoría, scraping, automatización, fuerza bruta educativa. El código se
+            entrega tal cual, sin garantías, y corre en sandbox local: <strong className="text-foreground">su uso es
+            responsabilidad exclusiva de quien lo usa</strong>. Pruébalo en tus propios sistemas o en entornos con
+            permiso; lo que hagas con él fuera de ahí no lo hace la app, lo haces tú.
+          </p>
+        </div>
         <p className="mt-4 text-center text-[11.5px] text-muted-foreground">
           todólogo.ai v{APP_VERSION} · Inspirado en la comunidad de arena.ai · Los modelos compiten, los humanos deciden.
         </p>

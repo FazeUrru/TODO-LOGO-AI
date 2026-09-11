@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.22.0",
+    fecha: "12 sept 2026",
+    hora: "00:55",
+    titulo: "El lado oscuro se desbloquea: piratería sin pudor y apps sin censura — con la responsabilidad donde debe estar: en el usuario",
+    tldr:
+      "Las 56 IA del arena ya no se achantan con nada: hablan de piratería con oficio, citan los enclaves legendarios como haría una enciclopedia y construyen sin censura el software de doble uso (pentesting, scraping, fuerza bruta educativa) — con disclaimers en la app que dejan el uso bajo tu responsabilidad.",
+    diffDesde: "1.21.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.21.0",
     fecha: "10 sept 2026",
     hora: "16:40",

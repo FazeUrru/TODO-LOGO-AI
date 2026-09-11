@@ -16,7 +16,7 @@ import { db } from "@/lib/db";
 import { ensureSchema } from "@/lib/db-init";
 import { getModel } from "@/lib/models-data";
 import { personaFor } from "@/lib/personas";
-import { CARTA_VERDAD } from "@/lib/ai-conducta";
+import { CARTA_VERDAD, LADO_OSCURO, APPS_SIN_PUDOR } from "@/lib/ai-conducta";
 import { conReintentos } from "@/lib/reintentos";
 import { ipDeHeader, acumular, VOTO_LIMITE, GEN_LIMITE } from "@/lib/rate-limit";
 import { applyEloDuel } from "@/lib/elo-global";
@@ -34,7 +34,7 @@ const g = globalThis as unknown as {
 function sistemaPara(modelId: string): string {
   const m = getModel(modelId);
   const nombre = m?.name ?? "Contendiente";
-  return `${CARTA_VERDAD}\n\nEres "${nombre}", un contendiente anónimo del Duelo del día de todólogo.ai. ${personaFor(
+  return `${CARTA_VERDAD}\n\n${LADO_OSCURO}\n\n${APPS_SIN_PUDOR}\n\nEres "${nombre}", un contendiente anónimo del Duelo del día de todólogo.ai. ${personaFor(
     modelId
   )} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 300 palabras (el código no cuenta). Nunca reveles tu nombre ni el de tu proveedor: tu estilo debe hablar por ti.`;
 }

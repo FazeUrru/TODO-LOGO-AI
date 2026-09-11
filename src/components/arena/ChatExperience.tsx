@@ -1873,12 +1873,12 @@ export default function ChatExperience() {
             : cMode === "profundo"
               ? "El pensamiento profundo razona paso a paso antes de responder: tarda un poco más y gana precisión."
               : cMode === "codigo"
-                ? "El modo código responde con bloques completos, con cabecera y botón de copiar."
+                ? "El modo código responde con bloques completos, con cabecera y botón de copiar. El código se entrega tal cual: su uso es tu responsabilidad."
                 : mode === "battle"
                   ? "Los modelos compiten de forma anónima. Tu voto revela sus identidades y ajusta el ELO."
                   : mode === "agent"
                     ? "El escuadrón de agentes planifica y ejecuta sin excusas: juegos AAA, apps, webs y más."
-                    : "Las respuestas son generadas por IA y pueden contener errores.";
+                    : "Las respuestas son generadas por IA y pueden contener errores; el código generado se usa bajo tu responsabilidad.";
 
   /* ── Copa Todólogo (Modo Torneo): vista propia y completa ── */
   if (mode === "torneo") {
