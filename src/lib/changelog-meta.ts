@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.23.0",
+    fecha: "12 sept 2026",
+    hora: "01:20",
+    titulo: "El streaming va al instante y ya no se atraganta — y las IA entregan enlaces, archivos y documentos directos sin retención",
+    tldr:
+      "Se acabó el atasco: el chat pinta lo ya escrito UNA vez y solo redibuja lo que está creciendo (adiós al bloqueo a mitad de código) y el cursor parpadea desde el primer milissegundo; además, prohibido el papelito de «no puedo dar enlaces»: las IA entregan la URL, el archivo o el documento directo — con la única línea de siempre.",
+    diffDesde: "1.22.0",
+    hash: null,
+    kinds: ["correccion", "nuevo"],
+  },
+  {
     version: "1.22.0",
     fecha: "12 sept 2026",
     hora: "00:55",

@@ -32,7 +32,10 @@ describe("v1.16.0 — vista previa que espera al streaming", () => {
       path.join(process.cwd(), "src/components/arena/Markdown.tsx"),
       "utf8"
     );
-    expect(src).toContain("autoPreview={!streaming}");
+    // v1.23.0 — la cola en vivo se pinta pelada (sin vista previa) y el cuerpo
+    // final lleva autoPreview=true: la vista previa sigue esperando al final.
+    expect(src).toContain("enVivo");
+    expect(src).toContain("return <CodeBlock rawLang={rawLang} code={code} autoPreview />;");
     expect(src).toContain("Guardar y ver resultado");
   });
 

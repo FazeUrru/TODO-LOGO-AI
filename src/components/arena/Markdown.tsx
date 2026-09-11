@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { memo, useEffect, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Check, Copy, Code2, Eye, Pencil, X } from "lucide-react";
+import { partirCola } from "@/lib/cola-markdown";
+
+// v1.23.0 — la partición incremental vive en src/lib/cola-markdown.ts (pura,
+// testeable sin React). Reexportamos por comodidad junto al render.
+export { partirCola, vallasAbiertas } from "@/lib/cola-markdown";
 
 // ─── Lenguajes registrados para el resaltado (PrismLight, bundle ligero) ────
 import tsx from "react-syntax-highlighter/dist/esm/languages/prism/tsx";
@@ -99,6 +104,77 @@ const LANG_ALIAS: Record<string, string> = {
 };
 
 const DEFAULT_CODE_BG = "#282C34"; // fondo del tema oneDark
+
+/** Bloque en crecimiento: <pre> pelado, sin Prism — el resaltado llega al final. */
+function PrePelado({ children }: { children?: ReactNode }) {
+  return (
+    <div className="my-3 overflow-hidden rounded-xl border border-border bg-[#282C34]">
+      <div className="flex items-center gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-wider text-zinc-400">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-highlight" />
+        escribiendo…
+      </div>
+      <pre className="!m-0 overflow-x-auto whitespace-pre-wrap p-4 font-mono text-[12.5px] leading-relaxed text-zinc-100">
+        {children}
+      </pre>
+    </div>
+  );
+}
+
+/**
+ * Cuerpo compartido de react-markdown. Memoizado: mientras la parte fija no
+ * cambie de VALOR (las strings se comparan por valor), no se re-renderiza —
+ * es la clave del render incremental. Con `enVivo`, los <pre> van pelados.
+ */
+const CuerpoMarkdown = memo(function CuerpoMarkdown({
+  text,
+  enVivo = false,
+}: {
+  text: string;
+  enVivo?: boolean;
+}) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        a: (props) => <a {...props} target="_blank" rel="noopener noreferrer" />,
+        pre: ({ children }) => {
+          if (enVivo) return <PrePelado>{children}</PrePelado>;
+          const child = Array.isArray(children) ? children[0] : children;
+          let rawLang = "";
+          let code = "";
+          if (child && typeof child === "object" && "props" in (child as { props?: unknown })) {
+            const props = (child as { props?: { className?: string; children?: ReactNode } })
+              .props;
+            rawLang = /language-([\w#+-]+)/.exec(props?.className ?? "")?.[1] ?? "";
+            code = textOf(props?.children);
+          }
+          // Blindaje: si el <pre> no trae un <code> como elemento (p. ej. texto
+          // pelado durante el streaming), nunca devolvemos un bloque vacío.
+          if (!code) code = textOf(children);
+          return <CodeBlock rawLang={rawLang} code={code} autoPreview />;
+        },
+        table: ({ children }) => (
+          <div className="arena-table-wrap">
+            <table>{children}</table>
+          </div>
+        ),
+        input: ({ node: _node, ...rest }) => (
+          <input {...rest} disabled readOnly className="arena-task-check" />
+        ),
+        img: ({ node: _node, alt = "", ...rest }) => (
+          <img
+            {...rest}
+            alt={alt}
+            loading="lazy"
+            className="rounded-lg border border-border"
+          />
+        ),
+      }}
+    >
+      {text}
+    </ReactMarkdown>
+  );
+});
 
 /** Extrae el texto plano de los hijos de un elemento de react-markdown. */
 function textOf(node: ReactNode): string {
@@ -276,50 +352,23 @@ export default function Markdown({
   streaming,
 }: {
   children: string;
-  /** true mientras la respuesta se está escribiendo: la vista previa espera al final. */
+  /** true mientras la respuesta se está escribiendo: render incremental, vista previa espera al final. */
   streaming?: boolean;
 }) {
+  if (!streaming) {
+    return (
+      <div className="arena-prose">
+        <CuerpoMarkdown text={children} />
+      </div>
+    );
+  }
+  // v1.23.0 — render incremental: lo cerrado UNA vez (memo), la cola viva en
+  // cada flush sin resaltado. El cursor ▍ viaja al final → siempre en cola.
+  const { fija, cola } = partirCola(children);
   return (
     <div className="arena-prose">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          a: (props) => <a {...props} target="_blank" rel="noopener noreferrer" />,
-          pre: ({ children }) => {
-            const child = Array.isArray(children) ? children[0] : children;
-            let rawLang = "";
-            let code = "";
-            if (child && typeof child === "object" && "props" in (child as { props?: unknown })) {
-              const props = (child as { props?: { className?: string; children?: ReactNode } })
-                .props;
-              rawLang = /language-([\w#+-]+)/.exec(props?.className ?? "")?.[1] ?? "";
-              code = textOf(props?.children);
-            }
-            // Blindaje: si el <pre> no trae un <code> como elemento (p. ej. texto
-            // pelado durante el streaming), nunca devolvemos un bloque vacío.
-            if (!code) code = textOf(children);
-            return <CodeBlock rawLang={rawLang} code={code} autoPreview={!streaming} />;
-          },
-          table: ({ children }) => (
-            <div className="arena-table-wrap">
-              <table>{children}</table>
-            </div>
-          ),
-          input: ({ node: _node, ...rest }) => (
-            <input {...rest} disabled readOnly className="arena-task-check" />
-          ),
-          img: ({ node: _node, alt = "", ...rest }) => (
-            <img
-              {...rest}
-              alt={alt}
-              loading="lazy"
-              className="rounded-lg border border-border"
-            />
-          ),
-        }}
-      >
-        {children}
-      </ReactMarkdown>
+      {fija ? <CuerpoMarkdown text={fija} /> : null}
+      <CuerpoMarkdown text={cola} enVivo />
     </div>
   );
 }

@@ -937,6 +937,9 @@ export default function ChatExperience() {
       const schedule = () => {
         if (flushTimer === null) flushTimer = setTimeout(flush, 80);
       };
+      // v1.23.0 — vida al instante: el cursor parpadea desde el primer
+      // milisegundo, antes de que el upstream diga la primera palabra.
+      flush();
 
       const handleEvent = (payload: Record<string, unknown>) => {
         const type = payload.t as string;

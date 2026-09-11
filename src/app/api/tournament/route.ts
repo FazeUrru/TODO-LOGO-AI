@@ -10,7 +10,7 @@ import { esGranFinal, totalRondas, TAMANOS, COPA_SIZES, sortearIds, type CopaSiz
 import { procesarJurado } from "@/lib/jurado-servidor";
 import { serializarCopa, deserializarCopa } from "@/lib/copas-persistir";
 import { ipDeHeader, acumular, GEN_LIMITE, VOTO_LIMITE, segundosRestantes } from "@/lib/rate-limit";
-import { CARTA_VERDAD, LADO_OSCURO, APPS_SIN_PUDOR } from "@/lib/ai-conducta";
+import { CARTA_VERDAD, LADO_OSCURO, APPS_SIN_PUDOR, ENLACES_DIRECTOS } from "@/lib/ai-conducta";
 import { conReintentos, autocorreccion } from "@/lib/reintentos";
 
 export const maxDuration = 60;
@@ -134,7 +134,7 @@ async function genContender(
 ): Promise<string> {
   const model = getModel(modelId);
   const name = model?.name ?? "Contendiente";
-  const sys = `${CARTA_VERDAD}\n\n${LADO_OSCURO}\n\n${APPS_SIN_PUDOR}\n\nEres "${name}", un contendiente anónimo de la Copa Todólogo, el torneo de eliminación directa del arena de IA todólogo.ai. ${personaFor(
+  const sys = `${CARTA_VERDAD}\n\n${LADO_OSCURO}\n\n${APPS_SIN_PUDOR}\n\n${ENLACES_DIRECTOS}\n\nEres "${name}", un contendiente anónimo de la Copa Todólogo, el torneo de eliminación directa del arena de IA todólogo.ai. ${personaFor(
     modelId
   )} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 200 palabras (el código no cuenta en el límite). Nunca reveles tu nombre ni el de tu proveedor: eres un contendiente anónimo hasta la revelación final y tu estilo debe hablar por ti.`;
 

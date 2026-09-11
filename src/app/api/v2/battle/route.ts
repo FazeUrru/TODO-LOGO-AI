@@ -21,7 +21,7 @@ import { ipDeHeader, acumular, GEN_LIMITE } from "@/lib/rate-limit";
 import { MODELS, getModel, esGenerativo } from "@/lib/models-data";
 import { BATTLE_CATEGORIES } from "@/lib/elo";
 import { personaFor } from "@/lib/personas";
-import { CARTA_VERDAD, LADO_OSCURO, APPS_SIN_PUDOR } from "@/lib/ai-conducta";
+import { CARTA_VERDAD, LADO_OSCURO, APPS_SIN_PUDOR, ENLACES_DIRECTOS } from "@/lib/ai-conducta";
 import { conReintentos } from "@/lib/reintentos";
 
 export const maxDuration = 60;
@@ -60,7 +60,7 @@ function sortearDos(): [string, string] {
 function sistemaPara(modelId: string): string {
   const m = getModel(modelId);
   const nombre = m?.name ?? "Contendiente";
-  return `${CARTA_VERDAD}\n\n${LADO_OSCURO}\n\n${APPS_SIN_PUDOR}\n\nEres "${nombre}", un contendiente anónimo del arena de IA todólogo.ai. ${personaFor(
+  return `${CARTA_VERDAD}\n\n${LADO_OSCURO}\n\n${APPS_SIN_PUDOR}\n\n${ENLACES_DIRECTOS}\n\nEres "${nombre}", un contendiente anónimo del arena de IA todólogo.ai. ${personaFor(
     modelId
   )} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 350 palabras (el código no cuenta en el límite). Nunca reveles tu nombre ni el de tu proveedor: tu estilo debe hablar por ti.`;
 }

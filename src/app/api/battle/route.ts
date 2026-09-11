@@ -5,7 +5,7 @@ import { ALL_3D_IDS } from "@/lib/models-3d";
 import { personaFor } from "@/lib/personas";
 import { chatExterno, vozExternaPara, type VozExterna } from "@/lib/voices-externas";
 import { ipDeHeader, acumular, GEN_LIMITE, segundosRestantes } from "@/lib/rate-limit";
-import { CARTA_VERDAD, CAPACIDADES_UNIVERSALES, LADO_OSCURO, APPS_SIN_PUDOR } from "@/lib/ai-conducta";
+import { CARTA_VERDAD, CAPACIDADES_UNIVERSALES, LADO_OSCURO, APPS_SIN_PUDOR, ENLACES_DIRECTOS } from "@/lib/ai-conducta";
 import {
   conReintentos,
   autocorreccion,
@@ -370,18 +370,34 @@ async function streamSide(
     }
 
     // Conexión vigilada: si no arranca dentro del reloj restante, muere.
+    // v1.23.0 — higiene de la carrera: el reloj se LIMPIA si la conexión gana
+    // (antes quedaban timers zombis de 25s por cada intento) y, si la pierde,
+    // la conexión tardía se cancela en fuego y olvido (antes quedaba un
+    // upstream zombi por reintento: sockets, memoria y presión 429 de más —
+    // uno de los motivos de que el streaming «no fuera al instante»).
     const esperaConexion = Math.min(STREAM_CONNECT_TIMEOUT_MS, restanteGlobal());
-    const started = await Promise.race([
-      zai.chat.completions.create({
-        messages: buildMessages(systemPrompt, promptAjustado, hist, images) as never,
-        temperature: temp,
-        thinking: { type: thinkAjustado ? "enabled" : "disabled" },
-        stream: true,
-      }),
-      new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), esperaConexion)
-      ),
-    ]);
+    let relojConexion: ReturnType<typeof setTimeout> | undefined;
+    const creacion = zai.chat.completions.create({
+      messages: buildMessages(systemPrompt, promptAjustado, hist, images) as never,
+      temperature: temp,
+      thinking: { type: thinkAjustado ? "enabled" : "disabled" },
+      stream: true,
+    }) as Promise<unknown>;
+    const goteoConexion = new Promise<null>((resolve) => {
+      relojConexion = setTimeout(() => resolve(null), esperaConexion);
+    });
+    const started = await Promise.race([creacion, goteoConexion]);
+    if (relojConexion) clearTimeout(relojConexion);
+    if (!started) {
+      creacion
+        .then((tardio) => {
+          if (tardio && typeof (tardio as ReadableStream).getReader === "function") {
+            const lector = (tardio as ReadableStream).getReader();
+            void lector.cancel().catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
 
     if (started && typeof (started as ReadableStream).getReader === "function") {
       // v1.19.2 — el vigilante recibe `cancelar` (reader directo) y el
@@ -604,7 +620,7 @@ export async function POST(req: NextRequest) {
   const vozB = modelB ? vozExternaPara(modelB.provider) : null;
 
   const sys = (name: string, extra = "") =>
-    `${CARTA_VERDAD}\n\n${CAPACIDADES_UNIVERSALES}\n\n${LADO_OSCURO}\n\n${APPS_SIN_PUDOR}\n\nEres "${name}", un contendiente anónimo del arena de IA todólogo.ai. ${personaFor(
+    `${CARTA_VERDAD}\n\n${CAPACIDADES_UNIVERSALES}\n\n${LADO_OSCURO}\n\n${APPS_SIN_PUDOR}\n\n${ENLACES_DIRECTOS}\n\nEres "${name}", un contendiente anónimo del arena de IA todólogo.ai. ${personaFor(
       name === modelA.name ? aId : (bId ?? "")
     )} ${framing} ${composerFraming} ${marcoVision} Responde SIEMPRE en español (salvo código/comandos), con un máximo de 230 palabras (el código no cuenta en el límite).${extra} Nunca reveles tu nombre ni el de tu proveedor: eres un contendiente anónimo y tu estilo debe hablar por ti.`;
 
