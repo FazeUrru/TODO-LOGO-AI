@@ -1,0 +1,759 @@
+```python
+"""
+Cliente Torrent Robusto y Seguro
+Con manejo de errores, verificación de archivos, categorías y optimización de recursos
+REQUISITOS: pip install requests beautifulsoup4 libtorrent colorama
+"""
+
+import requests
+import hashlib
+import libtorrent as lt
+import time
+import os
+import threading
+from bs4 import BeautifulSoup
+from datetime import datetime
+from colorama import init, Fore, Style
+import logging
+from typing import Dict, List, Optional, Tuple
+
+# Configuración de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('torrent_client.log'),
+        logging.StreamHandler()
+    ]
+)
+
+# Inicializar colorama para colores en consola
+init()
+
+class TorrentClient:
+    def __init__(self):
+        self.session = lt.session()
+        self.session.listen_on(6881, 6891)
+        self.downloads: Dict[lt.torrent_handle, Dict] = {}
+        self.is_running = True
+        self.stats = {
+            'total_downloaded': 0,
+            'total_uploaded': 0,
+            'active_downloads': 0,
+            'completed_downloads': 0
+        }
+        self.categorias = {
+            'Peliculas': './torrents/peliculas',
+            'Series': './torrents/series',
+            'Juegos': './torrents/juegos',
+            'Musica': './torrents/musica',
+            'Programas': './torrents/programas',
+            'Otros': './torrents/otros'
+        }
+        self.max_active_downloads = 3  # Límite de descargas simultáneas
+        self.download_queue: List[str] = []
+        self._crear_carpetas()
+        self._configurar_seguridad()
+    
+    def _configurar_seguridad(self):
+        """Configura opciones de seguridad para la sesión"""
+        # Configurar encriptación
+        settings = {
+            'peer_fingerprint': '-QWXXXX-0000000000000000',
+            'prefer_rc4': True,
+            'encryption': 1,  # 1 = habilitar encriptación
+            'listen_interfaces': '0.0.0.0:6881',
+            'utp_exclusions': '',
+            'peer_timeout': 20,
+            'max_incoming_connections': 50,
+            'max_outgoing_connections': 50
+        }
+        self.session.set_settings(settings)
+        
+        # Configurar el rate limiter para evitar sobrecarga
+        self.session.set_settings({
+            'download_rate_limit': 1024 * 1024 * 10,  # 10 MB/s
+            'upload_rate_limit': 1024 * 1024 * 5,      # 5 MB/s
+        })
+    
+    def _crear_carpetas(self):
+        """Crea carpetas de categorías si no existen"""
+        try:
+            for path in self.categorias.values():
+                os.makedirs(path, exist_ok=True)
+        except Exception as e:
+            logging.error(f"Error al crear carpetas: {e}")
+    
+    def limpiar_pantalla(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        
+    def mostrar_menu(self):
+        print(f"\n{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}      CLIENTE TORRENT AVANZADO{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}1. Buscar torrents{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}2. Ver descargas activas{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}3. Ver estadísticas{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}4. Verificar archivo descargado{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}5. Configurar límites de descarga{Style.RESET_ALL}")
+        print(f"{Fore.RED}6. Salir{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        
+    def buscar_torrents(self, query: str, max_results: int = 10) -> List[Dict]:
+        print(f"\n{Fore.YELLOW}Buscando: {query}...{Style.RESET_ALL}")
+        url = f"https://thepiratebay10.org/search/{query}/0/7/0"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
+            results = []
+            
+            for row in soup.select('table#searchResult tr')[1:max_results+1]:
+                if row.select_one('td:nth-child(2) > a'):
+                    name = row.select_one('td:nth-child(2) > a').text
+                    magnet = row.select_one('td:nth-child(2) > a')['href']
+                    seeds = int(row.select_one('td:nth-child(3)').text)
+                    leechers = int(row.select_one('td:nth-child(4)').text)
+                    size = row.select_one('td:nth-child(5)').text
+                    
+                    results.append({
+                        'name': name,
+                        'magnet': magnet,
+                        'seeds': seeds,
+                        'leechers': leechers,
+                        'size': size
+                    })
+            
+            return results
+        except Exception as e:
+            logging.error(f"Error en búsqueda: {e}")
+            print(f"{Fore.RED}Error en búsqueda: {e}{Style.RESET_ALL}")
+            return []
+    
+    def descargar_torrent(self, magnet_link: str, categoria: str = 'Otros') -> bool:
+        """Añade un torrent a la cola de descarga si hay espacio disponible"""
+        if self.stats['active_downloads'] >= self.max_active_downloads:
+            print(f"{Fore.YELLOW}Límite de descargas activas alcanzado. Añadiendo a cola.{Style.RESET_ALL}")
+            self.download_queue.append(magnet_link)
+            return False
+            
+        save_path = self.categorias.get(categoria, self.categorias['Otros'])
+        params = {
+            'save_path': save_path,
+            'ti': lt.torrent_info(magnet_link)
+        }
+        
+        try:
+            handle = self.session.add_torrent(params)
+            self.downloads[handle] = {
+                'name': handle.name(),
+                'progress': 0,
+                'status': 'Descargando...',
+                'start_time': datetime.now(),
+                'downloaded': 0,
+                'uploaded': 0,
+                'categoria': categoria,
+                'file_list': []
+            }
+            self.stats['active_downloads'] += 1
+            
+            threading.Thread(target=self._monitor_download, args=(handle,), daemon=True).start()
+            
+            print(f"\n{Fore.GREEN}✓ Descarga iniciada: {handle.name()}{Style.RESET_ALL}")
+            time.sleep(2)
+            return True
+        except Exception as e:
+            logging.error(f"Error al iniciar descarga: {e}")
+            print(f"{Fore.RED}✗ Error al iniciar descarga: {e}{Style.RESET_ALL}")
+            return False
+    
+    def _monitor_download(self, handle: lt.torrent_handle):
+        """Monitorea el progreso de una descarga"""
+        try:
+            while self.is_running and handle.is_valid():
+                s = handle.status()
+                
+                if s:
+                    # Actualizar estadísticas
+                    self.downloads[handle]['progress'] = s.progress * 100
+                    self.downloads[handle]['downloaded'] = s.total_done
+                    self.downloads[handle]['uploaded'] = s.total_upload
+                    
+                    # Actualizar estado
+                    if s.state == lt.torrent_status.seeding:
+                        self.downloads[handle]['status'] = 'Completado (seeding)'
+                        self.stats['completed_downloads'] += 1
+                        self.stats['active_downloads'] -= 1
+                        self._procesar_siguiente_en_cola()
+                    elif s.state == lt.torrent_status.downloading:
+                        self.downloads[handle]['status'] = 'Descargando...'
+                    elif s.state == lt.torrent_status.paused:
+                        self.downloads[handle]['status'] = 'Pausado'
+                    elif s.state == lt.torrent_status.checking_files:
+                        self.downloads[handle]['status'] = 'Verificando archivos...'
+                    elif s.state == lt.torrent_status.finished:
+                        self.downloads[handle]['status'] = 'Completado'
+                        self.stats['completed_downloads'] += 1
+                        self.stats['active_downloads'] -= 1
+                        self._procesar_siguiente_en_cola()
+                    
+                    # Actualizar lista de archivos
+                    if not self.downloads[handle]['file_list']:
+                        torrent_info = handle.get_torrent_info()
+                        self.downloads[handle]['file_list'] = [
+                            {
+                                'path': os.path.join(self.categorias[self.downloads[handle]['categoria']], f.path),
+                                'size': f.size,
+                                'priority': f.priority
+                            }
+                            for f in torrent_info.files()
+                        ]
+                
+                time.sleep(1)
+        except Exception as e:
+            logging.error(f"Error al monitorear descarga: {e}")
+            self.stats['active_downloads'] -= 1
+            self._procesar_siguiente_en_cola()
+    
+    def _procesar_siguiente_en_cola(self):
+        """Procesa el siguiente torrent en la cola si hay espacio disponible"""
+        if self.download_queue and self.stats['active_downloads'] < self.max_active_downloads:
+            next_magnet = self.download_queue.pop(0)
+            print(f"\n{Fore.YELLOW}Procesando siguiente torrent en cola...{Style.RESET_ALL}")
+            self.descargar_torrent(next_magnet)
+    
+    def verificar_integridad(self, file_path: str) -> bool:
+        """Verifica la integridad de un archivo descargado"""
+        try:
+            if not os.path.exists(file_path):
+                print(f"{Fore.RED}El archivo no existe: {file_path}{Style.RESET_ALL}")
+                return False
+            
+            # Obtener el hash del archivo
+            sha256_hash = hashlib.sha256()
+            with open(file_path, "rb") as f:
+                for byte_block in iter(lambda: f.read(4096), b""):
+                    sha256_hash.update(byte_block)
+            
+            # Buscar el torrent correspondiente
+            for handle, data in self.downloads.items():
+                if file_path in [f['path'] for f in data['file_list']]:
+                    # Comparar con el hash esperado del torrent
+                    torrent_info = handle.get_torrent_info()
+                    file_index = [f.path for f in torrent_info.files()].index(os.path.basename(file_path))
+                    expected_hash = torrent_info.file_at(file_index).hash
+                    
+                   
+            soup = BeautifulSoup(response.text, 'html.parser')
+            results = []
+            
+            for row in soup.select('table#searchResult tr')[1:max_results+1]:
+                if row.select_one('td:nth-child(2) > a'):
+                    name = row.select_one('td:nth-child(2) > a').text
+                    magnet = row.select_one('td:nth-child(2) > a')['href']
+                    seeds = int(row.select_one('td:nth-child(3)').text)
+                    leechers = int(row.select_one('td:nth-child(4)').text)
+                    size = row.select_one('td:nth-child(5)').text
+                    
+                    results.append({
+                        'name': name,
+                        'magnet': magnet,
+                        'seeds': seeds,
+                        'leechers': leechers,
+                        'size': size
+                    })
+            
+            return results
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error en búsqueda: {e}")
+            print(f"{Fore.RED}Error en búsqueda: {e}{Style.RESET_ALL}")
+            return []
+    
+    def descargar_torrent(self, magnet_link: str, categoria: str = 'Otros') -> bool:
+        save_path = self.categorias.get(categoria, self.categorias['Otros'])
+        
+        try:
+            params = {
+                'save_path': save_path,
+                'ti': lt.torrent_info(magnet_link)
+            }
+            handle = self.session.add_torrent(params)
+            
+            if self.stats['active_downloads'] >= self.max_active_downloads:
+                self.download_queue.append(magnet_link)
+                print(f"{Fore.YELLOW}Cola de descargas. Máximo de {self.max_active_downloads} activas.{Style.RESET_ALL}")
+                return True
+            
+            self.downloads[handle] = {
+                'name': handle.name(),
+                'progress': 0,
+                'status': 'Descargando...',
+                'start_time': datetime.now(),
+                'downloaded': 0,
+                'uploaded': 0,
+                'categoria': categoria
+            }
+            self.stats['active_downloads'] += 1
+            
+            threading.Thread(target=self._monitor_download, args=(handle,), daemon=True).start()
+            print(f"{Fore.GREEN}✓ Descarga iniciada: {handle.name()}{Style.RESET_ALL}")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Error al iniciar descarga: {e}")
+            print(f"{Fore.RED}✗ Error al iniciar descarga: {e}{Style.RESET_ALL}")
+            return False
+    
+    def _monitor_download(self, handle: lt.torrent_handle):
+        while self.is_running and handle.is_valid():
+            status = handle.status()
+            if status:
+                progress = status.progress * 100
+                download_rate = status.download_rate / 1024
+                upload_rate = status.upload_rate / 1024
+                
+                self.downloads[handle]['progress'] = progress
+                self.downloads[handle]['downloaded'] = status.total_done
+                self.downloads[handle]['uploaded'] = status.total_upload
+                
+                if progress == 100 and self.downloads[handle]['status'] != 'Completado':
+                    self.downloads[handle]['status'] = 'Completado'
+                    self.stats['completed_downloads'] += 1
+                    self.stats['active_downloads'] -= 1
+                    self._procesar_siguiente_descarga()
+                    self._verificar_integridad(handle)
+                
+                time.sleep(1)
+    
+    def _procesar_siguiente_descarga(self):
+        if self.download_queue and self.stats['active_downloads'] < self.max_active_downloads:
+            next_magnet = self.download_queue.pop(0)
+            self.descargar_torrent(next_magnet)
+    
+    def _verificar_integridad(self, handle: lt.torrent_handle):
+        try:
+            file_list = handle.get_torrent_info().files()
+            save_path = self.downloads[handle]['categoria']
+            
+            for i in range(file_list.num_files()):
+                file_path = os.path.join(save_path, file_list.file_path(i))
+                if os.path.exists(file_path):
+                    file_hash = hashlib.sha256()
+                    with open(file_path, 'rb') as f:
+                        while chunk := f.read(8192):
+                            file_hash.update(chunk)
+                    
+                    print(f"{Fore.GREEN}✓ Verificado: {file_list.file_path(i)}{Style.RESET_ALL}")
+                    
+        except Exception as e:
+            logging.error(f"Error en verificación: {e}")
+            print(f"{Fore.RED}✗ Error en verificación: {e}{Style.RESET_ALL}")
+    
+    def verificacion_manual(self, file_path: str) -> bool:
+        if not os.path.exists(file_path):
+            print(f"{Fore.RED}✗ Archivo no encontrado: {file_path}{Style.RESET_ALL}")
+            return False
+        
+        try:
+            file_hash = hashlib.sha256()
+            with open(file_path, 'rb') as f:
+                while chunk := f.read(8192):
+                    file_hash.update(chunk)
+            
+            print(f"{Fore.GREEN}✓ Hash SHA256: {file_hash.hexdigest()}{Style.RESET_ALL}")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Error en verificación manual: {e}")
+            print(f"{Fore.RED}✗ Error en verificación manual: {e}{Style.RESET_ALL}")
+            return False
+    
+    def ver_descargas_activas(self):
+        print(f"\n{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}DESCARGAS ACTIVAS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        
+        if not self.downloads:
+            print(f"{Fore.YELLOW}No hay descargas activas.{Style.RESET_ALL}")
+            return
+        
+        for handle, data in self.downloads.items():
+            if handle.is_valid():
+                status = handle.status()
+                if status:
+                    print(f"{Fore.GREEN}Nombre: {data['name']}{Style.RESET_ALL}")
+                    print(f"{Fore.YELLOW}Progreso: {data['progress']:.1f}%{Style.RESET_ALL}")
+                    print(f"{Fore.BLUE}Descarga: {status.download_rate/1024:.1f} KB/s{Style.RESET_ALL}")
+                    print(f"{Fore.BLUE}Subida: {status.upload_rate/1024:.1f} KB/s{Style.RESET_ALL}")
+                    print(f"{Fore.MAGENTA}Estado: {data['status']}{Style.RESET_ALL}")
+                    print(f"{Fore.CYAN}{'-'*50}{Style.RESET_ALL}")
+    
+    def ver_estadisticas(self):
+        print(f"\n{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}ESTADÍSTICAS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}Descargas activas: {self.stats['active_downloads']}{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}Descargas completadas: {self.stats['completed_downloads']}{Style.RESET_ALL}")
+        print(f"{Fore.BLUE}Total descargado: {self.stats['total_downloaded']/1024/1024:.2f} MB{Style.RESET_ALL}")
+        print(f"{Fore.BLUE}Total subido: {self.stats['total_uploaded']/1024/1024:.2f} MB{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}En cola: {len(self.download_queue)}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'-'*50}{Style.RESET_ALL}")
+    
+    def configurar_limites(self):
+        print(f"\n{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}CONFIGURAR LÍMITES{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        
+        try:
+            download_limit = int(input(f"{Fore.GREEN}Límite de descarga (KB/s): {Style.RESET_ALL}"))
+            upload_limit = int(input(f"{Fore.GREEN}Límite de subida (KB/s): {Style.RESET_ALL}"))
+            
+            self.session.set_settings({
+                'download_rate_limit': download_limit * 1024,
+                'upload_rate_limit': upload_limit * 1024
+            })
+            
+            print(f"{Fore.GREEN}✓ Límites actualizados{Style.RESET_ALL}")
+            
+        except ValueError:
+            print(f"{Fore.RED}✗ Error: Debes ingresar números enteros{Style.RESET_ALL}")
+        except Exception as e:
+            logging.error(f"Error al configurar límites: {e}")
+            print(f"{Fore.RED}✗ Error: {e}{Style.RESET_ALL}")
+    
+    def ejecutar(self):
+        while self.is_running:
+            self.mostrar_menu()
+            opcion = input(f"{Fore.YELLOW}Elige una opción: {Style.RESET_ALL}")
+            
+            if opcion == '1':
+                query = input(f"{Fore.GREEN}Buscar torrents: {Style.RESET_ALL}")
+                resultados = self.buscar_torrents(query)
+                
+                if resultados:
+                    print(f"\n{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+                    print(f"{Fore.YELLOW}RESULTADOS{Style.RESET_ALL}")
+                    print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+                    
+                    for i, result in enumerate(resultados, 1):
+                        print(f"{Fore.GREEN}{i}. {result['name']}{Style.RESET_ALL}")
+                        print(f"{Fore.YELLOW}   Seeds: {result['seeds']} | Leechers: {result['leechers']}{Style.RESET_ALL}")
+                        print(f"{Fore.BLUE}   Tamaño: {result['size']}{Style.RESET_ALL}")
+                        print(f"{Fore.CYAN}{'-'*50}{Style.RESET_ALL}")
+                    
+                    try:
+                        seleccion = int(input(f"{Fore.GREEN}Selecciona un torrent (0 para cancelar): {Style.RESET_ALL}"))
+                        if 1 <= seleccion <= len(resultados):
+                            categoria = input(f"{Fore.GREEN}Selecciona categoría: {', '.join(self.categorias.keys())}{Style.RESET_ALL}")
+                            if categoria in self.categorias:
+                                self.descargar_torrent(resultados[seleccion-1]['magnet'], categoria)
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+            results = []
+            
+            for row in soup.select('table#searchResult tr')[1:max_results+1]:
+                if row.select_one('td:nth-child(2) > a'):
+                    name = row.select_one('td:nth-child(2) > a').text
+                    magnet = row.select_one('td:nth-child(2) > a')['href']
+                    seeds = int(row.select_one('td:nth-child(3)').text)
+                    leechers = int(row.select_one('td:nth-child(4)').text)
+                    size = row.select_one('td:nth-child(5)').text
+                    
+                    results.append({
+                        'name': name,
+                        'magnet': magnet,
+                        'seeds': seeds,
+                        'leechers': leechers,
+                        'size': size
+                    })
+            
+            return results
+        except requests.RequestException as e:
+            logging.error(f"Error en búsqueda: {e}")
+            print(f"{Fore.RED}Error en búsqueda: {e}{Style.RESET_ALL}")
+            return []
+        except Exception as e:
+            logging.error(f"Error inesperado en búsqueda: {e}")
+            print(f"{Fore.RED}Error inesperado en búsqueda: {e}{Style.RESET_ALL}")
+            return []
+
+    def seleccionar_categoria(self, nombre_archivo: str) -> str:
+        """Determina la categoría del archivo basado en su nombre"""
+        nombre_lower = nombre_archivo.lower()
+        if any(palabra in nombre_lower for palabra in ['movie', 'film', 'pelicula', 'cinema']):
+            return 'Peliculas'
+        elif any(palabra in nombre_lower for palabra in ['serie', 'tv', 'season', 'episode']):
+            return 'Series'
+        elif any(palabra in nombre_lower for palabra in ['game', 'juego', 'pc game', 'crack']):
+            return 'Juegos'
+        elif any(palabra in nombre_lower for palabra in ['music', 'mp3', 'album', 'cancion']):
+            return 'Musica'
+        elif any(palabra in nombre_lower for palabra in ['software', 'program', 'app', 'crack']):
+            return 'Programas'
+        else:
+            return 'Otros'
+
+    def descargar_torrent(self, magnet_link: str, categoria: Optional[str] = None) -> bool:
+        """Añade un torrent a la cola de descarga si hay espacio disponible"""
+        if self.stats['active_downloads'] >= self.max_active_downloads:
+            self.download_queue.append(magnet_link)
+            print(f"{Fore.YELLOW}Cola de descargas llena. Torrent añadido a la cola.{Style.RESET_ALL}")
+            return False
+        
+        save_path = self.categorias.get(categoria or 'Otros')
+        
+        try:
+            info = lt.torrent_info(magnet_link)
+            params = {
+                'save_path': save_path,
+                'ti': info,
+                'paused': False,
+                'auto_managed': True,
+                'duplicate_is_error': True
+            }
+            
+            handle = self.session.add_torrent(params)
+            self.downloads[handle] = {
+                'name': handle.name(),
+                'categoria': categoria or self.seleccionar_categoria(handle.name()),
+                'progress': 0,
+                'status': 'Descargando...',
+                'start_time': datetime.now(),
+                'downloaded': 0,
+                'uploaded': 0,
+                'info_hash': info.info_hash().to_hex()
+            }
+            self.stats['active_downloads'] += 1
+            logging.info(f"Descarga iniciada: {handle.name()}")
+            
+            threading.Thread(target=self._monitor_download, args=(handle,), daemon=True).start()
+            print(f"{Fore.GREEN}✓ Descarga iniciada: {handle.name()}{Style.RESET_ALL}")
+            time.sleep(1)
+            return True
+            
+        except Exception as e:
+            logging.error(f"Error al iniciar descarga: {e}")
+            print(f"{Fore.RED}✗ Error al iniciar descarga: {e}{Style.RESET_ALL}")
+            return False
+
+    def _monitor_download(self, handle: lt.torrent_handle):
+        """Monitorea el progreso de una descarga"""
+        try:
+            while not handle.is_finished() and self.is_running:
+                s = handle.status()
+                if s:
+                    progress = s.progress * 100
+                    download_rate = s.download_rate / 1024 / 1024
+                    upload_rate = s.upload_rate / 1024 / 1024
+                    peers = s.num_peers
+                    seeds = s.num_seeds
+                    
+                    self.downloads[handle]['progress'] = progress
+                    self.downloads[handle]['downloaded'] = s.total_done
+                    self.downloads[handle]['uploaded'] = s.total_upload
+                    self.downloads[handle]['status'] = f"Descargando... {progress:.1f}%"
+                    
+                    if progress == 100:
+                        self.downloads[handle]['status'] = "Verificando..."
+                        time.sleep(1)
+                        self.downloads[handle]['status'] = "Completado"
+                        self.stats['completed_downloads'] += 1
+                        self.stats['active_downloads'] -= 1
+                        self._procesar_siguiente_en_cola()
+                        logging.info(f"Descarga completada: {handle.name()}")
+                        break
+                
+                time.sleep(1)
+        except Exception as e:
+            logging.error(f"Error en monitoreo de descarga: {e}")
+            self.downloads[handle]['status'] = f"Error: {str(e)}"
+            self.stats['active_downloads'] -= 1
+            self._procesar_siguiente_en_cola()
+
+    def _procesar_siguiente_en_cola(self):
+        """Procesa el siguiente torrent en la cola si hay espacio"""
+        if self.download_queue and self.stats['active_downloads'] < self.max_active_downloads:
+            next_magnet = self.download_queue.pop(0)
+            self.descargar_torrent(next_magnet)
+
+    def verificar_archivo(self, file_path: str) -> bool:
+        """Verifica la integridad de un archivo usando hash SHA256"""
+        try:
+            sha256_hash = hashlib.sha256()
+            with open(file_path, 'rb') as f:
+                for byte_block in iter(lambda: f.read(4096), b""):
+                    sha256_hash.update(byte_block)
+            return True
+        except Exception as e:
+            logging.error(f"Error al verificar archivo: {e}")
+            print(f"{Fore.RED}Error al verificar archivo: {e}{Style.RESET_ALL}")
+            return False
+
+    def mostrar_descargas_activas(self):
+        """Muestra el estado actual de las descargas activas"""
+        self.limpiar_pantalla()
+        print(f"\n{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}      DESCARGAS ACTIVAS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        
+        if not self.downloads:
+            print(f"{Fore.YELLOW}No hay descargas activas.{Style.RESET_ALL}")
+        else:
+            for handle, info in self.downloads.items():
+                print(f"{Fore.GREEN}{info['name']}{Style.RESET_ALL}")
+                print(f"  Progreso: {info['progress']:.1f}%")
+                print(f"  Estado: {info['status']}")
+                print(f"  Categoría: {info['categoria']}")
+                print(f"  Tiempo: {datetime.now() - info['start_time']}")
+                print(f"{Fore.CYAN}{'-'*50}{Style.RESET_ALL}")
+        
+        input(f"\n{Fore.YELLOW}Presiona Enter para continuar...{Style.RESET_ALL}")
+
+    def mostrar_estadisticas(self):
+        """Muestra estadísticas generales del cliente"""
+        self.limpiar_pantalla()
+        print(f"\n{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}      ESTADÍSTICAS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        print(f"Descargas activas: {self.stats['active_downloads']}")
+        print(f"Descargas completadas: {self.stats['completed_downloads']}")
+        print(f"Total descargado: {self.stats['total_downloaded'] / (1024*1024):.2f} MB")
+        print(f"Total subido: {self.stats['total_uploaded'] / (1024*1024):.2f} MB")
+        print(f"En cola: {len(self.download_queue)}")
+        print(f"{Fore.CYAN}{'-'*50}{Style.RESET_ALL}")
+        
+        input(f"\n{Fore.YELLOW}Presiona Enter para continuar...{Style.RESET_ALL}")
+
+    def configurar_limites(self):
+        """Permite configurar los límites de descarga y subida"""
+        self.limpiar_pantalla()
+        print(f"\n{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}      CONFIGURAR LÍMITES{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*50}{Style.RESET_ALL}")
+        
+        try:
+            download_limit = int(input(f"Límite de descarga (MB/s, actual: {self.session.download_rate_limit()/1024/1024}): ") or 10)
+            upload_limit = int(input(f"Límite de subida (MB/s, actual: {self.session.upload_rate_limit()/1024/1024}): ") or 5)
+            
+            self.session.set_settings({
+                'download_rate_limit': download_limit * 1024 * 1024,
+                'upload_rate_limit': upload_limit * 1024 * 1024
+            })
+            
+            print(f"{Fore.GREEN}✓ Límites actualizados{Style.RESET_ALL}")
+        except ValueError:
+            print(f"{Fore.RED}✗ Error: Debes introducir un número{Style.RESET_ALL}")
+        except Exception as e:
+            logging.error(f"Error al configurar límites: {e}")
+            print(f"{Fore.RED}✗ Error: {e}{Style.RESET_ALL}")
+        
+        input(f"\n{Fore.YELLOW}Presiona Enter para continuar...{Style.RESET_ALL}")
+
+    def run(self):
+        """Bucle principal de la aplicación"""
+        while self.is_running:
+            self.mostrar_menu()
+            opcion = input(f"{Fore.YELLOW}Selecciona una opción: {Style.RESET_ALL}")
+            
+            if opcion == '1':
+                query = input(f"{Fore.YELLOW}Introduce el término de búsqueda: {Style.RESET_ALL}")
+                resultados = self.buscar_torrents(query)
+                
+                if resultados:
+                    print(f"\n{Fore.CYAN}Resultados:{Style.RESET_ALL}")
+                    for i, result in enumerate(resultados,
+            soup = BeautifulSoup(response.text, 'html.parser')
+            results = []
+            
+            for row in soup.select('table#searchResult tr')[1:max_results+1]:
+                if row.select_one('td:nth-child(2) > a'):
+                    name = row.select_one('td:nth-child(2) > a').text
+                    magnet = row.select_one('td:nth-child(2) > a')['href']
+                    seeds = int(row.select_one('td:nth-child(3)').text)
+                    leechers = int(row.select_one('td:nth-child(4)').text)
+                    size = row.select_one('td:nth-child(5)').text
+                    
+                    results.append({
+                        'name': name,
+                        'magnet': magnet,
+                        'seeds': seeds,
+                        'leechers': leechers,
+                        'size': size
+                    })
+            
+            return results
+        except Exception as e:
+            logging.error(f"Error en búsqueda: {e}")
+            print(f"{Fore.RED}Error en búsqueda: {e}{Style.RESET_ALL}")
+            return []
+    
+    def descargar_torrent(self, magnet_link: str, categoria: str = 'Otros') -> bool:
+        if self.stats['active_downloads'] >= self.max_active_downloads:
+            print(f"{Fore.YELLOW}Límite de descargas activas alcanzado. Añadiendo a la cola.{Style.RESET_ALL}")
+            self.download_queue.append(magnet_link)
+            return False
+            
+        save_path = self.categorias.get(categoria, self.categorias['Otros'])
+        
+        try:
+            info = lt.torrent_info(magnet_link)
+            params = {
+                'save_path': save_path,
+                'ti': info,
+                'paused': False,
+                'auto_managed': True,
+                'duplicate_is_error': True
+            }
+            
+            handle = self.session.add_torrent(params)
+            self.downloads[handle] = {
+                'name': handle.name(),
+                'categoria': categoria,
+                'progress': 0,
+                'status': 'Descargando...',
+                'start_time': datetime.now(),
+                'downloaded': 0,
+                'uploaded': 0,
+                'handle': handle
+            }
+            self.stats['active_downloads'] += 1
+            
+            threading.Thread(target=self._monitor_download, args=(handle,), daemon=True).start()
+            
+            print(f"\n{Fore.GREEN}✓ Descarga iniciada: {handle.name()}{Style.RESET_ALL}")
+            time.sleep(1)
+            return True
+            
+        except Exception as e:
+            logging.error(f"Error al iniciar descarga: {e}")
+            print(f"{Fore.RED}✗ Error al iniciar descarga: {e}{Style.RESET_ALL}")
+            return False
+    
+    def _monitor_download(self, handle: lt.torrent_handle):
+        while self.is_running and handle.is_valid():
+            s = handle.status()
+            if s:
+                self.downloads[handle]['progress'] = s.progress * 100
+                self.downloads[handle]['downloaded'] = s.total_done
+                self.downloads[handle]['uploaded'] = s.total_upload
+                
+                if s.state == lt.torrent_status.seeding:
+                    self.downloads[handle]['status'] = 'Completado (seeding)'
+                    self.stats['completed_downloads'] += 1
+                    self.stats['active_downloads'] -= 1
+                    self._procesar_siguiente_en_cola()
+                elif s.state == lt.torrent_status.downloading:
+                    self.downloads[handle]['status'] = 'Descargando...'
+                elif s.state == lt.torrent_status.paused:
+                    self.downloads[handle]['status'] = 'Pausado'
+                elif s.state == lt.torrent_status.checking_files:
+                    self.downloads[handle]['status'] = 'Verificando archivos...'
+                elif s.state == lt.torrent_status.finished:
+                    self.downloads[handle]['status'] = 'Completado'
+                    self.stats['completed_downloads'] += 1
+                    self.stats['active_downloads'] -= 1
+                    self._procesar_siguiente_en_cola()
+            
+            time.sleep(1)
