@@ -1577,6 +1577,58 @@ export default function ChatExperience() {
     }
   }
 
+  /**
+   * v1.25.0 — El hilo permanente: link público /c/[id] con la conversación
+   * ENTERA, turno a turno, para cada modelo. A diferencia del replay (que
+   * aplasta todo en un prompt + respuestas pegadas), este link abre el chat
+   * tal cual ocurrió. Los campos efímeros no viajan: los medios generados
+   * (blob URLs) y las imágenes adjuntas (dataURL) mueren con la sesión o
+   * pesan megas — un link permanente solo lleva texto, razonamiento y fuentes.
+   */
+  async function compartirConversacion() {
+    if (!battle?.aId) return;
+    const limpiarHilo = (turnos: Turn[]) =>
+      turnos
+        .filter((t) => t.role === "user" || t.role === "assistant")
+        .map((t) => ({
+          role: t.role,
+          content: t.content,
+          ...(t.role === "assistant" && t.thinking ? { thinking: t.thinking } : {}),
+          ...(t.sources && t.sources.length > 0 ? { sources: t.sources } : {}),
+        }));
+    const hiloA = limpiarHilo(turnsA);
+    const hiloB = battle.bId ? limpiarHilo(turnsB) : null;
+    try {
+      const res = await fetch("/api/conversacion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          modelAId: battle.aId,
+          modelBId: battle.bId,
+          turnosA: hiloA,
+          turnosB: hiloB,
+          ganador: battle.winner ?? null,
+          category,
+          composerMode: cMode,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error);
+      const url = `${window.location.origin}${data.url}`;
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link de conversación copiado",
+        description: `El hilo completo queda publicado en ${url}`,
+      });
+    } catch (e) {
+      toast({
+        title: "No se pudo crear el link de conversación",
+        description: e instanceof Error ? e.message : undefined,
+        variant: "destructive",
+      });
+    }
+  }
+
   /* ───────────────────────── UI ───────────────────────── */
 
   const canSend = prompt.trim().length > 1 && !thinking;
@@ -2442,17 +2494,28 @@ export default function ChatExperience() {
                 Nueva batalla
               </button>
               {!isStaticDemo() && (
-                <button
-                  onClick={compartirDuelo}
-                  className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[12.5px] font-medium hover:bg-accent"
-                >
-                  <Share2 className="h-3.5 w-3.5" />
-                  Compartir replay
-                </button>
+                <>
+                  <button
+                    onClick={compartirConversacion}
+                    className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[12.5px] font-medium hover:bg-accent"
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    Link de conversación
+                  </button>
+                  <button
+                    onClick={compartirDuelo}
+                    className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[12.5px] font-medium hover:bg-accent"
+                  >
+                    <Share2 className="h-3.5 w-3.5" />
+                    Compartir replay
+                  </button>
+                </>
               )}
               <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                Transparencia: las respuestas las genera el motor único de Todólogo encarnando la
-                personalidad de cada modelo; el ELO sí es real y nace de votos como el tuyo.
+                El link de conversación publica el hilo entero, turno a turno; el replay
+                aplasta el duelo en una tarjeta. Transparencia: las respuestas las genera el
+                motor único de Todólogo encarnando la personalidad de cada modelo; el ELO sí es
+                real y nace de votos como el tuyo.
               </p>
             </div>
           )}

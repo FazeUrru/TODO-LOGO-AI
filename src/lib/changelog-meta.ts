@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.25.0",
+    fecha: "12 sept 2026",
+    hora: "03:05",
+    titulo: "El hilo permanente: cada conversación gana su link público — real, funcional y estable",
+    tldr:
+      "El botón «Link de conversación» publica el hilo ENTERO de tu batalla en una URL estable /c/[id]: cada mensaje tuyo y cada respuesta de cada modelo, turno a turno y tal cual ocurrió — no el snapshot aplastado del replay, que solo guardaba el primer prompt y las respuestas pegadas.",
+    diffDesde: "1.24.0",
+    hash: null,
+    kinds: ["nuevo"],
+  },
+  {
     version: "1.24.0",
     fecha: "12 sept 2026",
     hora: "02:10",

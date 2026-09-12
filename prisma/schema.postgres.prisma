@@ -166,6 +166,29 @@ model DueloGuardado {
   @@index([shares])
 }
 
+// Conversación completa compartida por URL permanente (v1.25.0): el hilo
+// ENTERO multi-turno (usuario + asistente, en orden) para el link público
+// /c/[id]. A diferencia de DueloGuardado (snapshot aplastado: primer prompt
+// + respuestas pegadas), aquí cada turno conserva su rol, contenido y orden
+// — la conversación es la conversación, no un resumen.
+model ConversacionGuardada {
+  id           String   @id // id público corto (c_xxx)
+  prompt       String // primer mensaje del usuario (título del link)
+  category     String   @default("global")
+  composerMode String   @default("texto")
+  modelAId     String
+  modelBId     String?
+  turnosA      String // JSON del hilo completo del lado A [{role, content, thinking?, sources?}]
+  turnosB      String? // JSON del hilo completo del lado B (duelo 1×1)
+  ganador      String? // 'A' | 'B' | 'tie' | 'bad'; null si se compartió sin voto
+  shares       Int      @default(0) // veces que alguien re-difunde el link
+  views        Int      @default(0) // visitas al link público
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([shares])
+}
+
 // Canal Todólogo Labs (v1.14.0): features experimentales con ciclo de vida
 // finito (máx. 8 semanas → graduación o descarte) y telemetría estructurada.
 // El registro fuente de verdad vive en src/lib/labs.ts (viaja en el bundle);

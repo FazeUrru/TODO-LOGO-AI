@@ -28,14 +28,14 @@ const leer = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf8")
 
 describe("v1.23.0 — versión y trazabilidad", () => {
   it("la app va por la 1.23.0 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.24.0");
+    expect(APP_VERSION).toBe("1.25.0");
   });
 
   it("changelog-meta y CHANGELOG.md relatan la 1.23.0", () => {
-    expect(VERSIONS[0].version).toBe("1.24.0");
-    expect(VERSIONS[1].version).toBe("1.23.0");
-    expect(VERSIONS[1].diffDesde).toBe("1.22.0");
-    expect(VERSIONS[1].kinds).toContain("correccion");
+    expect(VERSIONS[0].version).toBe("1.25.0");
+    expect(VERSIONS[2].version).toBe("1.23.0");
+    expect(VERSIONS[2].diffDesde).toBe("1.22.0");
+    expect(VERSIONS[2].kinds).toContain("correccion");
     const md = leer("CHANGELOG.md");
     expect(md).toContain("partirCola");
     expect(md).toContain("ENLACES_DIRECTOS");

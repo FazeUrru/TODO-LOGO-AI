@@ -40,14 +40,14 @@ const cliente = leer("src/components/arena/ChatExperience.tsx");
 
 describe("v1.24.0 — versión y trazabilidad", () => {
   it("la app va por la 1.24.0 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.24.0");
+    expect(APP_VERSION).toBe("1.25.0");
   });
 
   it("changelog-meta y CHANGELOG.md relatan la 1.24.0", () => {
-    expect(VERSIONS[0].version).toBe("1.24.0");
-    expect(VERSIONS[1].version).toBe("1.23.0");
-    expect(VERSIONS[0].diffDesde).toBe("1.23.0");
-    expect(VERSIONS[0].kinds).toContain("nuevo");
+    expect(VERSIONS[0].version).toBe("1.25.0");
+    expect(VERSIONS[1].version).toBe("1.24.0");
+    expect(VERSIONS[1].diffDesde).toBe("1.23.0");
+    expect(VERSIONS[1].kinds).toContain("nuevo");
     const md = leer("CHANGELOG.md");
     expect(md).toContain("STREAM FOREVER");
     expect(md).toContain("Memoria inmunitaria");

@@ -242,6 +242,32 @@ async function createSchema(): Promise<void> {
       `CREATE INDEX IF NOT EXISTS "DueloGuardado_shares_idx" ON "DueloGuardado"("shares");`
     );
 
+    // Conversaciones completas compartidas por URL permanente (v1.25.0):
+    // el hilo entero multi-turno en JSON para el link público /c/[id].
+    await crearTabla(
+      "ConversacionGuardada",
+      `CREATE TABLE IF NOT EXISTS "ConversacionGuardada" (
+        "id"           TEXT PRIMARY KEY,
+        "prompt"       TEXT NOT NULL,
+        "category"     TEXT NOT NULL DEFAULT 'global',
+        "composerMode" TEXT NOT NULL DEFAULT 'texto',
+        "modelAId"     TEXT NOT NULL,
+        "modelBId"     TEXT,
+        "turnosA"      TEXT NOT NULL,
+        "turnosB"      TEXT,
+        "ganador"      TEXT,
+        "createdAt"    ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "ConversacionGuardada_createdAt_idx" ON "ConversacionGuardada"("createdAt");`
+    );
+    await addColumnSiFalta("ConversacionGuardada", "shares", "INTEGER NOT NULL DEFAULT 0");
+    await addColumnSiFalta("ConversacionGuardada", "views", "INTEGER NOT NULL DEFAULT 0");
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "ConversacionGuardada_shares_idx" ON "ConversacionGuardada"("shares");`
+    );
+
     // ELO de jurado (v1.20.0): el ranking de las personas que votan
     await crearTabla(
       "UserElo",
