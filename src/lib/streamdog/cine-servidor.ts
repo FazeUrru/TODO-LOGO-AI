@@ -20,6 +20,8 @@
 
 import type { TituloOro } from "./cine";
 
+export const VERSION_UA = "1.33.0";
+
 /* ══════════════════ ESTADO DE FUENTES ══════════════════ */
 
 export type EstadoFuente = "ok" | "degradada" | "caida";
@@ -96,7 +98,7 @@ export async function fetchJsonConTope<T>(url: string, topeMs: number): Promise<
   try {
     const res = await fetch(url, {
       signal: control.signal,
-      headers: { accept: "application/json", "user-agent": "StreamDog/1.32.0 (catalogo publico; contacto: repo FazeUrru/TODO-LOGO-AI)" },
+      headers: { accept: "application/json", "user-agent": `StreamDog/${VERSION_UA} (catalogo publico; contacto: repo FazeUrru/TODO-LOGO-AI)` },
       cache: "no-store",
     });
     if (!res.ok) {
@@ -181,6 +183,11 @@ export function archiveBuscarUrl(q: string, pagina: number, filas: number): stri
   const consulta = q
     ? `collection:(feature_films) AND mediatype:(movies) AND (${q})`
     : "collection:(feature_films) AND mediatype:(movies)";
+  return archiveConsultaUrl(consulta, pagina, filas);
+}
+
+/** Núcleo común de advancedsearch: consulta libre + página + filas, orden por descargas. */
+export function archiveConsultaUrl(consulta: string, pagina: number, filas: number): string {
   const params = new URLSearchParams({
     q: consulta,
     page: String(Math.max(1, pagina)),
@@ -192,6 +199,31 @@ export function archiveBuscarUrl(q: string, pagina: number, filas: number): stri
     params.append("fl[]", campo);
   }
   return `https://archive.org/advancedsearch.php?${params.toString()}`;
+}
+
+/**
+ * Archive.org: advancedsearch sobre UNA colección curada (film_noir,
+ * classic_cartoons, classic_tv…). La que la comunidad renombre
+ * simplemente devuelve 0 filas: la UI la omite sin ruido.
+ */
+export function archiveColeccionUrl(coleccion: string, pagina: number, filas: number): string {
+  const limpia = coleccion.replace(/["\\]/g, "").trim();
+  return archiveConsultaUrl(`collection:("${limpia}") AND mediatype:(movies)`, pagina, filas);
+}
+
+/**
+ * Archive.org: LOS TÍTULOS MÁS FAMOSOS del dominio público en una sola
+ * consulta (title:"A" OR title:"B"…). Es la fila «tipo Netflix» de la
+ * casa: los éxitos eternos que todo el mundo reconoce, jugables y legales.
+ */
+export function archiveFamososUrl(titulos: string[], filas: number): string {
+  const limpias = titulos.slice(0, 30).map((t) => t.replace(/["()]/g, "").trim()).filter((t) => t.length > 0);
+  const clausula = limpias.map((t) => `title:"${t}"`).join(" OR ");
+  return archiveConsultaUrl(
+    `collection:(feature_films) AND mediatype:(movies) AND (${clausula})`,
+    1,
+    filas
+  );
 }
 
 /** Archive.org: metadatos completos (ficheros incluidos) de un ítem. */
@@ -268,3 +300,5 @@ export function urlColeccionOro(coleccion: TituloOro[]): string {
 /** Tope de tiempo por fuente: generoso con metadata, estricto con listas. */
 export const TOPE_LISTA_MS = 3_500;
 export const TOPE_FICHA_MS = 6_000;
+/** Tope del cron empresarial: puede permitirse más (corre sin usuario esperando). */
+export const TOPE_CRON_MS = 12_000;

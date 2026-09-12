@@ -1,0 +1,47 @@
+# StreamDog · cron empresarial de respaldo (v1.33.0).
+#
+# Vercel Hobby limita los crons a 1 vez al día; con este workflow el
+# catálogo se refresca CADA HORA gratis usando GitHub Actions (repos
+# públicos: minutos ilimitados). Define los secrets del repo:
+#
+#   · STREAMDOG_URL → https://TU-DOMINIO.vercel.app (o tu dominio propio)
+#   · CRON_SECRET   → el mismo valor que la env var CRON_SECRET de Vercel
+#                     (opcional en dev, OBLIGATORIO en producción)
+#
+name: StreamDog · cron de catálogo
+
+on:
+  schedule:
+    - cron: "0 * * * *" # cada hora en punto (UTC)
+  workflow_dispatch: {} # disparo manual desde la pestaña Actions
+
+jobs:
+  refrescar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Calentar el catálogo de StreamDog
+        shell: bash
+        run: |
+          URL="${{ secrets.STREAMDOG_URL }}"
+          CLAVE="${{ secrets.CRON_SECRET }}"
+          if [ -z "$URL" ]; then
+            echo "::error::Falta el secret STREAMDOG_URL (https://tu-dominio.vercel.app)"
+            exit 1
+          fi
+          if [ -n "$CLAVE" ]; then
+            RESPUESTA=$(curl -fsS --max-time 180 \
+              -H "Authorization: Bearer $CLAVE" \
+              "$URL/api/streamdog/cron/actualizar") || exit 1
+          else
+            echo "::warning::Sin CRON_SECRET: la llamada va abierta (solo para dev)."
+            RESPUESTA=$(curl -fsS --max-time 180 \
+              "$URL/api/streamdog/cron/actualizar") || exit 1
+          fi
+          echo "$RESPUESTA" | head -c 2000
+          echo
+          # Informe en el resumen del workflow
+          echo '## StreamDog · recarga horaria' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          echo "$RESPUESTA" | head -c 4000 >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

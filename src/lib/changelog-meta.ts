@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.33.0",
+    fecha: "12 sept 2026",
+    hora: "13:30",
+    titulo: "StreamDog ∞: archivo infinito con colecciones de cine eterno, cron empresarial cada hora y UI premium/VIP con hoja de ruta motivadora",
+    tldr:
+      "El cine de StreamDog se vuelve infinito: 5 colecciones nuevas de Internet Archive (film noir, sci-fi/horror, cartoons, TV clásica y documentales) más la fila «Los títulos más famosos» con 30 clásicos eternos jugables, todo pre-cocinado cada hora por un cron empresarial con informe y salud en vivo, listo para Vercel con cron horario y dominio propio (guía incluida) — y una UI premium/VIP: héroe destacado, buscador verde, chips degradados de salto rápido, deportes con cuenta atrás real y «Muy pronto» (viajes, juegos, apps, webs) con diálogo motivador en 4 idiomas.",
+    diffDesde: "1.32.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.32.0",
     fecha: "12 sept 2026",
     hora: "11:20",

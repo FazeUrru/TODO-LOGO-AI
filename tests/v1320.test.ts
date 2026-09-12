@@ -432,7 +432,9 @@ describe("v1320 · invariantes estáticos del backend, la UI y el SW", () => {
   it("las 3 rutas del cine usan rate-limit y degradación (sin llamadas colgantes)", () => {
     const catalogo = readFileSync(join(RAIZ, "src/app/api/streamdog/cine/route.ts"), "utf8");
     expect(catalogo).toContain("acumular(");
-    expect(catalogo).toContain("degradada");
+    // desde v1.33.0 la degradación vive en cine-catalogo.ts (compartida con el cron)
+    const agregacion = readFileSync(join(RAIZ, "src/lib/streamdog/cine-catalogo.ts"), "utf8");
+    expect(agregacion).toContain("degradada");
     const detalle = readFileSync(join(RAIZ, "src/app/api/streamdog/cine/detalle/route.ts"), "utf8");
     expect(detalle).toContain("TOPE_FICHA_MS");
     const reproducir = readFileSync(join(RAIZ, "src/app/api/streamdog/cine/reproducir/route.ts"), "utf8");
@@ -471,10 +473,10 @@ describe("v1320 · invariantes estáticos del backend, la UI y el SW", () => {
 
 describe("v1320 · tríada de versiones coherente", () => {
   it("version.ts, changelog-meta.ts y CHANGELOG.md dicen 1.32.0", () => {
-    expect(APP_VERSION).toBe("1.32.0");
-    expect(VERSIONS[0].version).toBe("1.32.0");
-    expect(VERSIONS[0].diffDesde).toBe("1.31.0");
-    expect(VERSIONS[0].kinds).toContain("nuevo");
+    expect(APP_VERSION).toBe("1.33.0");
+    expect(VERSIONS[1].version).toBe("1.32.0");
+    expect(VERSIONS[1].diffDesde).toBe("1.31.0");
+    expect(VERSIONS[1].kinds).toContain("nuevo");
     const changelog = readFileSync(join(RAIZ, "CHANGELOG.md"), "utf8");
     expect(changelog).toContain("## [1.32.0]");
     expect(changelog).toContain("StreamDog Cine&Series");

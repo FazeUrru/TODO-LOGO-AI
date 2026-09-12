@@ -3,9 +3,18 @@
   "framework": "nextjs",
   "regions": ["cdg1"],
   "buildCommand": "node scripts/vercel-build.mjs",
+  "crons": [
+    {
+      "path": "/api/streamdog/cron/actualizar",
+      "schedule": "0 * * * *"
+    }
+  ],
   "functions": {
     "src/app/api/**/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/streamdog/cron/actualizar/route.ts": {
+      "maxDuration": 120
     }
   },
   "headers": [

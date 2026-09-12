@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Globe, Loader2, RefreshCw, Search, WifiOff } from "lucide-react";
+import { Download, Globe, Infinity as InfinityIcon, Loader2, RefreshCw, Search, WifiOff } from "lucide-react";
 import { asset } from "@/lib/asset-path";
 import { jsonSeguro } from "@/lib/fetch-seguro";
 import { isStaticDemo } from "@/lib/static-mode";
@@ -27,7 +27,11 @@ import { IDIOMAS_CINE, traducirCine, type IdiomaCine } from "@/lib/streamdog/cin
 import { cn } from "@/lib/utils";
 import BannerReparacion from "./BannerReparacion";
 import DetalleModal from "./DetalleModal";
+import DialogoProximamente from "./DialogoProximamente";
 import FilaCarrusel from "./FilaCarrusel";
+import FilaDeportes from "./FilaDeportes";
+import FilaProximamente, { type SeccionPronto } from "./FilaProximamente";
+import HeroeDestacado from "./HeroeDestacado";
 import Reproductor from "./Reproductor";
 import TarjetaContenido from "./TarjetaContenido";
 
@@ -43,6 +47,18 @@ import TarjetaContenido from "./TarjetaContenido";
  */
 
 type Vista = "inicio" | "peliculas" | "series" | "milista";
+
+/** Degradados de los chips de salto rápido (uno por fila, ciclando). */
+const GRADIENTES_FILA = [
+  "from-emerald-400/25 to-teal-400/10 text-emerald-100 border-emerald-300/40",
+  "from-violet-400/25 to-fuchsia-400/10 text-violet-100 border-violet-300/40",
+  "from-sky-400/25 to-cyan-400/10 text-sky-100 border-sky-300/40",
+  "from-amber-400/25 to-orange-400/10 text-amber-100 border-amber-300/40",
+  "from-rose-400/25 to-pink-400/10 text-rose-100 border-rose-300/40",
+  "from-lime-400/25 to-green-400/10 text-lime-100 border-lime-300/40",
+  "from-cyan-400/25 to-blue-300/10 text-cyan-100 border-cyan-300/40",
+  "from-orange-400/25 to-red-400/10 text-orange-100 border-orange-300/40",
+];
 
 const VISTAS: { id: Vista; clave: string }[] = [
   { id: "inicio", clave: "Inicio" },
@@ -106,6 +122,10 @@ export default function Cine() {
   const [sesion, setSesion] = useState<SesionReproductor | null>(null);
   const [instalador, setInstalador] = useState<EventoInstalador | null>(null);
   const [instalada, setInstalada] = useState(false);
+
+  /* ── premium v1.33.0: diálogo motivador + salud del cron ── */
+  const [dialogo, setDialogo] = useState<{ seccion: string; texto: string } | null>(null);
+  const [cronSalud, setCronSalud] = useState<"ok" | "degradada" | "caida" | "sin-datos" | null>(null);
 
   const t = useCallback((clave: string, vars?: Record<string, string | number>) => traducirCine(clave, idioma, vars), [idioma]);
 
@@ -174,6 +194,19 @@ export default function Cine() {
       setInstalador(null);
     });
     return () => window.removeEventListener("beforeinstallprompt", alPedir);
+  }, []);
+
+  /* Chip honesto «Actualizado cada hora»: lee el estado real del cron empresarial. */
+  useEffect(() => {
+    if (isStaticDemo()) return;
+    const control = new AbortController();
+    fetch("/api/streamdog/cron/estado", { signal: control.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.ok) setCronSalud((d.salud ?? "sin-datos") as "ok" | "degradada" | "caida" | "sin-datos");
+      })
+      .catch(() => {});
+    return () => control.abort();
   }, []);
 
   /* ── BÚSQUEDA con debounce (450 ms) ── */
@@ -361,6 +394,37 @@ export default function Cine() {
   const buscando = qDebounce.length > 0;
   const itemsGrilla = vista === "milista" && !buscando ? miLista : items;
 
+  /** El botón verde BUSCAR: sin esperar el debounce de 450 ms. */
+  const buscarAhora = (): void => setQDebounce(consulta.trim().slice(0, 80));
+
+  /** El héroe: el nº1 REAL de la fila de famosos (o de la primera fila viva). */
+  const heroe = useMemo<ItemCine | null>(() => {
+    const famosos = filas.find((f) => f.claveI18n === "Los títulos más famosos");
+    return famosos?.items[0] ?? filas[0]?.items[0] ?? null;
+  }, [filas]);
+
+  /** Salto suave a una fila del inicio (chips premium). */
+  const irAFila = (i: number): void => {
+    document.getElementById(`fila-cine-${i}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  /** Diálogo motivador: secciones de la hoja de ruta. */
+  const TEXTOS_DIALOGO: Record<string, string> = {
+    deportes: t("Los deportes llegan a StreamDog: partidos, marcadores y emoción en directo, con la misma calidad que ya tienes en cine y series. Cada hora que pasa estamos más cerca del saque inicial. ⚽"),
+    viajes: t("Rutas, destinos y rincones del mundo libre: la brújula de StreamDog está sobre la mesa. Pronto viajar será tan fácil como dar al play. ✈️"),
+    juegos: t("El arcade en tiempo real de StreamDog está en desarrollo: partidas rápidas, récords y diversión sin esperas. El mando se está calibrando. 🎮"),
+    apps: t("Una caja de apps libres y herramientas de la casa, al estilo StreamDog: útiles, rápidas y sin letra pequeña. Se está compilando. 📱"),
+    webs: t("Un radar de webs útiles, seguras y gratuitas para acompañar al catálogo infinito. Estamos afinando la antena. 🌐"),
+  };
+  const ETIQUETA_SECCION: Record<string, string> = {
+    deportes: t("Deportes en vivo"),
+    viajes: t("Viajes"),
+    juegos: t("Juegos"),
+    apps: t("Apps"),
+    webs: t("Webs"),
+  };
+  const abrirDialogo = (seccion: string): void => setDialogo({ seccion, texto: TEXTOS_DIALOGO[seccion] ?? "" });
+
   const chipFuente = (id: string, etiqueta: string) => {
     const info = fuentes[id];
     const salvadaPorCliente = fuentesCliente[id];
@@ -392,10 +456,26 @@ export default function Cine() {
 
       <BannerReparacion idioma={idioma} />
 
-      {/* Cabecera del módulo: fuentes en vivo, idioma e instalación */}
+      {/* Cabecera del módulo: catálogo infinito, fuentes en vivo, idioma e instalación */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">{t("Fuentes en vivo")}</span>
+          <span
+            className="mr-1 inline-flex items-center gap-1 rounded-full border border-cyan-300/30 bg-gradient-to-r from-cyan-400/15 to-emerald-400/10 px-2.5 py-1 text-[11px] font-bold tracking-wide text-cyan-100"
+            title={cronSalud ? `cron: ${cronSalud}` : undefined}
+          >
+            <InfinityIcon className="h-3.5 w-3.5" aria-hidden />
+            {t("Catálogo infinito")}
+            {cronSalud && (
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  cronSalud === "ok" ? "bg-emerald-400" : cronSalud === "degradada" ? "bg-amber-400" : cronSalud === "caida" ? "bg-rose-400" : "bg-slate-500"
+                )}
+                aria-hidden
+              />
+            )}
+          </span>
+          <span className="hidden text-[11px] font-medium uppercase tracking-wide text-slate-500 sm:inline">{t("Fuentes en vivo")}</span>
           {chipFuente("commons", "Commons")}
           {chipFuente("archive", "Archive")}
           {chipFuente("tvmaze", "TVMaze")}
@@ -431,8 +511,15 @@ export default function Cine() {
         </div>
       </div>
 
-      {/* Buscador */}
-      <div className="relative">
+      {/* Buscador premium (v1.33.0): barra oscura + botón verde BUSCAR */}
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          buscarAhora();
+        }}
+        className="relative flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] p-1.5 pl-10 shadow-lg transition-colors focus-within:border-emerald-300/50"
+      >
         <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden />
         <input
           type="search"
@@ -440,9 +527,15 @@ export default function Cine() {
           onChange={(e) => setConsulta(e.target.value)}
           placeholder={t("Buscar películas y series…")}
           aria-label={t("Buscar películas y series…")}
-          className="min-h-[44px] w-full rounded-xl border border-white/10 bg-white/[0.04] pl-10 pr-4 text-[13.5px] text-slate-100 placeholder:text-slate-500 focus:border-cyan-300/50 focus:outline-none"
+          className="min-h-[38px] w-full bg-transparent pr-1 text-[13.5px] text-slate-100 placeholder:text-slate-500 focus:outline-none"
         />
-      </div>
+        <button
+          type="submit"
+          className="min-h-[38px] shrink-0 rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-500 px-4 text-[13px] font-bold text-slate-950 shadow-md shadow-emerald-500/20 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+        >
+          {t("Buscar")}
+        </button>
+      </form>
 
       {/* Vistas (se ocultan mientras se busca) */}
       {!buscando && (
@@ -548,8 +641,23 @@ export default function Cine() {
           <p className="py-10 text-center text-[13.5px] text-slate-400">{t("Catálogo vacío por ahora")}</p>
         )
       ) : vista === "inicio" ? (
-        /* INICIO: seguir viendo + filas de carrusel */
+        /* INICIO: héroe + seguir viendo + chips + filas ♾️ + deportes + muy pronto */
         <div className="space-y-7">
+          <HeroeDestacado
+            item={heroe}
+            idioma={idioma}
+            etiquetas={{
+              destacado: t("Destacado hoy"),
+              infinito: t("Actualizado cada hora"),
+              reproducir: t("Reproducir"),
+              enMiLista: t("En mi lista"),
+              anadir: t("Añadir a mi lista"),
+            }}
+            enMiLista={heroe ? idsEnLista.has(heroe.id) : false}
+            onAbrir={setDetalle}
+            onMiLista={alternarMiLista}
+          />
+
           {seguirViendo.length > 0 && (
             <section aria-label={t("Seguir viendo")}>
               <h2 className="mb-2 text-[15px] font-semibold tracking-tight text-slate-100">{t("Seguir viendo")}</h2>
@@ -569,22 +677,65 @@ export default function Cine() {
               </div>
             </section>
           )}
+
+          {/* Chips de salto rápido (estilo «Chequeo» premium) */}
+          {filas.length > 1 && (
+            <nav aria-label="Saltar a una fila" className="scrollbar-thin flex items-center gap-2 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="min-h-[36px] shrink-0 rounded-xl border border-emerald-300/40 bg-gradient-to-r from-emerald-400/25 to-teal-400/10 px-4 text-[12.5px] font-bold text-emerald-100 transition-transform hover:scale-[1.03]"
+              >
+                {t("Inicio")}
+              </button>
+              {filas.map((fila, i) => (
+                <button
+                  key={fila.claveI18n}
+                  type="button"
+                  onClick={() => irAFila(i)}
+                  className={cn(
+                    "min-h-[36px] shrink-0 rounded-xl border bg-gradient-to-r px-4 text-[12.5px] font-semibold transition-transform hover:scale-[1.03]",
+                    GRADIENTES_FILA[i % GRADIENTES_FILA.length]
+                  )}
+                >
+                  {t(fila.claveI18n)}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setVista("peliculas")}
+                className="min-h-[36px] shrink-0 rounded-xl border border-white/15 bg-white/[0.06] px-4 text-[12.5px] font-bold text-slate-100 transition-transform hover:scale-[1.03]"
+              >
+                {t("Explorar todo")} →
+              </button>
+            </nav>
+          )}
+
           {filas.length > 0 ? (
-            filas.map((fila) => (
-              <FilaCarrusel
-                key={fila.claveI18n}
-                titulo={t(fila.claveI18n)}
-                items={fila.items}
-                idioma={idioma}
-                miLista={idsEnLista}
-                progresos={pctProgresos}
-                onAbrir={setDetalle}
-                onMiLista={alternarMiLista}
-              />
+            filas.map((fila, i) => (
+              <div key={fila.claveI18n} id={`fila-cine-${i}`} className="scroll-mt-6">
+                <FilaCarrusel
+                  titulo={t(fila.claveI18n)}
+                  items={fila.items}
+                  idioma={idioma}
+                  miLista={idsEnLista}
+                  progresos={pctProgresos}
+                  onAbrir={setDetalle}
+                  onMiLista={alternarMiLista}
+                />
+              </div>
             ))
           ) : (
             !cargando && <p className="py-10 text-center text-[13.5px] text-slate-400">{t("Catálogo vacío por ahora")}</p>
           )}
+
+          {/* Hoja de ruta premium: deportes con cuenta atrás + muy pronto */}
+          <FilaDeportes t={t} onAbrir={() => abrirDialogo("deportes")} />
+          <FilaProximamente
+            t={t}
+            textos={TEXTOS_DIALOGO}
+            onAbrir={(s: SeccionPronto) => abrirDialogo(s)}
+          />
         </div>
       ) : (
         /* Películas y Series: grilla paginada */
@@ -620,6 +771,18 @@ export default function Cine() {
       )}
 
       {/* Modales */}
+      <DialogoProximamente
+        abierto={dialogo !== null}
+        seccion={dialogo ? (ETIQUETA_SECCION[dialogo.seccion] ?? dialogo.seccion) : ""}
+        texto={dialogo?.texto ?? ""}
+        etiquetas={{ titulo: t("Esto se está cocinando"), badge: t("Muy pronto"), cta: t("Ver el catálogo"), cerrar: t("Cerrar") }}
+        onCerrar={() => setDialogo(null)}
+        onVerCatalogo={() => {
+          setDialogo(null);
+          setVista("inicio");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
       {detalle && (
         <DetalleModal
           item={detalle}

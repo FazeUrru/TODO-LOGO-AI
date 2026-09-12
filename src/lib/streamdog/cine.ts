@@ -97,6 +97,73 @@ export const COLECCION_ORO: TituloOro[] = [
   { archivo: "File:The General (1926).webm", titulo: "The General", anyo: 1926, director: "Buster Keaton", generos: ["Comedy", "Action"] },
 ];
 
+/* ═════════ EXITOSOS MUNDIALES (la fila «tipo Netflix», pero legal) ═════════ */
+
+/**
+ * Los títulos ETERNOS del dominio público: los que en cualquier país del
+ * mundo suenan a cine de siempre. Se consultan a Archive.org por título
+ * exacto en UNA consulta (archiveFamososUrl) y se ordenan por descargas
+ * reales de la fuente — popularidad honesta, sin números inventados.
+ * Si un título ya no está, simplemente no aparece: degradación elegante.
+ */
+export const EXITOSOS_MUNDIALES: string[] = [
+  "Night of the Living Dead",
+  "Nosferatu",
+  "His Girl Friday",
+  "The General",
+  "Charade",
+  "The Last Man on Earth",
+  "Carnival of Souls",
+  "House on Haunted Hill",
+  "Little Shop of Horrors",
+  "D.O.A.",
+  "Detour",
+  "Suddenly",
+  "The Stranger",
+  "Scarlet Street",
+  "Dementia 13",
+  "The Phantom of the Opera",
+  "McLintock",
+  "Beat the Devil",
+  "Plan 9 from Outer Space",
+  "The Cabinet of Dr. Caligari",
+  "Metropolis",
+  "The Kid",
+  "Sherlock Jr.",
+  "Popeye",
+  "Betty Boop",
+  "Superman",
+  "The Snows of Kilimanjaro",
+  "The Outlaw",
+  "Royal Wedding",
+  "Freaks",
+];
+
+/* ═════════ COLECCIONES INFINITAS DE ARCHIVE.ORG (v1.33.0) ═════════ */
+
+/**
+ * Los grandes cajones del Internet Archive, curados como filas del catálogo.
+ * Cada una es una consulta real con MILES de títulos: contenido infinito ♾️
+ * y legal (dominio público). `tipo` marca las de televisión como series;
+ * `claveI18n` es la cadena canónica española que traduce cine-i18n.
+ */
+export interface ColeccionArchivo {
+  /** Identificador EXACTO de la colección en Archive.org. */
+  id: string;
+  claveI18n: string;
+  tipo: TipoCine;
+  /** Filas por página al calentar. */
+  filas: number;
+}
+
+export const COLECCIONES_ARCHIVE: ColeccionArchivo[] = [
+  { id: "film_noir", claveI18n: "Film noir", tipo: "pelicula", filas: 12 },
+  { id: "sci-fi_horror", claveI18n: "Ciencia ficción y terror", tipo: "pelicula", filas: 12 },
+  { id: "classic_cartoons", claveI18n: "Dibujos animados clásicos", tipo: "pelicula", filas: 12 },
+  { id: "classic_tv", claveI18n: "Televisión clásica", tipo: "serie", filas: 12 },
+  { id: "documentaryfilms", claveI18n: "Documentales", tipo: "pelicula", filas: 12 },
+];
+
 /* ═════════════════ LIMPIEZA Y UTILIDADES ═════════════════ */
 
 const ENTIDADES: Record<string, string> = {
@@ -311,7 +378,7 @@ export function elegirVideoArchive(files: unknown): { nombre: string; tamano: nu
 }
 
 /** Archive.org: un doc de advancedsearch → ItemCine. */
-export function normalizarArchiveDoc(doc: unknown): ItemCine | null {
+export function normalizarArchiveDoc(doc: unknown, opciones?: { tipo?: TipoCine }): ItemCine | null {
   if (typeof doc !== "object" || doc === null) return null;
   const d = doc as Record<string, unknown>;
   const identifier = aTexto(d.identifier);
@@ -322,7 +389,7 @@ export function normalizarArchiveDoc(doc: unknown): ItemCine | null {
   return {
     id: `archive:${encodeURIComponent(identifier)}`,
     fuente: "archive",
-    tipo: "pelicula",
+    tipo: opciones?.tipo ?? "pelicula",
     titulo,
     anyo: anyo !== null ? Math.trunc(anyo) : null,
     imagen: `https://archive.org/services/img/${encodeURIComponent(identifier)}`,
