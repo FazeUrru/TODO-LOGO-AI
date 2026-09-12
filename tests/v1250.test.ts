@@ -42,17 +42,17 @@ const dbInit = leer("src/lib/db-init.ts");
 
 describe("v1.25.0 — versión y trazabilidad", () => {
   it("la app va por la 1.25.0 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.31.0");
+    expect(APP_VERSION).toBe("1.32.0");
   });
 
   it("changelog-meta y CHANGELOG.md relatan la 1.25.0", () => {
-    expect(VERSIONS[6].version).toBe("1.26.0");
-    expect(VERSIONS[7].version).toBe("1.25.1");
-    expect(VERSIONS[7].diffDesde).toBe("1.25.0");
-    expect(VERSIONS[8].version).toBe("1.25.0");
-    expect(VERSIONS[8].diffDesde).toBe("1.24.0");
-    expect(VERSIONS[8].kinds).toContain("nuevo");
-    expect(VERSIONS[9].version).toBe("1.24.0");
+    expect(VERSIONS[7].version).toBe("1.26.0");
+    expect(VERSIONS[8].version).toBe("1.25.1");
+    expect(VERSIONS[8].diffDesde).toBe("1.25.0");
+    expect(VERSIONS[9].version).toBe("1.25.0");
+    expect(VERSIONS[9].diffDesde).toBe("1.24.0");
+    expect(VERSIONS[9].kinds).toContain("nuevo");
+    expect(VERSIONS[10].version).toBe("1.24.0");
     const md = leer("CHANGELOG.md");
     expect(md).toContain("El hilo permanente");
     expect(md).toContain("Link de conversación");

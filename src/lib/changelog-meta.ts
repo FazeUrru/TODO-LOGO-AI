@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.32.0",
+    fecha: "12 sept 2026",
+    hora: "11:20",
+    titulo: "StreamDog Cine&Series: películas y series gratis reales, reproductor con segundo plano y caché que se repara sola",
+    tldr:
+      "Nuevo módulo de cine y series en StreamDog: catálogo REAL de APIs públicas y legales (Wikimedia Commons e Internet Archive en dominio público jugable + TVMaze para series), backend propio con caché TTL y degradación por fuente, reproductor completo con MediaSession y Picture-in-Picture automático (el streaming ya no muere al cambiar de pestaña), interfaz en 4 idiomas (es/en/de/fr), Mi lista y Seguir viendo con autoreparación real del storage, y service worker con auditoría de salud COMPROBAR_SALUD.",
+    diffDesde: "1.31.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.31.0",
     fecha: "12 sept 2026",
     hora: "11:05",

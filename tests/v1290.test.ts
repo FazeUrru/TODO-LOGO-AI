@@ -162,12 +162,12 @@ describe("v1.29.0 — el shell traducido, pieza a pieza", () => {
 
 describe("tríada de versiones — 1.29.0 coherente en los tres sitios", () => {
   it("version.ts declara 1.29.0", () => {
-    expect(APP_VERSION).toBe("1.31.0");
+    expect(APP_VERSION).toBe("1.32.0");
     expect(APP_BUILD_DATE).toBe("2026-09-12");
   });
 
   it("changelog-meta.ts trae la entrada nueva arriba y encadena el diff", () => {
-    const nueva = VERSIONS[2];
+    const nueva = VERSIONS[3];
     expect(nueva.version).toBe("1.29.0");
     expect(nueva.diffDesde).toBe("1.28.1");
     expect(nueva.hora).toBeTruthy();

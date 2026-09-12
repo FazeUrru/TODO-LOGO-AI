@@ -1,15 +1,21 @@
 /**
- * STREAMDOG · Service Worker (v1.26.0) — la pieza que hace la app «nativa».
+ * STREAMDOG · Service Worker (v1.32.0) — la pieza que hace la app «nativa».
  *
- *  · Precaché del shell: la parrilla /streamdog, su manifest y sus iconos
- *    abren SIN RED (arranque instantáneo en el móvil).
+ *  · Precaché del shell: la parrilla /streamdog (con su cine y series),
+ *    el manifest y los iconos abren SIN RED (arranque instantáneo).
  *  · Navegaciones: red primero con reserva en caché → si la red muere,
- *    la app abre igual (el corazón del «alojamiento a prueba de tormentas»).
+ *    la app abre igual. Las respuestas de error (404/5xx) NO se cachean:
+ *    la caché nunca queda envenenada.
  *  · Assets del mismo origen (iconos, CSS, chunks): stale-while-revalidate.
- *  · Las API de StreamDog NUNCA se cachean (el buzón y el relay son vivos
- *    y el relay además transporta cifrado efímero).
+ *  · Las API de StreamDog NUNCA se cachean (catálogo cine, buzón, relay
+ *    E2E: todo vivo; el relay además transporta cifrado efímero).
  *  · Versionado de caché por APP_VERSION: al activarse, las cachés viejas
- *    se purgan solas. El mensaje SKIP_WAITING permite «actualizar ya».
+ *    se purgan solas (reparación autónoma permanente).
+ *  · NUEVO v1.32.0 — SALUD REAL: el mensaje {tipo:"COMPROBAR_SALUD"}
+ *    audita la precaché (¿falta alguna entrada del shell?), re-añade lo
+ *    que falte e informa a la página con {tipo:"SALUD", reparado, …}:
+ *    el banner de reparación de StreamDog Cine muestra el informe REAL.
+ *    El mensaje SKIP_WAITING permite «actualizar ya».
  *
  * Se registra desde la página con scope /streamdog/ (cabecera
  * Service-Worker-Allowed en next.config.ts y vercel.json). En la demo
@@ -18,7 +24,7 @@
  * cual queda documentado en docs/STREAMDOG-ALOJAMIENTO.md.
  */
 
-const VERSION = "v1.26.0";
+const VERSION = "v1.32.0";
 const CACHE = `streamdog-${VERSION}`;
 
 /** El shell relativo al SCOPE: funciona igual bajo un basePath de Pages. */
@@ -56,7 +62,39 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
-  if (event.data === "SKIP_WAITING") self.skipWaiting();
+  if (event.data === "SKIP_WAITING") {
+    self.skipWaiting();
+    return;
+  }
+
+  // AUDITORÍA DE SALUD REAL: cuenta las entradas del shell, re-añade las
+  // que falten (reparación) y responde con un informe a la página.
+  if (event.data && event.data.tipo === "COMPROBAR_SALUD") {
+    event.waitUntil(
+      (async () => {
+        const cache = await caches.open(CACHE);
+        const presentes = await Promise.all(SHELL.map((ruta) => cache.match(ruta)));
+        const faltantes = SHELL.filter((_, i) => !presentes[i]);
+        for (const ruta of faltantes) {
+          try {
+            await cache.add(ruta);
+          } catch {
+            /* inalcanzable ahora: queda pendiente para la próxima */
+          }
+        }
+        const totales = (await cache.keys()).length;
+        const informe = {
+          tipo: "SALUD",
+          ok: faltantes.length === 0,
+          reparado: faltantes.length > 0,
+          faltaban: faltantes.length,
+          entradas: totales,
+          version: VERSION,
+        };
+        (event.source ?? self).postMessage(informe);
+      })()
+    );
+  }
 });
 
 self.addEventListener("fetch", (event) => {
@@ -73,8 +111,11 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const fresca = await fetch(req);
-          const cache = await caches.open(CACHE);
-          cache.put(req, fresca.clone());
+          // SOLO se cachea una respuesta sana: un 404/5xx no envenena el shell.
+          if (fresca && fresca.ok) {
+            const cache = await caches.open(CACHE);
+            cache.put(req, fresca.clone());
+          }
           return fresca;
         } catch {
           const cache = await caches.open(CACHE);

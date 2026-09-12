@@ -8,9 +8,9 @@ import { asset } from "@/lib/asset-path";
  * (enlazado abajo: Next solo soporta manifest.ts en la raíz de app/).
  */
 export const metadata: Metadata = {
-  title: "StreamDog — tu parrilla deportiva con IA",
+  title: "StreamDog — cine, series y parrilla con IA",
   description:
-    "App web nativa (PWA): parrilla deportiva en función de lo que va de año, changelog SportIA que manda sugerencias al desarrollador, laboratorio de parseo indestructible y chat 1-a-1 cifrado extremo a extremo.",
+    "App web nativa (PWA): cine y series gratis de dominio público con reproductor propio y segundo plano, parrilla deportiva en función de lo que va de año, changelog SportIA que manda sugerencias al desarrollador, laboratorio de parseo indestructible y chat 1-a-1 cifrado extremo a extremo.",
   applicationName: "StreamDog",
   // Manifest ESTÁTICO en /streamdog-pwa/: Next solo soporta manifest.ts en la
   // raíz de app/, y un manifest de raíz contaminaría al arena entero. Con el
@@ -31,9 +31,9 @@ export const metadata: Metadata = {
     apple: asset("/streamdog-pwa/icons/apple-touch-icon.png"),
   },
   openGraph: {
-    title: "StreamDog — tu parrilla deportiva con IA",
+    title: "StreamDog — cine, series y parrilla con IA",
     description:
-      "Se instala como app nativa: SportIA, chat E2E y el parseo que no explota.",
+      "Se instala como app nativa: cine y series gratis de dominio público, SportIA, chat E2E y el parseo que no explota.",
     siteName: "StreamDog",
     type: "website",
     locale: "es_ES",

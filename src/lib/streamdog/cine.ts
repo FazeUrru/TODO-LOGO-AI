@@ -162,6 +162,18 @@ function aLista(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((x) => x.trim()) : [];
 }
 
+/** Apunta los datos curados (año, géneros, título) sobre lo que dice Commons.
+ *  Compartida por el backend (route.ts) y el fallback cliente. */
+export function reforjarOro(items: ItemCine[]): ItemCine[] {
+  const ordenados: ItemCine[] = [];
+  for (const oro of COLECCION_ORO) {
+    const encontrado = items.find((i) => taparTitulo(i.titulo).startsWith(taparTitulo(oro.titulo)));
+    if (!encontrado) continue; // fichero renombrado/borrado: fuera sin ruido
+    ordenados.push({ ...encontrado, titulo: oro.titulo, anyo: oro.anyo, generos: [...oro.generos] });
+  }
+  return ordenados;
+}
+
 /* ════════════════════ NORMALIZADORES ════════════════════ */
 
 /** TVMaze: un show crudo → ItemCine (o null si no vale la pena). */
@@ -390,6 +402,8 @@ export const CLAVES_CINE = {
   miLista: "streamdog.cine.v1.miLista",
   progreso: "streamdog.cine.v1.progreso",
   idioma: "streamdog.cine.v1.idioma",
+  /** Preferencia de reproducción en segundo plano (MediaSession + PiP automático). */
+  fondo: "streamdog.cine.v1.fondo",
 } as const;
 
 /** Registro de «seguir viendo»: dónde se quedó cada título. */
@@ -500,6 +514,19 @@ export function guardarColeccion<T>(
 export const esListaIds = (v: unknown): v is string[] =>
   Array.isArray(v) && v.every((x) => typeof x === "string" && x.length > 0 && x.length <= 200);
 
+/** «Mi lista» guarda instantáneas ligeras del item (id + título obligatorios). */
+export function esListaCine(v: unknown): v is ItemCine[] {
+  return (
+    Array.isArray(v) &&
+    v.length <= 500 &&
+    v.every((p) => {
+      if (typeof p !== "object" || p === null) return false;
+      const r = p as Record<string, unknown>;
+      return typeof r.id === "string" && r.id.length > 0 && r.id.length <= 320 && typeof r.titulo === "string" && r.titulo.length > 0;
+    })
+  );
+}
+
 export function esProgresos(v: unknown): v is ProgresoVer[] {
   return (
     Array.isArray(v) &&
@@ -524,6 +551,9 @@ export function esProgresos(v: unknown): v is ProgresoVer[] {
 
 export const esIdiomaCine = (v: unknown): v is import("./cine-i18n").IdiomaCine =>
   v === "es" || v === "en" || v === "de" || v === "fr";
+
+/** Para la preferencia de segundo plano: solo true/false vale. */
+export const esBooleano = (v: unknown): v is boolean => typeof v === "boolean";
 
 /** Purga el historial: los más recientes primero, tope `max` (50 por defecto). */
 export function purgarProgreso(lista: ProgresoVer[], max = 50): ProgresoVer[] {

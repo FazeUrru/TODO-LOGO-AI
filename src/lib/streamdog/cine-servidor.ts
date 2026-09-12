@@ -113,30 +113,39 @@ export async function fetchJsonConTope<T>(url: string, topeMs: number): Promise<
   }
 }
 
-/** Envuelve una llamada: mide, registra el estado de la fuente y devuelve null si falló. */
+/** Envuelve una llamada: mide, registra el estado de la fuente y devuelve null si falló.
+ *  Con UN reintento automático: a la primera a veces la red del entorno
+ *  está arrancando (compilación, DNS frío) y una pausa de 400 ms lo salva. */
 export async function pedirFuente<T>(
   fuente: string,
   url: string,
   topeMs: number
 ): Promise<T | null> {
   const inicio = Date.now();
-  const datos = await fetchJsonConTope<T>(url, topeMs);
-  const ms = Date.now() - inicio;
-  if (datos === null) {
-    // fetchJsonConTope ya registró el detalle; eleva a nivel de fuente.
+  for (let intento = 1; intento <= 2; intento++) {
+    const t0 = Date.now();
+    const datos = await fetchJsonConTope<T>(url, topeMs);
+    const ms = Date.now() - t0;
+    if (datos !== null) {
+      registrarFuente(fuente, "ok", ms, intento > 1 ? "al 2.º intento" : undefined);
+      return datos;
+    }
+    if (intento === 1) {
+      await new Promise((r) => setTimeout(r, 400));
+      continue;
+    }
     const previo = estados.get("(fetch)");
     estados.delete("(fetch)");
-    registrarFuente(fuente, previo?.estado === "caida" ? "caida" : "degradada", ms, previo?.detalle);
+    registrarFuente(fuente, previo?.estado === "caida" ? "caida" : "degradada", Date.now() - inicio, previo?.detalle);
     return null;
   }
-  registrarFuente(fuente, "ok", ms);
-  return datos;
+  return null;
 }
 
 /* ══════════════════ CONSTRUCTORES DE URL (puros) ══════════════════ */
 
-/** Commons: búsqueda de vídeos por texto (namespace 6 = File:). */
-export function commonsBuscarUrl(q: string, limite: number, ancho = 480): string {
+/** Commons: búsqueda de vídeos por texto (namespace 6 = File:) con offset opcional para paginar. */
+export function commonsBuscarUrl(q: string, limite: number, ancho = 480, offset = 0): string {
   const params = new URLSearchParams({
     action: "query",
     format: "json",
@@ -149,6 +158,7 @@ export function commonsBuscarUrl(q: string, limite: number, ancho = 480): string
     iiprop: "url|mime|size|extmetadata",
     iiurlwidth: String(ancho),
   });
+  if (offset > 0) params.set("gsroffset", String(Math.max(0, offset)));
   return `https://commons.wikimedia.org/w/api.php?${params.toString()}`;
 }
 

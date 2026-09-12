@@ -397,6 +397,16 @@ export const EN: Record<string, string> = {
   /* ── v1.31.0 · Voz del navegador (TTS del chat) ── */
   "Leer en voz alta": "Read aloud",
   "Detener lectura": "Stop reading",
+
+  /* ── v1.32.0 · StreamDog Cine&Series ── */
+  "Cine y series": "Movies & TV",
+  "Gratis y reales: dominio público y APIs públicas": "Free and real: public domain and public APIs",
+  "Tu cine y series gratis de dominio público y tu parrilla deportiva con IA — se instala como app nativa y todo lo que traga, lo digiere sin explotar.":
+    "Your free public-domain movies & series and your AI sports grid — installs as a native app and everything it swallows, it digests without crashing.",
+  "El catálogo de cine y series se alimenta solo de fuentes públicas y legales: Wikimedia Commons e Internet Archive (películas de dominio público, reproducibles) y TVMaze (metadatos de series). Sin piratería: contenido libre, con el reproductor propio y en segundo plano.":
+    "The movies & series catalog is fed only by public, legal sources: Wikimedia Commons and Internet Archive (playable public-domain films) and TVMaze (series metadata). No piracy: free content, with its own player and background playback.",
+  "Estilo inspirado en la experiencia de NetMirror, MovieBox y DixMax — con contenido 100 % libre. StreamDog se aloja como app nativa (Vercel o GitHub Pages) y el chat es extremo a extremo: este servidor solo transporta cifrado y no guarda conversaciones. Guía completa en ":
+    "Style inspired by the experience of NetMirror, MovieBox and DixMax — with 100% free content. StreamDog is hosted as a native app (Vercel or GitHub Pages) and the chat is end-to-end: this server only transports ciphertext and stores no conversations. Full guide at ",
 };
 
 /** Variables de interpolación: {clave} dentro del texto. */

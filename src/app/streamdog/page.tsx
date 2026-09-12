@@ -1,18 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Bone, CalendarRange, FlaskConical, LockKeyhole, Sparkles } from "lucide-react";
+import { Bone, CalendarRange, Clapperboard, FlaskConical, LockKeyhole, Sparkles } from "lucide-react";
 import { asset } from "@/lib/asset-path";
+import { APP_VERSION } from "@/lib/version";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import Cine from "@/components/streamdog/cine/Cine";
 import Parrilla from "@/components/streamdog/Parrilla";
 import PanelSportia from "@/components/streamdog/PanelSportia";
 import ChatE2E from "@/components/streamdog/ChatE2E";
 import Laboratorio from "@/components/streamdog/Laboratorio";
 
-type Pestaña = "parrilla" | "sportia" | "chat" | "lab";
+type Pestaña = "cine" | "parrilla" | "sportia" | "chat" | "lab";
 
 const PESTAÑAS: { id: Pestaña; nombre: string; icono: typeof Bone; pista: string }[] = [
+  { id: "cine", nombre: "Cine y series", icono: Clapperboard, pista: "Gratis y reales: dominio público y APIs públicas" },
   { id: "parrilla", nombre: "Parrilla", icono: CalendarRange, pista: "Lo que va de año y lo que se instala" },
   { id: "sportia", nombre: "SportIA", icono: Sparkles, pista: "Changelog y sugerencias al desarrollador" },
   { id: "chat", nombre: "Chat E2E", icono: LockKeyhole, pista: "1 a 1, cifrado extremo a extremo" },
@@ -21,7 +24,7 @@ const PESTAÑAS: { id: Pestaña; nombre: string; icono: typeof Bone; pista: stri
 
 export default function StreamDogPage() {
   const { t } = useT();
-  const [pestaña, setPestaña] = useState<Pestaña>("parrilla");
+  const [pestaña, setPestaña] = useState<Pestaña>("cine");
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-thin bg-[#050a12]">
@@ -38,17 +41,17 @@ export default function StreamDogPage() {
               Stream<span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text font-medium text-transparent">Dog</span>
             </h1>
             <p className="mt-0.5 text-[13.5px] leading-relaxed text-slate-400">
-              {t("Tu parrilla deportiva con IA — se instala como app nativa y todo lo que scrapea, lo traga sin explotar.")}
+              {t("Tu cine y series gratis de dominio público y tu parrilla deportiva con IA — se instala como app nativa y todo lo que traga, lo digiere sin explotar.")}
             </p>
           </div>
           <span className="ml-auto hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[11.5px] font-medium text-emerald-300 sm:flex">
             <Bone className="h-3.5 w-3.5" aria-hidden />
-            PWA nativa · v1.26.0
+            PWA nativa · v{APP_VERSION}
           </span>
         </header>
 
         {/* Pestañas */}
-        <nav aria-label="Secciones de StreamDog" className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <nav aria-label="Secciones de StreamDog" className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {PESTAÑAS.map((p) => {
             const Icono = p.icono;
             const activa = pestaña === p.id;
@@ -76,16 +79,25 @@ export default function StreamDogPage() {
 
         {/* Contenido */}
         <main className="mt-6 flex-1">
+          {pestaña === "cine" && <Cine />}
           {pestaña === "parrilla" && <Parrilla />}
           {pestaña === "sportia" && <PanelSportia />}
           {pestaña === "chat" && <ChatE2E />}
           {pestaña === "lab" && <Laboratorio />}
         </main>
 
-        <footer className="mt-10 border-t border-white/5 pt-4 text-[11.5px] leading-relaxed text-slate-500">
-          StreamDog es el módulo de parrilla deportiva del arena:alojable como app nativa (Vercel o GitHub Pages),
-          con dominio personalizado documentado paso a paso. El chat es extremo a extremo: este servidor solo transporta
-          cifrado y no guarda conversaciones. Guía completa en <code className="rounded bg-white/5 px-1 py-0.5 text-slate-400">docs/STREAMDOG-ALOJAMIENTO.md</code>.
+        <footer className="mt-10 space-y-2 border-t border-white/5 pt-4 text-[11.5px] leading-relaxed text-slate-500">
+          <p>
+            {t(
+              "El catálogo de cine y series se alimenta solo de fuentes públicas y legales: Wikimedia Commons e Internet Archive (películas de dominio público, reproducibles) y TVMaze (metadatos de series). Sin piratería: contenido libre, con el reproductor propio y en segundo plano."
+            )}
+          </p>
+          <p>
+            {t(
+              "Estilo inspirado en la experiencia de NetMirror, MovieBox y DixMax — con contenido 100 % libre. StreamDog se aloja como app nativa (Vercel o GitHub Pages) y el chat es extremo a extremo: este servidor solo transporta cifrado y no guarda conversaciones. Guía completa en "
+            )}
+            <code className="rounded bg-white/5 px-1 py-0.5 text-slate-400">docs/STREAMDOG-ALOJAMIENTO.md</code>.
+          </p>
         </footer>
       </div>
     </div>
