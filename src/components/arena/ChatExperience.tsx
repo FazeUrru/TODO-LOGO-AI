@@ -10,10 +10,13 @@ import {
 import { jsonSeguro } from "@/lib/fetch-seguro";
 import { extraerVistaPrevia, type VistaPrevia } from "@/lib/vista-previa";
 import { useT } from "@/lib/i18n";
+import { hablar, detenerVoz } from "@/lib/voz";
 import type { EstadoJurado } from "@/lib/elo-usuario";
 import {
   ArrowUp,
   Paperclip,
+  Volume2,
+  Square,
   SquareTerminal,
   Globe,
   Image as ImageIcon,
@@ -2840,10 +2843,13 @@ function ChatPanel({
   thinking: boolean;
   streaming?: boolean;
 }) {
-  const { t: trad } = useT();
+  const { t: trad, idioma } = useT();
   const [copied, setCopied] = useState(false);
+  const [hablandoId, setHablandoId] = useState<string | null>(null);
   const { settings } = useSettings();
   const empty = turns.length === 0;
+  // Al desmontar el panel (nueva batalla, cambio de modo…) se corta la lectura.
+  useEffect(() => () => detenerVoz(), []);
   const fontClass =
     settings.responseFont === "serif"
       ? "font-serif"
@@ -2944,6 +2950,34 @@ function ChatPanel({
               {t.media?.type === "audio" && t.media.url && <AudioCard url={t.media.url} voz={t.media.voz} />}
               {t.sources && t.sources.length > 0 && <SourcesRow sources={t.sources} />}
               <div className="mt-1.5 flex items-center gap-3">
+                {/* v1.31.0 — «Leer en voz alta»: TTS del navegador sobre la respuesta */}
+                <button
+                  onClick={() => {
+                    const clave = `${side}-${i}`;
+                    if (hablandoId === clave) {
+                      detenerVoz();
+                      setHablandoId(null);
+                      return;
+                    }
+                    detenerVoz();
+                    setHablandoId(clave);
+                    hablar(t.content, {
+                      idioma,
+                      onFin: () => setHablandoId(null),
+                      onError: () => setHablandoId(null),
+                    });
+                  }}
+                  aria-label={trad(hablandoId === `${side}-${i}` ? "Detener lectura" : "Leer en voz alta")}
+                  className={cn(
+                    "inline-flex items-center gap-1 text-[11.5px]",
+                    hablandoId === `${side}-${i}`
+                      ? "font-medium text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {hablandoId === `${side}-${i}` ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                  {hablandoId === `${side}-${i}` ? trad("Detener lectura") : trad("Leer en voz alta")}
+                </button>
                 {settings.quickCopy && (
                   <button
                     onClick={() => {

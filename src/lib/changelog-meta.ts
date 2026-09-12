@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.31.0",
+    fecha: "12 sept 2026",
+    hora: "11:05",
+    titulo: "El chat te habla: «Leer en voz alta» con la voz del navegador, y la calculadora estrena insignia",
+    tldr:
+      "Cada respuesta del asistente lleva ahora un botón de altavoz que la lee en voz alta con la Web Speech API nativa (sin APIs externas ni claves): limpia el markdown, trocea textos largos y elige voz en español o inglés según tu idioma — el mismo botón detiene la lectura. Además, la Calculadora de costes ya luce su insignia ¡Nuevo! en el menú.",
+    diffDesde: "1.30.0",
+    hash: null,
+    kinds: ["nuevo"],
+  },
+  {
     version: "1.30.0",
     fecha: "12 sept 2026",
     hora: "10:20",

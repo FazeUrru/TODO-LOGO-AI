@@ -393,6 +393,10 @@ export const EN: Record<string, string> = {
     "No MCP matches “{q}”. Try another search.",
   "Tu parrilla deportiva con IA — se instala como app nativa y todo lo que scrapea, lo traga sin explotar.":
     "Your AI sports grid — installs as a native app and everything it scrapes, it swallows without crashing.",
+
+  /* ── v1.31.0 · Voz del navegador (TTS del chat) ── */
+  "Leer en voz alta": "Read aloud",
+  "Detener lectura": "Stop reading",
 };
 
 /** Variables de interpolación: {clave} dentro del texto. */

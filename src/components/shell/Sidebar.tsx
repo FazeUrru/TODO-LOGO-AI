@@ -448,7 +448,7 @@ export default function Sidebar() {
           {navItem(pathname === "/labs", "/labs", "Labs", FlaskConical, "labs")}
           {navItem(pathname === "/conectores", "/conectores", "Conectores", Plug, "conectores")}
           {navItem(pathname === "/empresas", "/empresas", "Empresas", Building2)}
-          {navItem(pathname === "/calculadora", "/calculadora", "Calculadora", Calculator)}
+          {navItem(pathname === "/calculadora", "/calculadora", "Calculadora", Calculator, "calculadora")}
           {navItem(pathname === "/streamdog", "/streamdog", "StreamDog", Dog)}
           {navItem(pathname === "/cuanticas", "/cuanticas", "Cuánticas", Atom)}
           {navItem(pathname === "/mcps", "/mcps", "MCPs", Server)}

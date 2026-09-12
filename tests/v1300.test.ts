@@ -143,15 +143,15 @@ describe("v1.30.0 · invariantes estáticos", () => {
 
 describe("v1.30.0 · tríada de versiones", () => {
   it("APP_VERSION es 1.30.0", () => {
-    expect(APP_VERSION).toBe("1.30.0");
+    expect(APP_VERSION).toBe("1.31.0");
   });
 
   it("VERSIONS[0] describe la 1.30.0 con diff desde 1.29.0", () => {
     expect(VERSIONS.length).toBeGreaterThan(1);
-    expect(VERSIONS[0].version).toBe("1.30.0");
-    expect(VERSIONS[0].diffDesde).toBe("1.29.0");
-    expect(VERSIONS[0].kinds).toContain("nuevo");
-    expect(VERSIONS[1].version).toBe("1.29.0");
+    expect(VERSIONS[1].version).toBe("1.30.0");
+    expect(VERSIONS[1].diffDesde).toBe("1.29.0");
+    expect(VERSIONS[1].kinds).toContain("nuevo");
+    expect(VERSIONS[2].version).toBe("1.29.0");
   });
 
   it("CHANGELOG.md tiene la entrada 1.30.0 por encima de la 1.29.0", () => {

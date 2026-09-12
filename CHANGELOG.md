@@ -9,6 +9,17 @@
 >
 > 🧩 **Huecos de numeración**: no existen v1.1.x ni v1.3.x — eran iteraciones internas fusionadas dentro de la v1.2.0 y la v1.4.0 sin llegar a publicarse.
 
+## [1.31.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.30.0...v1.31.0) · 12 sept 2026, 11:05 — *El chat te habla: «Leer en voz alta» con la voz del navegador, y la calculadora estrena insignia*
+
+> 💡 **En una frase:** cada respuesta del asistente lleva ahora un botón de altavoz que la lee en voz alta con la Web Speech API nativa — sin APIs externas, sin claves y sin coste — con limpieza de markdown, troceado de textos largos y voz en español o inglés según tu idioma; y la Calculadora de costes estrena su insignia ¡Nuevo! en el menú lateral.
+
+### Añadido
+- **«Leer en voz alta» en el chat** 🔊 (nueva `src/lib/voz.ts` + `PanelRespuesta`): todo turno del asistente en Batalla, Lado a Lado y Directo gana un botón de altavoz junto al de copiar. Motor: `speechSynthesis` del navegador (funciona offline, cero dependencias). `textoParaLeer` limpia el markdown (cabeceras, negritas, enlaces leídos por su texto, bloques de código anunciados como «bloque de código»), `partirEnFrases` trocea textos largos respetando frases y palabras (los navegadores truncan enunciados kilométricos), y la voz se elige por locale (`es-ES`/`en-US`) según el idioma de la interfaz. El mismo botón — convertido en cuadrado — detiene la lectura, y desmontar el panel (nueva batalla, cambio de modo) la corta en seco.
+- **Insignia ¡Nuevo! para la Calculadora** 🏷️ (`Sidebar`, `calculadora/page.tsx`): la Calculadora de costes se suma al sistema de insignias de la casa — punto amarillo en el menú que desaparece al visitar la página de verdad, igual que Labs o Conectores.
+
+### Regresión
+- `tests/v1310.test.ts`: `textoParaLeer` (markdown → texto digerible), `partirEnFrases` (cortes por frase, por espacio y palabra gigante), `vozDisponible`/`detenerVoz`/`hablar` seguros sin navegador, invariantes estáticos (botón TTS en `PanelRespuesta` con limpieza al desmontar, badge de calculadora en menú y página) y tríada 1.31.0 coherente.
+
 ## [1.30.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.29.0...v1.30.0) · 12 sept 2026, 10:20 — *i18n fase 2: la arena, el leaderboard, el muro y los conectores ya hablan inglés*
 
 > 💡 **En una frase:** la traducción salta del shell a las secciones — la arena completa (tarjetas de arranque, composer con sus 11 placeholders, misión de agentes, voto con confirmación y Modo Oráculo, adjuntos, banner promos, errores), el leaderboard con filtros y ticker en vivo, el muro de replays, el salón de la fama, el catálogo de 75 servidores MCP y la portada de Streamdog se traducen al inglés al vuelo, y las fechas y contadores ya usan el locale del idioma elegido.

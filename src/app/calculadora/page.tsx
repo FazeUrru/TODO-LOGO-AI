@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Calculator as CalcIcon, Plus, X, Sparkles, PlayCircle } from "lucide-react";
 import { MODELS, PROVIDERS, getModel, formatContext, esGenerativo } from "@/lib/models-data";
+import { markUsed } from "@/lib/badges";
 import { cn } from "@/lib/utils";
 
 const PRESETS = [
@@ -13,6 +14,8 @@ const PRESETS = [
 ];
 
 export default function CalculadoraPage() {
+  // La insignia ¡Nuevo! de la calculadora desaparece al visitarla de verdad.
+  useEffect(() => markUsed("calculadora"), []);
   const [inM, setInM] = useState(5);
   const [outM, setOutM] = useState(8);
   const [picks, setPicks] = useState<string[]>(["glm-5.3", "claude-opus-5", "deepseek-v4"]);
