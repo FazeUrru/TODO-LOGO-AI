@@ -202,16 +202,16 @@ describe("v1.28.1 — invariantes estáticos de la cura", () => {
 
 describe("tríada de versiones — 1.28.1 coherente en los tres sitios", () => {
   it("version.ts declara 1.28.1", () => {
-    expect(APP_VERSION).toBe("1.28.1");
+    expect(APP_VERSION).toBe("1.29.0");
     expect(APP_BUILD_DATE).toBe("2026-09-12");
   });
 
-  it("changelog-meta.ts trae la entrada nueva arriba y encadena el diff", () => {
-    const nueva = VERSIONS[0];
-    expect(nueva.version).toBe("1.28.1");
-    expect(nueva.diffDesde).toBe("1.28.0");
-    expect(nueva.hora).toBeTruthy();
-    expect(nueva.kinds).toContain("correccion");
+  it("changelog-meta.ts conserva la entrada 1.28.1 con su diff encadenado", () => {
+    const nueva = VERSIONS.find((v) => v.version === "1.28.1");
+    expect(nueva).toBeTruthy();
+    expect(nueva?.diffDesde).toBe("1.28.0");
+    expect(nueva?.hora).toBeTruthy();
+    expect(nueva?.kinds).toContain("correccion");
     const versiones = VERSIONS.map((v) => v.version);
     expect(new Set(versiones).size).toBe(versiones.length); // sin duplicados
   });

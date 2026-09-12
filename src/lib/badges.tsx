@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
+import { useT } from "@/lib/i18n";
 
 /**
  * Sistema de insignias ¡NUEVO!: cada funcionalidad nueva lleva una insignia
@@ -59,6 +60,7 @@ export function useUsed(key: string): boolean {
 /** Insignia visual reutilizable. */
 export function NewBadge({ k, className }: { k: string; className?: string }) {
   const used = useUsed(k);
+  const { t } = useT();
   if (used) return null;
   return (
     <span
@@ -67,7 +69,7 @@ export function NewBadge({ k, className }: { k: string; className?: string }) {
         (className ?? "")
       }
     >
-      ¡Nuevo!
+      {t("¡Nuevo!")}
     </span>
   );
 }

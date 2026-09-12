@@ -55,6 +55,7 @@ import { useProfile } from "@/lib/profile";
 import { accentColor, effectiveName } from "@/lib/profile-shared";
 import { useAuth } from "@/lib/auth-client";
 import { useToast } from "@/hooks/use-toast";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const MODE_ICONS: Record<ArenaMode, typeof Swords> = {
@@ -72,10 +73,11 @@ function UserCard() {
   const { user, logout } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const { t } = useT();
 
   async function onLogout() {
     await logout();
-    toast({ title: "Sesión cerrada", description: "Vuelve pronto a la arena." });
+    toast({ title: t("Sesión cerrada"), description: t("Vuelve pronto a la arena.") });
   }
 
   return (
@@ -112,7 +114,7 @@ function UserCard() {
         className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border py-1.5 text-[12.5px] font-medium hover:bg-accent"
       >
         <LogOut className="h-3.5 w-3.5" />
-        Cerrar sesión
+        {t("Cerrar sesión")}
       </button>
     </div>
   );
@@ -131,6 +133,7 @@ export default function Sidebar() {
   const arena = useArena();
   const { toast } = useToast();
   const { user, logout } = useAuth();
+  const { t, idioma } = useT();
   const open = arena.sidebarOpen;
   const chats = useSyncExternalStore(subscribeChats, loadChats, () => EMPTY_CHATS);
   const [recentsOpen, setRecentsOpen] = useState(true);
@@ -153,7 +156,7 @@ export default function Sidebar() {
 
   async function onLogout() {
     await logout();
-    toast({ title: "Sesión cerrada", description: "Vuelve pronto a la arena." });
+    toast({ title: t("Sesión cerrada"), description: t("Vuelve pronto a la arena.") });
   }
 
   const navItem = (
@@ -168,7 +171,7 @@ export default function Sidebar() {
       const inner = (
         <>
           <Icon className="h-[17px] w-[17px] shrink-0" strokeWidth={2} />
-          <span className="truncate">{label}</span>
+          <span className="truncate">{t(label)}</span>
           {badgeKey && <NewBadge k={badgeKey} className="ml-auto" />}
         </>
       );
@@ -188,7 +191,7 @@ export default function Sidebar() {
     }
     const btn = (
       <span
-        title={label}
+        title={t(label)}
         className={cn(
           "mx-auto flex h-9 w-9 items-center justify-center rounded-lg hover:bg-accent",
           active && "bg-accent"
@@ -218,28 +221,28 @@ export default function Sidebar() {
         onClick={() => setLogoMenu(false)}
         className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] hover:bg-accent"
       >
-        <Settings className="h-4 w-4" /> Ajustes <NewBadge k="ajustes" className="ml-auto" />
+        <Settings className="h-4 w-4" /> {t("Ajustes")} <NewBadge k="ajustes" className="ml-auto" />
       </Link>
       <Link
         href="/acerca"
         onClick={() => setLogoMenu(false)}
         className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] hover:bg-accent"
       >
-        <Info className="h-4 w-4" /> Acerca de <NewBadge k="acerca" className="ml-auto" />
+        <Info className="h-4 w-4" /> {t("Acerca de")} <NewBadge k="acerca" className="ml-auto" />
       </Link>
       <Link
         href="/changelog"
         onClick={() => setLogoMenu(false)}
         className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] hover:bg-accent"
       >
-        <History className="h-4 w-4" /> Changelog
+        <History className="h-4 w-4" /> {t("Changelog")}
       </Link>
       <Link
         href="/salon-de-la-fama"
         onClick={() => setLogoMenu(false)}
         className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] hover:bg-accent"
       >
-        <Trophy className="h-4 w-4" /> Salón de la Fama{" "}
+        <Trophy className="h-4 w-4" /> {t("Salón de la Fama")}{" "}
         <NewBadge k="salon-de-la-fama" className="ml-auto" />
       </Link>
       <a
@@ -249,7 +252,7 @@ export default function Sidebar() {
         onClick={() => setLogoMenu(false)}
         className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] hover:bg-accent"
       >
-        <GithubMark className="h-4 w-4" /> Repositorio en GitHub
+        <GithubMark className="h-4 w-4" /> {t("Repositorio en GitHub")}
       </a>
       <div className="mt-1.5 border-t border-border px-2.5 pt-1.5 text-[11px] text-muted-foreground">
         v{APP_VERSION} · {APP_BUILD_DATE}
@@ -284,8 +287,8 @@ export default function Sidebar() {
               <button
                 onClick={() => (logoMenu ? setLogoMenu(false) : openLogoMenu())}
                 className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-                aria-label="Menú de la plataforma: ajustes, acerca de y changelog"
-                title="Ajustes, Acerca de y Changelog"
+                aria-label={t("Menú de la plataforma: ajustes, acerca de y changelog")}
+                title={t("Ajustes, Acerca de y Changelog")}
               >
                 <NewDot k="logo-menu" className="right-0 top-0" />
                 <ChevronUp
@@ -306,7 +309,7 @@ export default function Sidebar() {
               "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground",
               !open && "hidden"
             )}
-            aria-label={open ? "Contraer barra lateral" : "Expandir barra lateral"}
+            aria-label={open ? t("Contraer barra lateral") : t("Expandir barra lateral")}
           >
             <PanelLeft className="h-[17px] w-[17px]" />
           </button>
@@ -318,7 +321,7 @@ export default function Sidebar() {
             <button
               onClick={openLogoMenu}
               className="relative mx-auto flex h-8 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
-              title="Ajustes, Acerca de y Changelog"
+              title={t("Ajustes, Acerca de y Changelog")}
             >
               <NewDot k="logo-menu" className="right-1 top-0.5" />
               <ChevronUp className={cn("h-4 w-4 transition-transform", logoMenu && "rotate-180")} />
@@ -354,7 +357,7 @@ export default function Sidebar() {
               )}
             >
               <SquarePen className="h-[17px] w-[17px] shrink-0" strokeWidth={2} />
-              Nuevo chat
+              {t("Nuevo chat")}
             </button>
           ) : (
             <button
@@ -362,7 +365,7 @@ export default function Sidebar() {
                 arena.resetChat();
                 if (pathname !== "/") router.push("/");
               }}
-              title="Nuevo chat"
+              title={t("Nuevo chat")}
               className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg hover:bg-accent"
             >
               <SquarePen className="h-[17px] w-[17px]" strokeWidth={2} />
@@ -377,7 +380,7 @@ export default function Sidebar() {
                 className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14.5px] text-foreground/90 hover:bg-accent"
               >
                 <MessagesSquare className="h-[17px] w-[17px] shrink-0" strokeWidth={2} />
-                <span className="truncate">Recientes</span>
+                <span className="truncate">{t("Recientes")}</span>
                 <NewBadge k="historial" className="ml-auto" />
                 {recentsOpen ? (
                   <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground", !chats.length && "hidden")} />
@@ -398,17 +401,17 @@ export default function Sidebar() {
                           <MIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-[13px] leading-tight">{c.title}</span>
-                            <span className="block text-[10.5px] text-muted-foreground">{timeAgo(c.ts)}</span>
+                            <span className="block text-[10.5px] text-muted-foreground">{timeAgo(c.ts, idioma)}</span>
                           </span>
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteChat(c.id);
-                            toast({ title: "Conversación eliminada del historial" });
+                            toast({ title: t("Conversación eliminada del historial") });
                           }}
                           className="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground group-hover:block"
-                          aria-label="Eliminar conversación"
+                          aria-label={t("Eliminar conversación")}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -417,7 +420,7 @@ export default function Sidebar() {
                   })}
                   {chats.length === 0 && (
                     <p className="px-[38px] py-1.5 text-[12px] text-muted-foreground">
-                      Tus chats se guardan solos aquí
+                      {t("Tus chats se guardan solos aquí")}
                     </p>
                   )}
                 </div>
@@ -438,7 +441,7 @@ export default function Sidebar() {
 
           {open && (
             <div className="mt-4 px-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              Más
+              {t("Más")}
             </div>
           )}
           {navItem(pathname === "/novedades", "/novedades", "Novedades", Newspaper)}
@@ -459,10 +462,10 @@ export default function Sidebar() {
             <div className="rounded-xl border border-border bg-secondary/60 p-3.5">
               <div className="flex items-center gap-1.5 text-[14px] font-semibold">
                 <Sparkles className="h-4 w-4" />
-                Saca más partido con Agentes
+                {t("Saca más partido con Agentes")}
               </div>
               <p className="mt-1 text-[12.5px] leading-snug text-muted-foreground">
-                Juegos AAA, apps y webs completos. Sin excusas.
+                {t("Juegos AAA, apps y webs completos. Sin excusas.")}
               </p>
               <button
                 onClick={() => {
@@ -471,7 +474,7 @@ export default function Sidebar() {
                 }}
                 className="mt-2.5 w-full rounded-lg bg-primary py-1.5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
               >
-                Probar ahora
+                {t("Probar ahora")}
               </button>
             </div>
 
@@ -484,14 +487,14 @@ export default function Sidebar() {
                   className="relative w-full rounded-lg bg-primary py-2.5 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   <NewDot k="cuenta" className="right-2 top-2" />
-                  Iniciar sesión
+                  {t("Iniciar sesión")}
                 </button>
                 <button
                   onClick={() => router.push("/registro")}
                   className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-[13px] font-medium hover:bg-accent"
                 >
                   <UserRound className="h-4 w-4" />
-                  Crear cuenta
+                  {t("Crear cuenta")}
                   <NewBadge k="cuenta" />
                 </button>
               </>
@@ -499,12 +502,12 @@ export default function Sidebar() {
 
             <div className="flex items-center justify-between px-1 text-[11.5px] text-muted-foreground">
               <Link href="/acerca" className="hover:text-foreground">
-                Términos
+                {t("Términos")}
               </Link>
               <Link href="/acerca" className="hover:text-foreground">
-                Privacidad
+                {t("Privacidad")}
               </Link>
-              <span title="Versión actual">v{APP_VERSION}</span>
+              <span title={t("Versión actual")}>v{APP_VERSION}</span>
             </div>
           </div>
         ) : (

@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.29.0",
+    fecha: "12 sept 2026",
+    hora: "09:35",
+    titulo: "La arena habla tu idioma: fundación i18n con el shell traducido al inglés",
+    tldr:
+      "En Ajustes → Apariencia ya puedes poner la interfaz en English: menú lateral, barra superior, buscador de modelos, avisos de actualización y banner de demo se traducen al vuelo y se recuerdan entre sesiones — con un sistema «el español es la clave» que permite ir traduciendo el resto de páginas sin riesgo de dejar nada colgado.",
+    diffDesde: "1.28.1",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.28.1",
     fecha: "12 sept 2026",
     hora: "08:10",

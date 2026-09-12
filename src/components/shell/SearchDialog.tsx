@@ -6,12 +6,14 @@ import { Search, X, ArrowRight, Zap } from "lucide-react";
 import { MODELS, PROVIDERS, formatContext, esGenerativo } from "@/lib/models-data";
 import { useArena } from "./arena-context";
 import ProviderLogo from "@/components/arena/ProviderLogo";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /** Diálogo de búsqueda de modelos (command palette estilo lmarena). */
 export default function SearchDialog() {
   const arena = useArena();
   const router = useRouter();
+  const { t } = useT();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -66,13 +68,15 @@ export default function SearchDialog() {
               if (e.key === "Enter" && results[0] && !detail)
                 setSelected(results[0].id);
             }}
-            placeholder={`Buscar entre ${MODELS.length} modelos: nombre, organización, especialidad…`}
+            placeholder={t("Buscar entre {n} modelos: nombre, organización, especialidad…", {
+              n: MODELS.length,
+            })}
             className="w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
           />
           <button
             onClick={() => arena.setSearchOpen(false)}
             className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label="Cerrar buscador"
+            aria-label={t("Cerrar buscador")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -85,7 +89,7 @@ export default function SearchDialog() {
                 onClick={() => setSelected(null)}
                 className="mb-2 text-[12.5px] text-muted-foreground hover:text-foreground"
               >
-                ← Volver a resultados
+                {t("← Volver a resultados")}
               </button>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
@@ -95,13 +99,13 @@ export default function SearchDialog() {
                       <h3 className="font-mono text-[17px] font-semibold">{detail.name}</h3>
                       {detail.isNew && (
                         <span className="rounded bg-highlight px-1.5 py-0.5 text-[10px] font-bold uppercase">
-                          Nuevo
+                          {t("Nuevo")}
                         </span>
                       )}
                     </div>
                     <p className="mt-0.5 text-[13px] text-muted-foreground">
                       {PROVIDERS[detail.provider]?.name} ·{" "}
-                      {detail.license === "abierto" ? "Pesos abiertos" : "Propietario"} ·{" "}
+                      {detail.license === "abierto" ? t("Pesos abiertos") : t("Propietario")} ·{" "}
                       {detail.released}
                     </p>
                   </div>
@@ -116,16 +120,16 @@ export default function SearchDialog() {
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {(detail.especs
                   ? ([
-                      ["Modalidad", detail.categories.includes("video") ? "Vídeo" : detail.categories.includes("imagen") ? "Imagen" : "Audio"],
-                      ["Especificaciones", detail.especs],
-                      ["Precio", detail.precioNota ?? "—"],
-                      ["Lanzamiento", detail.released],
+                      [t("Modalidad"), detail.categories.includes("video") ? t("Vídeo") : detail.categories.includes("imagen") ? t("Imagen") : t("Audio")],
+                      [t("Especificaciones"), detail.especs],
+                      [t("Precio"), detail.precioNota ?? "—"],
+                      [t("Lanzamiento"), detail.released],
                     ] as const)
                   : ([
-                      ["Contexto", formatContext(detail.context)],
-                      ["Salida máx.", formatContext(detail.maxOutput)],
-                      ["Entrada", `$${detail.priceIn}/1M`],
-                      ["Salida", `$${detail.priceOut}/1M`],
+                      [t("Contexto"), formatContext(detail.context)],
+                      [t("Salida máx."), formatContext(detail.maxOutput)],
+                      [t("Entrada"), `$${detail.priceIn}/1M`],
+                      [t("Salida"), `$${detail.priceOut}/1M`],
                     ] as const)
                 ).map(([k, v]: readonly [string, string]) => (
                   <div key={k} className="rounded-lg border border-border px-3 py-2">
@@ -152,17 +156,20 @@ export default function SearchDialog() {
                    vídeo o audio), no el chat de texto ni el modo Directo. */
                 <div className="mt-4">
                   <p className="rounded-lg bg-secondary px-3 py-2.5 text-[13px] leading-relaxed text-foreground/85">
-                    <span className="font-medium">{detail.name}</span> es un modelo generativo:
-                    no conversa por texto. Compite y recibe votos en la arena de{" "}
+                    <span className="font-medium">{detail.name}</span>{" "}
+                    {t(
+                      "es un modelo generativo: no conversa por texto. Compite y recibe votos en la arena de"
+                    )}{" "}
                     <span className="font-medium">
                       {detail.categories.includes("video")
-                        ? "vídeo"
+                        ? t("vídeo")
                         : detail.categories.includes("audio")
-                          ? "audio"
-                          : "imagen"}
+                          ? t("audio")
+                          : t("imagen")}
                     </span>{" "}
-                    del leaderboard, y se usa para generar desde su modo específico
-                    (imagen, vídeo o voz del composer).
+                    {t(
+                      "del leaderboard, y se usa para generar desde su modo específico (imagen, vídeo o voz del composer)."
+                    )}
                   </p>
                   <button
                     onClick={() => {
@@ -172,7 +179,7 @@ export default function SearchDialog() {
                     className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-card py-2.5 text-[14px] font-medium hover:bg-accent"
                   >
                     <Zap className="h-4 w-4" />
-                    Ver su arena en el leaderboard
+                    {t("Ver su arena en el leaderboard")}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -187,7 +194,7 @@ export default function SearchDialog() {
                   className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   <Zap className="h-4 w-4" />
-                  Chatear ahora con {detail.name}
+                  {t("Chatear ahora con {n}", { n: detail.name })}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               )}
@@ -210,7 +217,7 @@ export default function SearchDialog() {
                   <span className="flex shrink-0 items-center gap-2">
                     {m.license === "abierto" && (
                       <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-foreground/70">
-                        Abierto
+                        {t("Abierto")}
                       </span>
                     )}
                     <span className="font-mono text-[12px] text-muted-foreground">
@@ -221,7 +228,7 @@ export default function SearchDialog() {
               ))}
               {results.length === 0 && (
                 <p className="px-3 py-10 text-center text-[13.5px] text-muted-foreground">
-                  Ningún modelo coincide con «{query}».
+                  {t("Ningún modelo coincide con «{q}».", { q: query })}
                 </p>
               )}
             </>
@@ -229,11 +236,14 @@ export default function SearchDialog() {
         </div>
         <div className="flex items-center justify-between border-t border-border px-4 py-2 text-[11.5px] text-muted-foreground">
           <span>
-            {MODELS.length} modelos · {new Set(MODELS.map((m) => m.provider)).size} organizaciones
+            {t("{n} modelos · {m} organizaciones", {
+              n: MODELS.length,
+              m: new Set(MODELS.map((m) => m.provider)).size,
+            })}
           </span>
           <span>
             <kbd className="rounded border border-border px-1 py-0.5 font-mono">Esc</kbd>{" "}
-            para cerrar
+            {t("para cerrar")}
           </span>
         </div>
       </div>

@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { idiomaValido, type IdiomaUI } from "@/lib/idioma";
 
 /**
  * 15 ajustes organizados en 5 categorías, persistidos en localStorage
@@ -35,6 +36,9 @@ export interface AppSettings {
   soundOnDone: boolean;
   autoSyncNews: boolean;
   reduceMotion: boolean;
+  // ── Idioma (1, v1.29.0) ──
+  /** Idioma de la INTERFAZ (no confundir con responseLang, la pista a los modelos). */
+  uiLang: IdiomaUI;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -53,6 +57,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   soundOnDone: false,
   autoSyncNews: true,
   reduceMotion: false,
+  uiLang: "es",
 };
 
 const STORE_KEY = "todologo.ajustes.v1";
@@ -62,7 +67,10 @@ function load(): AppSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
   try {
     const raw = window.localStorage.getItem(STORE_KEY);
-    return raw ? { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<AppSettings>) } : DEFAULT_SETTINGS;
+    const parsed = raw ? (JSON.parse(raw) as Partial<AppSettings>) : {};
+    // v1.29.0 — el idioma guardado se sanea: un valor corrupto jamás deja la UI en un idioma inválido.
+    if (parsed.uiLang !== undefined) parsed.uiLang = idiomaValido(parsed.uiLang);
+    return { ...DEFAULT_SETTINGS, ...parsed };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -131,8 +139,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     mq.addEventListener("change", applyTheme);
     root.dataset.density = settings.density;
     root.dataset.motion = settings.reduceMotion ? "reducida" : "normal";
+    // v1.29.0 — el idioma de la interfaz también vive en <html lang>:
+    // lectores de pantalla, traductores y tipografía lo agradecen.
+    root.lang = settings.uiLang;
     return () => mq.removeEventListener("change", applyTheme);
-  }, [settings.theme, settings.density, settings.reduceMotion]);
+  }, [settings.theme, settings.density, settings.reduceMotion, settings.uiLang]);
 
   const value = useMemo<SettingsCtx>(
     () => ({

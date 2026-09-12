@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { Container, ExternalLink, ShieldCheck, TriangleAlert, X } from "lucide-react";
 import { isStaticDemo, PRODUCCION_URL } from "@/lib/static-mode";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const DISMISS_KEY = "todologo.bannerDemoOculto";
@@ -46,6 +47,7 @@ function getServerSnapshot(): boolean {
 export default function DemoBanner() {
   const visible = useSyncExternalStore(subscribeBanner, getSnapshot, getServerSnapshot);
   const [copiado, setCopiado] = useState(false);
+  const { t } = useT();
 
   if (!visible) return null;
 
@@ -77,12 +79,13 @@ export default function DemoBanner() {
       <div className="mx-auto flex w-full max-w-[1080px] flex-wrap items-start gap-x-3 gap-y-2 px-4 py-2.5 sm:items-center">
         <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 sm:mt-0 dark:text-amber-400" aria-hidden />
         <p className="min-w-0 flex-1 text-[13px] leading-relaxed">
-          <strong className="font-semibold">Estás en la demo estática</strong> — las respuestas, los
-          votos y el ELO se generan en tu navegador: sin IA real, sin base de datos y sin torneos
-          globales. Para la experiencia completa despliega tu propia instancia con{" "}
+          <strong className="font-semibold">{t("Estás en la demo estática")}</strong> —{" "}
+          {t(
+            "las respuestas, los votos y el ELO se generan en tu navegador: sin IA real, sin base de datos y sin torneos globales. Para la experiencia completa despliega tu propia instancia con"
+          )}{" "}
           <button
             onClick={copiarComando}
-            title="Copiar comando"
+            title={t("Copiar comando")}
             className={cn(
               "mx-0.5 inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-100 px-1.5 py-0.5 font-mono text-[12px] font-medium transition-colors hover:bg-amber-200",
               "dark:border-amber-500/40 dark:bg-amber-900/60 dark:hover:bg-amber-900"
@@ -91,18 +94,18 @@ export default function DemoBanner() {
             <Container className="h-3 w-3" aria-hidden />
             docker compose up --build
           </button>
-          {copiado && <span className="ml-1 text-[12px] font-medium">¡copiado!</span>}{" "}
-          o entra directamente en la instancia oficial en producción.
+          {copiado && <span className="ml-1 text-[12px] font-medium">{t("¡copiado!")}</span>}{" "}
+          {t("o entra directamente en la instancia oficial en producción.")}
         </p>
         <div className="flex items-center gap-2 text-[12.5px] font-medium">
           <a
             href={PRODUCCION_URL}
             target="_blank"
             rel="noopener noreferrer"
-            title="Abrir la instancia oficial: IA real, base de datos y torneos globales"
+            title={t("Abrir la instancia oficial: IA real, base de datos y torneos globales")}
             className="inline-flex items-center gap-1 rounded-full bg-amber-900 px-2.5 py-1 font-medium text-amber-50 transition-colors hover:bg-amber-800 dark:bg-amber-100 dark:text-amber-950 dark:hover:bg-white"
           >
-            Instancia oficial en vivo
+            {t("Instancia oficial en vivo")}
             <ExternalLink className="h-3 w-3" aria-hidden />
           </a>
           <a
@@ -111,7 +114,7 @@ export default function DemoBanner() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-card/60 px-2.5 py-1 transition-colors hover:bg-accent dark:border-amber-500/40"
           >
-            Despliegue en 1 clic
+            {t("Despliegue en 1 clic")}
             <ExternalLink className="h-3 w-3" aria-hidden />
           </a>
           <a
@@ -121,11 +124,11 @@ export default function DemoBanner() {
             className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-card/60 px-2.5 py-1 transition-colors hover:bg-accent dark:border-amber-500/40"
           >
             <ShieldCheck className="h-3 w-3" aria-hidden />
-            Qué es real y qué no
+            {t("Qué es real y qué no")}
           </a>
           <button
             onClick={cerrar}
-            aria-label="Cerrar aviso de demo"
+            aria-label={t("Cerrar aviso de demo")}
             className="rounded-full p-1 text-amber-700 transition-colors hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/60"
           >
             <X className="h-4 w-4" aria-hidden />

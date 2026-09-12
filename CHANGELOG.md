@@ -9,6 +9,19 @@
 >
 > 🧩 **Huecos de numeración**: no existen v1.1.x ni v1.3.x — eran iteraciones internas fusionadas dentro de la v1.2.0 y la v1.4.0 sin llegar a publicarse.
 
+## [1.29.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.28.1...v1.29.0) · 12 sept 2026, 09:35 — *La arena habla tu idioma: fundación i18n con el shell traducido al inglés*
+
+> 💡 **En una frase:** en **Ajustes → Apariencia → Idioma de la interfaz** ya puedes cambiar a English y ver el menú lateral, la barra superior, el buscador de modelos, los avisos de actualización y el banner de demo traducidos al vuelo — y el sistema elegido, «el español es la clave», permite ir traduciendo el resto de páginas sin que nada pueda quedar colgado.
+
+### Añadido
+- **Motor «el español es la clave»** 🌐 (nueva `src/lib/i18n.tsx` + `src/lib/idioma.ts`): las cadenas canónicas de la app SON las claves — `t("Recientes")` devuelve «Recientes» en español y «Recent» en inglés — así que un componente sin traducir sigue renderizando español perfecto en lugar de una clave fea. Interpolación `{var}` incluida (`t("Chatear ahora con {n}", { n: modelo })`), función pura `traducir` testeable y hook `useT()` que solo re-renderiza cuando cambia el idioma. El diccionario EN de esta release cubre el shell persistente entero: Sidebar (navegación, Recientes, promo, sesión, pie, menú del logo), TopBar (etiquetas y subtítulos de los 5 modos vía `MODE_META`, selector de modelo, títulos de ruta), SearchDialog (buscador, ficha del modelo, especificaciones, avisos de generativos), UpdateGate (fases de aviso y actualización, con variables interpoladas) y DemoBanner.
+- **Ajuste `uiLang` en el sistema de la casa** ⚙️ (en `settings.tsx`): nuevo ajuste de idioma de interfaz (es/en, distinto del `responseLang` que es la pista a los modelos), persistido en `todologo.ajustes.v1`, saneado al cargar (`idiomaValido` — un valor corrupto degrada a español) y aplicado también al `<html lang>` del documento para lectores de pantalla y traductores. Selector con bandera tipográfica en Ajustes → Apariencia.
+- **Tiempo relativo bilingüe** ⏱️ (en `history.ts`): `timeAgo(ts, idioma)` — «hace 12 min» ↔ «12 min ago», «ayer» ↔ «yesterday», y fecha local con locale propio por idioma.
+- **Regresión blindada** 🧪: `tests/v1290.test.ts` — `traducir` (es identidad, en traduce, clave ausente cae al español, interpolación simple y doble), diccionario sano (sin claves vacías ni traducciones vacías), `idiomaValido` con basura, `timeAgo` en los dos idiomas; invariantes estáticos: los 5 componentes del shell usan `useT`, `uiLang` en ajustes con saneo y `<html lang>`, selector en Ajustes; y tríada 1.29.0 coherente.
+
+### Mejorado
+- **El UpdateGate y el banner de demo ya no tienen textos clavados** 🧹: cada string del shell pasa por `t()` — el patrón queda documentado para extenderlo página a página en las próximas releases sin tocar arquitectura.
+
 ## [1.28.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.28.0...v1.28.1) · 12 sept 2026, 08:10 — *Adiós a los saltos de sección fantasma: la arena ya no cambia de sitio sola*
 
 > 💡 **En una frase:** si dabas una vuelta por otras secciones y volvías a la arena, a veces te esperaba una conversación antigua en otro modo — Batalla por Torneo, Directo por Lado a Lado — **sin que hubieras tocado nada**: un chat pendiente huérfano en `sessionStorage` se reaplicaba en cada remonte del componente, y ahora ese pendiente **caduca a los 15 segundos** y se limpia al aplicarse.

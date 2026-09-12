@@ -21,6 +21,7 @@ import { useArena, type ArenaMode, MODE_META } from "./arena-context";
 import ProviderLogo from "@/components/arena/ProviderLogo";
 import FloatingPanel from "./FloatingPanel";
 import { GithubMark, GITHUB_REPO_URL } from "./GithubMark";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const MODE_ICONS: Record<ArenaMode, typeof Swords> = {
@@ -44,6 +45,7 @@ function ModelSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useT();
   const model = getModel(value);
 
   const results = useMemo(() => {
@@ -83,7 +85,7 @@ function ModelSelect({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar modelo u organización…"
+            placeholder={t("Buscar modelo u organización…")}
             className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
           />
         </div>
@@ -102,7 +104,7 @@ function ModelSelect({
                 <span className="truncate font-mono text-[12.5px]">{m.name}</span>
                 {m.isNew && (
                   <span className="rounded bg-highlight px-1 py-px text-[9.5px] font-semibold uppercase">
-                    Nuevo
+                    {t("Nuevo")}
                   </span>
                 )}
               </span>
@@ -115,7 +117,7 @@ function ModelSelect({
           ))}
           {results.length === 0 && (
             <p className="px-3 py-6 text-center text-[13px] text-muted-foreground">
-              Sin resultados para «{query}»
+              {t("Sin resultados para «{q}»", { q: query })}
             </p>
           )}
         </div>
@@ -129,6 +131,7 @@ function ModeDropdown() {
   const arena = useArena();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useT();
   const Icon = MODE_ICONS[arena.mode];
   const torneoUsed = useUsed("modo-torneo");
 
@@ -141,7 +144,7 @@ function ModeDropdown() {
         className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[14px] font-medium hover:bg-accent sm:px-2.5"
       >
         <Icon className="h-4 w-4" />
-        <span className="hidden max-w-[130px] truncate sm:inline">{MODE_META[arena.mode].label}</span>
+        <span className="hidden max-w-[130px] truncate sm:inline">{t(MODE_META[arena.mode].label)}</span>
         <ChevronDown
           className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", open && "rotate-180")}
         />
@@ -167,11 +170,11 @@ function ModeDropdown() {
                 <MIcon className="mt-0.5 h-[18px] w-[18px] shrink-0" />
                 <span>
                   <span className="flex items-center gap-1.5 text-[14px] font-medium">
-                    {MODE_META[m].label}
+                    {t(MODE_META[m].label)}
                     {m === "torneo" && !torneoUsed && <NewBadge k="modo-torneo" />}
                   </span>
                   <span className="block text-[12.5px] text-muted-foreground">
-                    {MODE_META[m].sub}
+                    {t(MODE_META[m].sub)}
                   </span>
                 </span>
                 {active && <Check className="ml-auto mt-1 h-4 w-4" />}
@@ -188,34 +191,35 @@ function ModeDropdown() {
 export default function TopBar() {
   const pathname = usePathname();
   const arena = useArena();
+  const { t } = useT();
 
   const title =
     pathname === "/leaderboard"
-      ? "Overview"
+      ? t("Overview")
       : pathname === "/novedades"
-        ? "Novedades"
+        ? t("Novedades")
         : pathname === "/empresas"
-          ? "Empresas"
+          ? t("Empresas")
           : pathname === "/changelog"
-            ? "Changelog"
+            ? t("Changelog")
             : pathname === "/acerca"
-              ? "Acerca de"
+              ? t("Acerca de")
               : pathname === "/ajustes"
-                ? "Ajustes"
+                ? t("Ajustes")
                 : pathname === "/calculadora"
-                  ? "Calculadora"
+                  ? t("Calculadora")
                   : pathname === "/conectores"
-                    ? "Conectores"
+                    ? t("Conectores")
                     : pathname === "/iniciar-sesion"
-                      ? "Iniciar sesión"
+                      ? t("Iniciar sesión")
                         : pathname === "/registro"
-                          ? "Crear cuenta"
+                          ? t("Crear cuenta")
                           : pathname === "/cuanticas"
-                            ? "Cuánticas"
+                            ? t("Cuánticas")
                             : pathname === "/mcps"
                               ? "MCPs"
                               : pathname === "/pruebas"
-                                ? "Pruebas"
+                                ? t("Pruebas")
                                 : null;
 
   return (
@@ -223,7 +227,7 @@ export default function TopBar() {
       <button
         onClick={() => arena.setSidebarOpen(!arena.sidebarOpen)}
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-foreground/80 hover:bg-accent md:hidden"
-        aria-label="Abrir barra lateral"
+        aria-label={t("Abrir barra lateral")}
       >
         <PanelLeft className="h-[17px] w-[17px]" />
       </button>
@@ -265,8 +269,8 @@ export default function TopBar() {
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-medium text-foreground/80 hover:bg-accent hover:text-foreground"
-          title="Ver el repositorio en GitHub"
-          aria-label="Ver el repositorio en GitHub"
+          title={t("Ver el repositorio en GitHub")}
+          aria-label={t("Ver el repositorio en GitHub")}
         >
           <GithubMark className="h-[17px] w-[17px]" />
           <span className="hidden sm:inline">GitHub</span>

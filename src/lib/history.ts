@@ -197,15 +197,23 @@ export function consumePendingChat(): SavedChat | null {
   }
 }
 
-export function timeAgo(ts: number): string {
+/**
+ * Tiempo relativo de las «Recientes». v1.29.0: acepta el idioma de la
+ * interfaz — en español queda como siempre y en inglés traduce las cinco
+ * formas posibles. Sin interpolación mágica: cada idioma compone su frase.
+ */
+export function timeAgo(ts: number, idioma: "es" | "en" = "es"): string {
   const diff = Date.now() - ts;
   const min = Math.floor(diff / 60_000);
-  if (min < 1) return "ahora";
-  if (min < 60) return `hace ${min} min`;
+  if (min < 1) return idioma === "en" ? "now" : "ahora";
+  if (min < 60) return idioma === "en" ? `${min} min ago` : `hace ${min} min`;
   const h = Math.floor(min / 60);
-  if (h < 24) return `hace ${h} h`;
+  if (h < 24) return idioma === "en" ? `${h} h ago` : `hace ${h} h`;
   const d = Math.floor(h / 24);
-  if (d === 1) return "ayer";
-  if (d < 7) return `hace ${d} días`;
-  return new Date(ts).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  if (d === 1) return idioma === "en" ? "yesterday" : "ayer";
+  if (d < 7) return idioma === "en" ? `${d} days ago` : `hace ${d} días`;
+  return new Date(ts).toLocaleDateString(idioma === "en" ? "en-GB" : "es-ES", {
+    day: "numeric",
+    month: "short",
+  });
 }

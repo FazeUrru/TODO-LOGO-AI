@@ -1,7 +1,9 @@
 "use client";
 
-import { Settings, Sun, Moon, Monitor, Rows3, Type, Swords, MessageSquare, Zap, Save, Palette } from "lucide-react";
+import { Settings, Sun, Moon, Monitor, Rows3, Type, Swords, MessageSquare, Zap, Save, Palette, Languages } from "lucide-react";
 import { useSettings, type AppSettings } from "@/lib/settings";
+import { IDIOMAS_UI } from "@/lib/idioma";
+import { useT } from "@/lib/i18n";
 import { markUsed } from "@/lib/badges";
 import { BATTLE_CATEGORIES, NEW_CATEGORIES } from "@/lib/elo";
 import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
@@ -10,6 +12,7 @@ import PerfilAjustes from "@/components/ajustes/PerfilAjustes";
 
 export default function AjustesPage() {
   const { settings, set, reset } = useSettings();
+  const { t } = useT();
 
   function change<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
     set(key, value);
@@ -69,6 +72,19 @@ export default function AjustesPage() {
                   { value: "serif", label: "Serif" },
                   { value: "mono", label: "Mono" },
                 ]}
+              />
+            </Row>
+            {/* v1.29.0 — la interfaz también habla tu idioma */}
+            <Row
+              title={t("Idioma de la interfaz")}
+              desc={t(
+                "Traduce el menú, la barra superior y los avisos del sistema. Las páginas se irán sumando."
+              )}
+            >
+              <Segmented
+                value={settings.uiLang}
+                onChange={(v) => change("uiLang", v)}
+                options={IDIOMAS_UI.map((i) => ({ value: i.id, label: i.label, icon: Languages }))}
               />
             </Row>
           </Section>

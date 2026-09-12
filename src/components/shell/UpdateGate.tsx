@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { APP_VERSION } from "@/lib/version";
 import { esVersionMenor } from "@/lib/version";
+import { useT } from "@/lib/i18n";
 import { Download, RefreshCw } from "lucide-react";
 
 /**
@@ -29,6 +30,7 @@ const DURACION_BARRA_MS = 2800; // duración de la barra durante la recarga
 type Fase = "reposo" | "aviso" | "actualizando";
 
 export default function UpdateGate() {
+  const { t } = useT();
   const [fase, setFase] = useState<Fase>("reposo");
   const [nueva, setNueva] = useState<string | null>(null);
   const [restante, setRestante] = useState(CUENTA_ATRAS_S);
@@ -122,17 +124,18 @@ export default function UpdateGate() {
       <div
         role="alertdialog"
         aria-modal="true"
-        aria-label={`Actualizando a la versión ${nueva}`}
+        aria-label={t("Actualizando a la versión {v}", { v: nueva })}
         className="fixed inset-0 z-[100] flex items-center justify-center bg-background/97 backdrop-blur-sm"
       >
         <div className="w-[320px] max-w-[86vw] rounded-2xl border border-border bg-card p-6 text-center shadow-xl">
           <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-highlight/20">
             <RefreshCw className="h-5 w-5 animate-spin text-foreground" />
           </div>
-          <p className="mt-3 text-[15px] font-semibold">Actualizando a v{nueva}</p>
+          <p className="mt-3 text-[15px] font-semibold">{t("Actualizando a v{v}", { v: nueva })}</p>
           <p className="mt-1 text-[12.5px] leading-snug text-muted-foreground">
-            La app se recarga sola al terminar. No cierres la pestaña: la versión anterior ya
-            no está disponible.
+            {t(
+              "La app se recarga sola al terminar. No cierres la pestaña: la versión anterior ya no está disponible."
+            )}
           </p>
           <div
             className="mt-4 h-2 w-full overflow-hidden rounded-full bg-secondary"
@@ -167,9 +170,9 @@ export default function UpdateGate() {
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-highlight" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-semibold">Nueva versión v{nueva} lista</p>
+          <p className="text-[13.5px] font-semibold">{t("Nueva versión v{v} lista", { v: nueva })}</p>
           <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">
-            Se instalará sola en {restante}s — tus chats y tu perfil no se tocan.
+            {t("Se instalará sola en {n}s — tus chats y tu perfil no se tocan.", { n: restante })}
           </p>
         </div>
       </div>
@@ -179,7 +182,7 @@ export default function UpdateGate() {
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-1.5 text-[12.5px] font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Download className="h-3.5 w-3.5" />
-          Actualizar ahora
+          {t("Actualizar ahora")}
         </button>
       </div>
       {/* Barra de progreso real: el tiempo restante de la cuenta atrás */}
