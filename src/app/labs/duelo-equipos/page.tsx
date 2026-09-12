@@ -14,6 +14,7 @@ import {
   type MarcadorEquipos,
 } from "@/lib/duelo-equipos";
 import { cn } from "@/lib/utils";
+import { jsonSeguro } from "@/lib/fetch-seguro";
 
 /**
  * /labs/duelo-equipos (v1.21.0) — la arena del flag Labs «duelo-equipos»:
@@ -141,7 +142,7 @@ export default function DueloEquiposPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: consigna.trim() }),
       });
-      const j = (await res.json()) as { ok?: boolean; duelo?: DueloEquipos; error?: string };
+      const j = await jsonSeguro<{ ok?: boolean; duelo?: DueloEquipos; error?: string }>(res);
       if (!res.ok || !j.ok || !j.duelo) throw new Error(j.error ?? "El duelo no pudo celebrarse.");
       setDuelo(j.duelo);
       setMarcador(anotarVeredicto(j.duelo.arbitro.veredicto));

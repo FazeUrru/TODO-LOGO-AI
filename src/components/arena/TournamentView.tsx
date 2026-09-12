@@ -23,6 +23,8 @@ import SalonFama from "./SalonFama";
 import Confeti from "./Confeti";
 import { NewBadge, markUsed } from "@/lib/badges";
 import { reportarEventoLabs } from "@/lib/use-labs";
+import { jsonSeguro } from "@/lib/fetch-seguro";
+import type { EstadoJurado } from "@/lib/elo-usuario";
 import { isStaticDemo } from "@/lib/static-mode";
 import { registrarVotoJurado } from "@/lib/jurado-client";
 import { cn } from "@/lib/utils";
@@ -274,7 +276,7 @@ export default function TournamentView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "start", prompt: p, size }),
       });
-      const data = await res.json();
+      const data = await jsonSeguro<{ ok?: boolean; error?: string; copa?: Copa }>(res);
       if (!res.ok) throw new Error(data.error ?? "No se pudo iniciar la copa.");
       markUsed("modo-torneo");
       setCopa(data.copa as Copa);
@@ -296,12 +298,12 @@ export default function TournamentView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "vote", id: copa.id, duel: duelKey, winner }),
       });
-      const data = await res.json();
+      const data = await jsonSeguro<{ ok?: boolean; error?: string; usuarioElo?: unknown; copa?: Copa }>(res);
       if (!res.ok) throw new Error(data.error ?? "El voto no se pudo registrar.");
       // ELO de jurado (v1.20.0): el servidor calcula el estado — el cuadro es
       // anónimo y el cliente no puede derivar el consenso por su cuenta.
       if (data.usuarioElo) {
-        registrarVotoJurado(winner === "a" ? "A" : "B", "", "", data.usuarioElo);
+        registrarVotoJurado(winner === "a" ? "A" : "B", "", "", data.usuarioElo as EstadoJurado);
       }
       setCopa(data.copa as Copa);
     } catch (e) {
@@ -337,7 +339,7 @@ export default function TournamentView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "start", prompt: consigna, size: 4 }),
       });
-      const data = await res.json();
+      const data = await jsonSeguro<{ ok?: boolean; error?: string; copa?: Copa }>(res);
       if (!res.ok) throw new Error(data.error ?? "No se pudo iniciar la copa en directo.");
       markUsed("modo-torneo");
       markUsed("espectador");
@@ -392,7 +394,7 @@ export default function TournamentView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tipo: "copa", copaId: copa.id }),
       });
-      const data = await res.json();
+      const data = await jsonSeguro<{ ok?: boolean; error?: string; url: string }>(res);
       if (!res.ok || !data.ok) throw new Error(data.error ?? "No se pudo compartir la copa.");
       const url = `${window.location.origin}${data.url}`;
       await navigator.clipboard.writeText(url);

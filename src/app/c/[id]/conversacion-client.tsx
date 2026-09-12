@@ -20,6 +20,7 @@ import ProviderLogo from "@/components/arena/ProviderLogo";
 import { getModel, PROVIDERS } from "@/lib/models-data";
 import { cn } from "@/lib/utils";
 import type { TurnoGuardable } from "@/lib/hilo-conversacion";
+import { jsonSeguro } from "@/lib/fetch-seguro";
 
 /**
  * v1.25.0 — El hilo permanente: visor público de una conversación (/c/[id]).
@@ -56,9 +57,9 @@ export default function ConversacionClient() {
     const id = params.id ?? "";
     fetch(`/api/conversacion/${encodeURIComponent(id)}`)
       .then(async (r) => {
-        const d = await r.json();
+        const d = await jsonSeguro<ConversacionData & { error?: string }>(r);
         if (!r.ok || !d.ok) throw new Error(d.error ?? "Conversación no encontrada.");
-        return d as ConversacionData;
+        return d;
       })
       .then((d) => {
         setData(d);
@@ -73,7 +74,7 @@ export default function ConversacionClient() {
             body: JSON.stringify({ accion: "vista" }),
           })
             .then(async (r) => {
-              const d2 = await r.json();
+              const d2 = await jsonSeguro<{ ok: boolean; shares: number; views: number }>(r);
               if (r.ok && d2.ok) setContadores({ shares: d2.shares, views: d2.views });
             })
             .catch(() => {});
@@ -97,7 +98,7 @@ export default function ConversacionClient() {
           body: JSON.stringify({ accion: "compartir" }),
         })
           .then(async (r) => {
-            const d = await r.json();
+            const d = await jsonSeguro<{ ok: boolean; shares: number; views: number }>(r);
             if (r.ok && d.ok) setContadores({ shares: d.shares, views: d.views });
           })
           .catch(() => {});

@@ -8,6 +8,7 @@ import { Landmark } from "lucide-react";
 import { AuthShell, SocialRow } from "@/components/auth/SocialAuth";
 import { markUsed } from "@/lib/badges";
 import { useAuth } from "@/lib/auth-client";
+import { jsonSeguro } from "@/lib/fetch-seguro";
 
 export default function IniciarSesionPage() {
   const router = useRouter();
@@ -26,8 +27,8 @@ export default function IniciarSesionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const d = await r.json();
-      if (!d.ok) throw new Error(d.error);
+      const d = await jsonSeguro<{ ok: boolean; error?: string; user: { name: string } }>(r);
+      if (!d.ok) throw new Error(d.error ?? "No se pudo iniciar sesión.");
       markUsed("cuenta");
       await refresh();
       toast({ title: "Sesión iniciada", description: `Bienvenido de nuevo, ${d.user.name}` });

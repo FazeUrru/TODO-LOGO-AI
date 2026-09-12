@@ -7,6 +7,8 @@ import {
   extraerBloqueHtml,
   quitarBloqueHtml,
 } from "@/lib/clasificador-html";
+import { jsonSeguro } from "@/lib/fetch-seguro";
+import type { EstadoJurado } from "@/lib/elo-usuario";
 import {
   ArrowUp,
   Paperclip,
@@ -1068,8 +1070,8 @@ export default function ChatExperience() {
       if (!res.ok) {
         let msg = "La arena no pudo generar las respuestas.";
         try {
-          const j = await res.json();
-          if (j?.error) msg = j.error as string;
+          const j = await jsonSeguro<{ ok?: boolean; error?: string }>(res);
+          if (j?.error) msg = j.error;
         } catch {
           /* sin cuerpo JSON */
         }
@@ -1080,7 +1082,20 @@ export default function ChatExperience() {
 
       if (!ctype.includes("text/event-stream") || !res.body) {
         // Ruta de compatibilidad: respuesta JSON completa (sin streaming)
-        const data = await res.json();
+        // v1.25.1 — jsonSeguro: un HTML de error o un cuerpo cortado ya no
+        // revienta con «Unexpected token»; lanza un mensaje amable en español.
+        const data = await jsonSeguro<{
+          ok: boolean;
+          error?: string;
+          aId: string;
+          bId: string;
+          battleId: string;
+          a: string;
+          b: string | null;
+          thinkingA?: string;
+          thinkingB?: string;
+          sources?: WebSource[];
+        }>(res);
         if (!data.ok) {
           throw new Error(data.error ?? "La arena no pudo generar las respuestas.");
         }
@@ -1292,7 +1307,7 @@ export default function ChatExperience() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: content }),
       });
-      const data = await res.json();
+      const data = await jsonSeguro<{ ok: boolean; error?: string; url: string }>(res);
       if (!res.ok || !data.ok) throw new Error(data.error ?? "No se pudo generar la imagen.");
       setTurnsA((t) => [
         ...t,
@@ -1337,7 +1352,15 @@ export default function ChatExperience() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: desc, duracion: 5 }),
       });
-      const data = await res.json();
+      const data = await jsonSeguro<{
+        ok: boolean;
+        error?: string;
+        pending?: boolean;
+        url?: string | null;
+        taskId?: string;
+        estilo?: string;
+        segundos?: number;
+      }>(res);
       if (!res.ok || !data.ok) throw new Error(data.error ?? "El rodaje no pudo iniciarse.");
       let url: string | null = data.pending ? null : (data.url ?? null);
       if (!url && data.taskId) {
@@ -1346,7 +1369,7 @@ export default function ChatExperience() {
         while (!url && Date.now() < limite) {
           await new Promise((r) => setTimeout(r, 6_000));
           const s = (await fetch(`/api/video/status?id=${encodeURIComponent(data.taskId)}`)
-            .then((r) => r.json())
+            .then((r) => jsonSeguro<{ ok?: boolean; ready?: boolean; failed?: boolean; url?: string }>(r))
             .catch(() => null)) as { ok?: boolean; ready?: boolean; failed?: boolean; url?: string } | null;
           if (s?.ok && s.ready && s.url) url = s.url;
           if (s?.ok && s.failed) throw new Error("El motor descartó la toma. Prueba con otra escena.");
@@ -1388,7 +1411,7 @@ export default function ChatExperience() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto, voz: voz.id }),
       });
-      const data = await res.json();
+      const data = await jsonSeguro<{ ok: boolean; error?: string; url: string }>(res);
       if (!res.ok || !data.ok) throw new Error(data.error ?? "No se pudo generar la locución.");
       setTurnsA((t) => [
         ...t,
@@ -1430,11 +1453,11 @@ export default function ChatExperience() {
           budget: agentBudget,
         }),
       });
-      const data = await res.json();
+      const data = await jsonSeguro<{ ok: boolean; error?: string; plan?: AgentPlan; generated?: boolean }>(res);
       if (!res.ok || !data.ok) {
         throw new Error(data.error ?? "El escuadrón de agentes no pudo planificar.");
       }
-      setAgentPlan(data.plan);
+      setAgentPlan(data.plan ?? null);
       setAgentGenerated(Boolean(data.generated));
       if (settings.soundOnDone) playDoneChime();
     } catch (e) {
@@ -1470,10 +1493,17 @@ export default function ChatExperience() {
           category,
         }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error);
+      const data = await jsonSeguro<{
+        ok: boolean;
+        error?: string;
+        message?: string;
+        swing?: number;
+        usuarioElo?: unknown;
+        elo: Record<string, { total?: number }>;
+      }>(res);
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "No se pudo registrar el voto.");
       // ELO de jurado (v1.20.0): tu veredicto mueve tu propia escalera
-      registrarVotoJurado(winner, battle.aId, battle.bId, data.usuarioElo ?? null);
+      registrarVotoJurado(winner, battle.aId, battle.bId, (data.usuarioElo ?? null) as EstadoJurado | null);
       const eloA = data.elo[battle.aId];
       const eloB = data.elo[battle.bId];
       setBattle({
@@ -1517,8 +1547,8 @@ export default function ChatExperience() {
       toast({
         title: data.message,
         description:
-          winId && data.swing !== 0
-            ? `${getModel(winId)?.name}: ${data.swing > 0 ? "+" : ""}${data.swing} ELO en esta batalla`
+          winId && (data.swing ?? 0) !== 0
+            ? `${getModel(winId)?.name}: ${(data.swing ?? 0) > 0 ? "+" : ""}${data.swing ?? 0} ELO en esta batalla`
             : undefined,
       });
     } catch {
@@ -1560,8 +1590,8 @@ export default function ChatExperience() {
           ganador: battle.winner ?? null,
         }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error);
+      const data = await jsonSeguro<{ ok: boolean; error?: string; url: string }>(res);
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "No se pudo crear el replay.");
       const url = `${window.location.origin}${data.url}`;
       await navigator.clipboard.writeText(url);
       toast({
@@ -1612,8 +1642,8 @@ export default function ChatExperience() {
           composerMode: cMode,
         }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error);
+      const data = await jsonSeguro<{ ok: boolean; error?: string; url: string }>(res);
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "No se pudo publicar el hilo.");
       const url = `${window.location.origin}${data.url}`;
       await navigator.clipboard.writeText(url);
       toast({

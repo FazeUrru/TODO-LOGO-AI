@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.25.1",
+    fecha: "12 sept 2026",
+    hora: "02:25",
+    titulo: "Adiós al «Unexpected token»: ningún error inglés vuelve a asomar en la arena",
+    tldr:
+      "Cuando el navegador recibía HTML donde esperaba JSON (página de error 5xx de Vercel, 404 de la demo estática, proxy de red o cuerpo cortado), JSON.parse reventaba con «Unexpected token» en inglés y sin contexto. Ahora cada respuesta se lee como texto ANTES de parsear y el fallo se traduce a un mensaje amable en español, con el estado HTTP y sugerencia de reintento.",
+    diffDesde: "1.25.0",
+    hash: null,
+    kinds: ["correccion"],
+  },
+  {
     version: "1.25.0",
     fecha: "12 sept 2026",
     hora: "03:05",

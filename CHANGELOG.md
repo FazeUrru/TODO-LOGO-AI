@@ -9,6 +9,16 @@
 >
 > 🧩 **Huecos de numeración**: no existen v1.1.x ni v1.3.x — eran iteraciones internas fusionadas dentro de la v1.2.0 y la v1.4.0 sin llegar a publicarse.
 
+## [1.25.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.25.0...v1.25.1) · 12 sept 2026, 02:25 — *Adiós al «Unexpected token»: ningún error inglés vuelve a asomar en la arena*
+
+> 💡 **En una frase:** cuando el navegador recibía HTML donde esperaba JSON — la página 5xx de Vercel, el 404 de la demo estática, un proxy que inyecta avisos o un cuerpo cortado a medias — `JSON.parse` reventaba con «Unexpected token» en inglés y sin contexto; ahora cada respuesta se lee como texto ANTES de parsear y el fallo se traduce a un mensaje amable en español.
+
+### Corregido
+- **El cliente ya no muestra errores de parseo crudos** 🛡️ (nueva librería `src/lib/fetch-seguro.ts` con `jsonSeguro`): el helper lee SIEMPRE el cuerpo como texto e intenta `JSON.parse` después — si la respuesta no es JSON válido (o está vacía), lanza un error amable en español con el estado HTTP («El servidor respondió con un error 502. Inténtalo de nuevo en unos segundos.») en lugar del `SyntaxError: Unexpected token '<'` que se pintaba tal cual en toasts y páginas. El contexto opcional («el torneo», «el duelo») viaja en el mensaje.
+- **Cirugía en los 9 puntos expuestos del cliente** ⛑️: ChatExperience (ruta de compatibilidad sin streaming, handler de errores de la batalla, imagen, vídeo y su sondeo externo, locución, escuadrón de agentes, voto con ELO de jurado, replay y link de conversación), el visor `/c/[id]`, el replay `/duelo/[id]` — que mostraba el mensaje crudo cuando la demo estática devolvía su 404 HTML —, inicio de sesión, registro, Copa Todólogo y duelo de equipos. En todos, el catch recibe ahora un mensaje listo para el usuario.
+- **Tipado honesto de contrato** 📋: cada `jsonSeguro` lleva su tipo de respuesta (`{ ok, error, url, swing, elo, usuarioElo, … }`), los `new Error(data.error)` con posible `undefined` ganan mensajes de reserva en español, y el estado del jurado viaja como objeto (`EstadoJurado`), que es lo que el servidor realmente devuelve.
+- **Regresión blindada** 🧪: `tests/v1251.test.ts` — jsonSeguro ante JSON válido, HTML de Vercel, 404 de Pages, texto plano, cuerpo vacío, stream partido y lectura fallida (siempre mensaje amable, nunca «Unexpected token»); cirugía estática: los 7 ficheros curados usan `jsonSeguro` y no dejan ningún `.json()` crudo; el helper lee texto ANTES de parsear; tríada de versiones coherente.
+
 ## [1.25.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.24.0...v1.25.0) · 12 sept 2026, 03:05 — *El hilo permanente: cada conversación gana su link público — real, funcional y estable*
 
 > 💡 **En una frase:** el botón nuevo «Link de conversación» publica el hilo ENTERO de tu batalla en una URL estable `/c/[id]` — cada mensaje tuyo y cada respuesta de cada modelo, turno a turno y tal cual ocurrió; el link vive en la base de datos, abre en cualquier navegador y no caduca nunca.

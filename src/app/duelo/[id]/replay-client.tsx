@@ -8,6 +8,7 @@ import Markdown from "@/components/arena/Markdown";
 import ProviderLogo from "@/components/arena/ProviderLogo";
 import { getModel, PROVIDERS } from "@/lib/models-data";
 import { cn } from "@/lib/utils";
+import { jsonSeguro } from "@/lib/fetch-seguro";
 
 /**
  * v1.18.0 — Replay público de un duelo o copa compartida (/duelo/[id]).
@@ -65,9 +66,9 @@ export default function DueloReplayClient() {
     const id = params.id ?? "";
     fetch(`/api/share/${encodeURIComponent(id)}`)
       .then(async (r) => {
-        const d = await r.json();
+        const d = await jsonSeguro<ReplayData & { error?: string }>(r);
         if (!r.ok || !d.ok) throw new Error(d.error ?? "Replay no encontrado.");
-        return d as ReplayData;
+        return d;
       })
       .then((d) => {
         setData(d);
@@ -83,7 +84,7 @@ export default function DueloReplayClient() {
             body: JSON.stringify({ accion: "vista" }),
           })
             .then(async (r) => {
-              const d2 = await r.json();
+              const d2 = await jsonSeguro<{ ok: boolean; shares: number; views: number }>(r);
               if (r.ok && d2.ok) setContadores({ shares: d2.shares, views: d2.views });
             })
             .catch(() => {});
@@ -105,7 +106,7 @@ export default function DueloReplayClient() {
           body: JSON.stringify({ accion: "compartir" }),
         })
           .then(async (r) => {
-            const d = await r.json();
+            const d = await jsonSeguro<{ ok: boolean; shares: number; views: number }>(r);
             if (r.ok && d.ok) setContadores({ shares: d.shares, views: d.views });
           })
           .catch(() => {});
