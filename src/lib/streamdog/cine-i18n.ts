@@ -8,26 +8,56 @@
  * españolas y `traducirCine` nunca deja una clave fea en pantalla —
  * si falta una traducción, cae al español.
  *
- * El selector vive en la cabecera del módulo y se persiste en
- * localStorage (con autoreparación: ver cine.ts). El catálogo en sí
- * llega en el idioma de su fuente — normalmente inglés: se avisa de
- * forma honesta en la UI.
+ * v1.38.0 — además de los cuatro idiomas fijos, el selector incorpora
+ * «Sistema»: sigue el idioma del dispositivo y la ficha se adapta sola
+ * (resolutores puros + seguridad en `traducirCine`).
  */
 
-/** Idiomas soportados por el módulo de cine. */
-export type IdiomaCine = "es" | "en" | "de" | "fr";
+/** Idiomas concretos del módulo (español = la clave fuente). */
+export type IdiomaCineFijo = "es" | "en" | "de" | "fr";
+
+/** Valor del selector: «sistema» (se adapta al dispositivo) o idioma fijo. */
+export type IdiomaCine = "sistema" | IdiomaCineFijo;
 
 /** Selector de idioma: metadatos para la UI. */
 export const IDIOMAS_CINE: { id: IdiomaCine; etiqueta: string }[] = [
+  { id: "sistema", etiqueta: "Sistema" },
   { id: "es", etiqueta: "Español" },
   { id: "en", etiqueta: "English" },
   { id: "de", etiqueta: "Deutsch" },
   { id: "fr", etiqueta: "Français" },
 ];
 
-/** Valida cualquier entrada y cae a español (el idioma de la casa). */
+/** Valida cualquier entrada y cae a «sistema» (la UI se adapta sola). */
 export function idiomaCineValido(v: unknown): IdiomaCine {
-  return v === "en" || v === "de" || v === "fr" ? v : "es";
+  return v === "es" || v === "en" || v === "de" || v === "fr" ? v : "sistema";
+}
+
+/**
+ * Lee el idioma del navegador/dispositivo y devuelve el soportado más
+ * cercano: recorre `navigator.languages` en orden de preferencia y cae
+ * al español (la casa) si no hay coincidencia. Seguro en SSR.
+ */
+export function idiomaCineDelNavegador(): IdiomaCineFijo {
+  if (typeof navigator === "undefined") return "es";
+  const candidatas = Array.isArray(navigator.languages) && navigator.languages.length > 0
+    ? navigator.languages
+    : navigator.language
+      ? [navigator.language]
+      : [];
+  for (const candidata of candidatas) {
+    const prefijo = candidata.slice(0, 2).toLowerCase();
+    if (prefijo === "en") return "en";
+    if (prefijo === "de") return "de";
+    if (prefijo === "fr") return "fr";
+    if (prefijo === "es") return "es";
+  }
+  return "es";
+}
+
+/** Resuelve el ajuste a un idioma concreto: «sistema» pregunta al dispositivo. */
+export function resolverIdiomaCine(idioma: IdiomaCine): IdiomaCineFijo {
+  return idioma === "sistema" ? idiomaCineDelNavegador() : idioma;
 }
 
 /* ────────────────────────── claves canónicas ────────────────────────── */
@@ -168,10 +198,44 @@ export const CLAVES_CINE_UI = [
   "English",
   "Deutsch",
   "Français",
+  "Sistema",
+  /* Fichas expandidas (v1.38.0): estado, características y acciones reales */
+  "Disponible ya",
+  "Qué incluye",
+  "Qué puedes hacer ya",
+  "Abrir la parrilla",
+  "Abrir SportIA",
+  "Jugar ahora",
+  "Buscar documentales de viajes",
+  "Marcadores en directo",
+  "Parrilla deportiva con IA",
+  "Cuenta atrás de cada partido",
+  "Documentales de viajes del archivo libre",
+  "Destinos de dominio público",
+  "Búsqueda real en el catálogo",
+  "Arcade en tiempo real",
+  "Récords guardados en tu dispositivo",
+  "Sin esperas ni instalaciones",
+  "Instalación como app nativa (PWA)",
+  "No aparece el botón: usa el menú de tu navegador → «Instalar app»",
+  "Todo StreamDog en tu bolsillo",
+  "Segundo plano y pantalla completa",
+  "Herramientas propias y libres",
+  "Salta a cada web en un clic",
+  "Todo gratis, como siempre",
+  "Webs de la casa",
+  "Calculadora",
+  "Cuánticas",
+  "Pruebas",
+  "Labs",
+  "Conectores",
+  "Leaderboard",
+  "Novedades",
+  "API pública",
 ] as const;
 
 /** Diccionario destino: clave española → cadena en el idioma destino. */
-export const DICCIONARIOS_CINE: Record<IdiomaCine, Record<string, string>> = {
+export const DICCIONARIOS_CINE: Record<IdiomaCineFijo, Record<string, string>> = {
   /* El español ES la clave: diccionario identidad (nunca se consulta). */
   es: {},
 
@@ -339,6 +403,40 @@ export const DICCIONARIOS_CINE: Record<IdiomaCine, Record<string, string>> = {
     English: "English",
     Deutsch: "German",
     Français: "French",
+    Sistema: "System",
+    /* Fichas expandidas (v1.38.0) */
+    "Disponible ya": "Available now",
+    "Qué incluye": "What's included",
+    "Qué puedes hacer ya": "What you can do right now",
+    "Abrir la parrilla": "Open the sports grid",
+    "Abrir SportIA": "Open SportIA",
+    "Jugar ahora": "Play now",
+    "Buscar documentales de viajes": "Search travel documentaries",
+    "Marcadores en directo": "Live scores",
+    "Parrilla deportiva con IA": "AI-powered sports grid",
+    "Cuenta atrás de cada partido": "Countdown to every match",
+    "Documentales de viajes del archivo libre": "Travel documentaries from the free archive",
+    "Destinos de dominio público": "Public-domain destinations",
+    "Búsqueda real en el catálogo": "Real search across the catalog",
+    "Arcade en tiempo real": "Real-time arcade",
+    "Récords guardados en tu dispositivo": "High scores saved on your device",
+    "Sin esperas ni instalaciones": "No waits, no installs",
+    "Instalación como app nativa (PWA)": "Installs like a native app (PWA)",
+    "No aparece el botón: usa el menú de tu navegador → «Instalar app»": "No button here? Use your browser menu → “Install app”",
+    "Todo StreamDog en tu bolsillo": "All of StreamDog in your pocket",
+    "Segundo plano y pantalla completa": "Background playback and fullscreen",
+    "Herramientas propias y libres": "Our own free tools",
+    "Salta a cada web en un clic": "Jump to each site in one click",
+    "Todo gratis, como siempre": "Everything free, as always",
+    "Webs de la casa": "House websites",
+    Calculadora: "Calculator",
+    Cuánticas: "Quantum",
+    Pruebas: "Tests",
+    Labs: "Labs",
+    Conectores: "Connectors",
+    Leaderboard: "Leaderboard",
+    Novedades: "What's new",
+    "API pública": "Public API",
   },
 
   de: {
@@ -505,6 +603,40 @@ export const DICCIONARIOS_CINE: Record<IdiomaCine, Record<string, string>> = {
     English: "Englisch",
     Deutsch: "Deutsch",
     Français: "Französisch",
+    Sistema: "System",
+    /* Fichas expandidas (v1.38.0) */
+    "Disponible ya": "Jetzt verfügbar",
+    "Qué incluye": "Was drin ist",
+    "Qué puedes hacer ya": "Was du jetzt tun kannst",
+    "Abrir la parrilla": "Sportprogramm öffnen",
+    "Abrir SportIA": "SportIA öffnen",
+    "Jugar ahora": "Jetzt spielen",
+    "Buscar documentales de viajes": "Reisedokumentationen suchen",
+    "Marcadores en directo": "Ergebnisse live",
+    "Parrilla deportiva con IA": "Sportprogramm mit KI",
+    "Cuenta atrás de cada partido": "Countdown zu jedem Spiel",
+    "Documentales de viajes del archivo libre": "Reisedokumentationen aus dem freien Archiv",
+    "Destinos de dominio público": "Reiseziele aus Gemeinfreiheit",
+    "Búsqueda real en el catálogo": "Echte Suche im Katalog",
+    "Arcade en tiempo real": "Arcade in Echtzeit",
+    "Récords guardados en tu dispositivo": "Rekorde auf deinem Gerät gespeichert",
+    "Sin esperas ni instalaciones": "Kein Warten, keine Installation",
+    "Instalación como app nativa (PWA)": "Installiert sich wie eine native App (PWA)",
+    "No aparece el botón: usa el menú de tu navegador → «Instalar app»": "Kein Button hier? Nimm das Menü deines Browsers → „App installieren“",
+    "Todo StreamDog en tu bolsillo": "Ganz StreamDog in der Tasche",
+    "Segundo plano y pantalla completa": "Hintergrund und Vollbild",
+    "Herramientas propias y libres": "Eigene freie Tools",
+    "Salta a cada web en un clic": "Mit einem Klick auf jede Website",
+    "Todo gratis, como siempre": "Alles gratis, wie immer",
+    "Webs de la casa": "Websites der Hauses",
+    Calculadora: "Taschenrechner",
+    Cuánticas: "Quanten",
+    Pruebas: "Tests",
+    Labs: "Labs",
+    Conectores: "Connectors",
+    Leaderboard: "Leaderboard",
+    Novedades: "Neuigkeiten",
+    "API pública": "Öffentliche API",
   },
 
   fr: {
@@ -671,6 +803,40 @@ export const DICCIONARIOS_CINE: Record<IdiomaCine, Record<string, string>> = {
     English: "Anglais",
     Deutsch: "Allemand",
     Français: "Français",
+    Sistema: "Système",
+    /* Fichas expandidas (v1.38.0) */
+    "Disponible ya": "Disponible dès maintenant",
+    "Qué incluye": "Ce qui est inclus",
+    "Qué puedes hacer ya": "Ce que tu peux faire déjà",
+    "Abrir la parrilla": "Ouvrir la grille sportive",
+    "Abrir SportIA": "Ouvrir SportIA",
+    "Jugar ahora": "Jouer maintenant",
+    "Buscar documentales de viajes": "Chercher des documentaires de voyage",
+    "Marcadores en directo": "Scores en direct",
+    "Parrilla deportiva con IA": "Grille sportive avec IA",
+    "Cuenta atrás de cada partido": "Compte à rebours de chaque match",
+    "Documentales de viajes del archivo libre": "Documentaires de voyage des archives libres",
+    "Destinos de dominio público": "Destinations du domaine public",
+    "Búsqueda real en el catálogo": "Recherche réelle dans le catalogue",
+    "Arcade en tiempo real": "Arcade en temps réel",
+    "Récords guardados en tu dispositivo": "Records sauvegardés sur ton appareil",
+    "Sin esperas ni instalaciones": "Sans attente ni installation",
+    "Instalación como app nativa (PWA)": "S'installe comme une app native (PWA)",
+    "No aparece el botón: usa el menú de tu navegador → «Instalar app»": "Pas de bouton ici ? Utilise le menu de ton navigateur → « Installer l'app »",
+    "Todo StreamDog en tu bolsillo": "Tout StreamDog dans ta poche",
+    "Segundo plano y pantalla completa": "Lecture en arrière-plan et plein écran",
+    "Herramientas propias y libres": "Nos propres outils libres",
+    "Salta a cada web en un clic": "Saute sur chaque site en un clic",
+    "Todo gratis, como siempre": "Tout gratuit, comme toujours",
+    "Webs de la casa": "Sites de la maison",
+    Calculadora: "Calculatrice",
+    Cuánticas: "Quantiques",
+    Pruebas: "Tests",
+    Labs: "Labs",
+    Conectores: "Connecteurs",
+    Leaderboard: "Classement",
+    Novedades: "Nouveautés",
+    "API pública": "API publique",
   },
 };
 
@@ -683,7 +849,10 @@ export type VarsCine = Record<string, string | number>;
  * nunca muestra un hueco feo.
  */
 export function traducirCine(clave: string, idioma: IdiomaCine, vars?: VarsCine): string {
-  let out = idioma === "es" ? clave : DICCIONARIOS_CINE[idioma][clave] ?? clave;
+  // v1.38.0 — «sistema» se resuelve al idioma del dispositivo (defensivo:
+  // los componentes ya reciben el idioma resuelto, pero la puerta no se cierra).
+  const fijo = idioma === "sistema" ? idiomaCineDelNavegador() : idioma;
+  let out = fijo === "es" ? clave : DICCIONARIOS_CINE[fijo][clave] ?? clave;
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
       out = out.split(`{${k}}`).join(String(v));

@@ -822,7 +822,7 @@ export function esProgresos(v: unknown): v is ProgresoVer[] {
 }
 
 export const esIdiomaCine = (v: unknown): v is import("./cine-i18n").IdiomaCine =>
-  v === "es" || v === "en" || v === "de" || v === "fr";
+  v === "sistema" || v === "es" || v === "en" || v === "de" || v === "fr";
 
 /** Para la preferencia de segundo plano: solo true/false vale. */
 export const esBooleano = (v: unknown): v is boolean => typeof v === "boolean";

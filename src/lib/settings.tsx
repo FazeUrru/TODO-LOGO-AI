@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { idiomaValido, type IdiomaUI } from "@/lib/idioma";
+import { idiomaValido, resolverIdioma, type IdiomaUI } from "@/lib/idioma";
 
 /**
  * 15 ajustes organizados en 5 categorías, persistidos en localStorage
@@ -57,7 +57,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   soundOnDone: false,
   autoSyncNews: true,
   reduceMotion: false,
-  uiLang: "es",
+  // v1.38.0 — por defecto la UI se adapta sola al idioma del dispositivo.
+  uiLang: "sistema",
 };
 
 const STORE_KEY = "todologo.ajustes.v1";
@@ -141,7 +142,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     root.dataset.motion = settings.reduceMotion ? "reducida" : "normal";
     // v1.29.0 — el idioma de la interfaz también vive en <html lang>:
     // lectores de pantalla, traductores y tipografía lo agradecen.
-    root.lang = settings.uiLang;
+    // v1.38.0 — «sistema» se resuelve al idioma real del dispositivo.
+    root.lang = resolverIdioma(settings.uiLang);
     return () => mq.removeEventListener("change", applyTheme);
   }, [settings.theme, settings.density, settings.reduceMotion, settings.uiLang]);
 

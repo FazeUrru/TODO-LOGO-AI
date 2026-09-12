@@ -78,13 +78,18 @@ export default function AjustesPage() {
             <Row
               title={t("Idioma de la interfaz")}
               desc={t(
-                "Traduce el menú, la barra superior y los avisos del sistema. Las páginas se irán sumando."
+                "Con «Sistema» la interfaz se adapta sola al idioma de tu dispositivo; también puedes fijar uno. Las páginas se irán sumando."
               )}
             >
               <Segmented
                 value={settings.uiLang}
                 onChange={(v) => change("uiLang", v)}
-                options={IDIOMAS_UI.map((i) => ({ value: i.id, label: i.label, icon: Languages }))}
+                options={IDIOMAS_UI.map((i) => ({
+                  value: i.id,
+                  label: i.label,
+                  // v1.38.0 — «Sistema» se adapta sola; los idiomas fijos van con la etiqueta de idiomas.
+                  icon: i.id === "sistema" ? Monitor : Languages,
+                }))}
               />
             </Row>
           </Section>

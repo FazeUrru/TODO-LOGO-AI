@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bone, CalendarRange, Clapperboard, FlaskConical, LockKeyhole, Sparkles } from "lucide-react";
 import { asset } from "@/lib/asset-path";
 import { APP_VERSION } from "@/lib/version";
@@ -14,6 +14,16 @@ import Laboratorio from "@/components/streamdog/Laboratorio";
 
 type Pestaña = "cine" | "parrilla" | "sportia" | "chat" | "lab";
 
+/** Pestañas válidas para sincronizar con el hash de la URL (#parrilla…). */
+const IDS_PESTAÑA: Pestaña[] = ["cine", "parrilla", "sportia", "chat", "lab"];
+
+/** Lee la pestaña del hash (#sportia → "sportia"); sin hash o inválida → null. */
+function pestañaDelHash(): Pestaña | null {
+  if (typeof window === "undefined") return null;
+  const id = window.location.hash.replace(/^#/, "") as Pestaña;
+  return IDS_PESTAÑA.includes(id) ? id : null;
+}
+
 const PESTAÑAS: { id: Pestaña; nombre: string; icono: typeof Bone; pista: string }[] = [
   { id: "cine", nombre: "Cine y series", icono: Clapperboard, pista: "Gratis y reales: dominio público y APIs públicas" },
   { id: "parrilla", nombre: "Parrilla", icono: CalendarRange, pista: "Lo que va de año y lo que se instala" },
@@ -24,7 +34,24 @@ const PESTAÑAS: { id: Pestaña; nombre: string; icono: typeof Bone; pista: stri
 
 export default function StreamDogPage() {
   const { t } = useT();
-  const [pestaña, setPestaña] = useState<Pestaña>("cine");
+  const [pestaña, setPestaña] = useState<Pestaña>(() => pestañaDelHash() ?? "cine");
+
+  /* v1.38.0 — las fichas expandidas saltan de pestaña vía hash (#parrilla):
+   * se sincroniza con hashchange (enlaces compartibles incluidos). */
+  useEffect(() => {
+    const alCambiar = () => {
+      const delHash = pestañaDelHash();
+      if (delHash) setPestaña(delHash);
+    };
+    window.addEventListener("hashchange", alCambiar);
+    return () => window.removeEventListener("hashchange", alCambiar);
+  }, []);
+
+  /** Cambia de pestaña y deja el hash acorde (sin entradas de historial). */
+  const elegirPestaña = (id: Pestaña): void => {
+    setPestaña(id);
+    if (typeof window !== "undefined") window.history.replaceState(null, "", `#${id}`);
+  };
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-thin bg-[#050a12]">
@@ -58,7 +85,7 @@ export default function StreamDogPage() {
             return (
               <button
                 key={p.id}
-                onClick={() => setPestaña(p.id)}
+                onClick={() => elegirPestaña(p.id)}
                 aria-current={activa ? "page" : undefined}
                 className={cn(
                   "group flex min-h-[44px] items-center gap-2 rounded-xl border px-3.5 py-2.5 text-left text-[13.5px] font-medium transition-colors",

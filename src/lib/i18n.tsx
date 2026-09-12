@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { useSettings } from "@/lib/settings";
-import { IDIOMA_BASE, type IdiomaUI } from "@/lib/idioma";
+import { IDIOMA_BASE, resolverIdioma, type IdiomaFijo, type IdiomaUI } from "@/lib/idioma";
 
 /**
  * ============================================================
@@ -155,8 +155,8 @@ export const EN: Record<string, string> = {
 
   /* ── Ajustes: la fila nueva del selector ── */
   "Idioma de la interfaz": "Interface language",
-  "Traduce el menú, la barra superior y los avisos del sistema. Las páginas se irán sumando.":
-    "Translates the menu, top bar and system notices. More pages coming along.",
+  "Con «Sistema» la interfaz se adapta sola al idioma de tu dispositivo; también puedes fijar uno. Las páginas se irán sumando.":
+    "With “System” the interface adapts itself to your device's language; you can also pin one. More pages coming along.",
 
   /* ── v1.30.0 Arena: tarjetas de arranque ── */
   "Crea un juego": "Create a game",
@@ -414,11 +414,13 @@ export type VarsT = Record<string, string | number>;
 
 /**
  * Traduce `texto` al idioma pedido. La clave es la cadena española;
- * si no hay traducción (o el idioma es el base), devuelve el propio
- * texto — la app nunca se queda "colgando" una clave fea.
+ * si no hay traducción (o el idioma resuelto es el base), devuelve el
+ * propio texto — la app nunca se queda "colgando" una clave fea.
+ * v1.38.0 — «sistema» se resuelve al idioma del dispositivo.
  */
 export function traducir(texto: string, idioma: IdiomaUI, vars?: VarsT): string {
-  let out = idioma === IDIOMA_BASE ? texto : EN[texto] ?? texto;
+  const fijo = resolverIdioma(idioma);
+  let out = fijo === IDIOMA_BASE ? texto : EN[texto] ?? texto;
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
       out = out.split(`{${k}}`).join(String(v));
@@ -434,7 +436,7 @@ export function traducir(texto: string, idioma: IdiomaUI, vars?: VarsT): string 
  */
 export function useT() {
   const { settings } = useSettings();
-  const idioma = settings.uiLang;
+  const idioma = resolverIdioma(settings.uiLang) as IdiomaFijo;
   const t = useCallback((texto: string, vars?: VarsT) => traducir(texto, idioma, vars), [idioma]);
   return useMemo(() => ({ t, idioma }), [t, idioma]);
 }

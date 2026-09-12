@@ -23,11 +23,11 @@ import {
   type ProgresoVer,
 } from "@/lib/streamdog/cine";
 import { coleccionOroCliente, explorarCliente } from "@/lib/streamdog/cine-cliente";
-import { IDIOMAS_CINE, traducirCine, type IdiomaCine } from "@/lib/streamdog/cine-i18n";
+import { IDIOMAS_CINE, resolverIdiomaCine, traducirCine, type IdiomaCine } from "@/lib/streamdog/cine-i18n";
 import { cn } from "@/lib/utils";
 import BannerReparacion from "./BannerReparacion";
 import DetalleModal from "./DetalleModal";
-import DialogoProximamente from "./DialogoProximamente";
+import FichaExpandida, { type AccionFicha, type FichaSeccionId } from "./FichaExpandida";
 import FilaCarrusel from "./FilaCarrusel";
 import FilaDeportes from "./FilaDeportes";
 import FilaProximamente, { type SeccionPronto } from "./FilaProximamente";
@@ -39,14 +39,18 @@ import EnlaceArena from "@/components/streamdog/EnlaceArena";
 import AvisoLegal from "./AvisoLegal";
 
 /**
- * CINE&SERIES (v1.32.0) — el módulo entero de películas y series gratis:
+ * CINE&SERIES (v1.38.0) — el módulo entero de películas y series gratis:
  *
  *  · CATÁLOGO REAL del backend (/api/streamdog/cine): Commons (dominio
  *    público jugable), Archive y TVMaze, con degradación por fuente.
- *  · MULTILENGUAJE es/en/de/fr propio del módulo (persistente).
+ *  · MULTILENGUAJE es/en/de/fr + «Sistema» propio del módulo (persistente;
+ *    se adapta solo al idioma del dispositivo).
  *  · MI LISTA y SEGUIR VIENDO con autoreparación real del storage.
  *  · REPRODUCTOR con segundo plano (MediaSession + PiP automático).
  *  · PWA: instalación y service worker con informe de salud real.
+ *  · FICHAS EXPANDIDAS (v1.38.0): la hoja de ruta se PUEDE USAR —
+ *    deportes → parrilla, juegos → /games, apps → instalar PWA,
+ *    viajes → búsqueda real y webs → las herramientas de la casa.
  */
 
 type Vista = "inicio" | "top100" | "peliculas" | "series" | "milista";
@@ -96,8 +100,9 @@ interface EventoInstalador extends Event {
 const ES_FUENTE = (v: string): v is FuenteCine => v === "commons" || v === "archive" || v === "tvmaze";
 
 export default function Cine() {
-  /* ── idioma y vistas ── */
-  const [idioma, setIdioma] = useState<IdiomaCine>("es");
+  /* ── idioma y vistas ── v1.38.0: «sistema» se adapta al dispositivo ── */
+  const [idiomaElegido, setIdiomaElegido] = useState<IdiomaCine>("sistema");
+  const idioma = resolverIdiomaCine(idiomaElegido);
   const [vista, setVista] = useState<Vista>("inicio");
   const [consulta, setConsulta] = useState("");
   const [qDebounce, setQDebounce] = useState("");
@@ -127,8 +132,8 @@ export default function Cine() {
   const [instalador, setInstalador] = useState<EventoInstalador | null>(null);
   const [instalada, setInstalada] = useState(false);
 
-  /* ── premium v1.33.0: diálogo motivador + salud del cron ── */
-  const [dialogo, setDialogo] = useState<{ seccion: string; texto: string } | null>(null);
+  /* ── ficha expandida (v1.38.0) + salud del cron ── */
+  const [ficha, setFicha] = useState<FichaSeccionId | null>(null);
   const [cronSalud, setCronSalud] = useState<"ok" | "degradada" | "caida" | "sin-datos" | null>(null);
 
   const t = useCallback((clave: string, vars?: Record<string, string | number>) => traducirCine(clave, idioma, vars), [idioma]);
@@ -145,17 +150,13 @@ export default function Cine() {
     if (historia.reparacion) avisarReparacion("Seguir viendo", historia.reparacion);
     setProgresos(historia.valor);
 
-    const idiomaGuardado = leerColeccion<IdiomaCine>(CLAVES_CINE.idioma, "es", esIdiomaCine, almacen);
+    const idiomaGuardado = leerColeccion<IdiomaCine>(CLAVES_CINE.idioma, "sistema", esIdiomaCine, almacen);
     if (idiomaGuardado.reparacion) avisarReparacion("Idioma", idiomaGuardado.reparacion);
-    if (idiomaGuardado.reparacion === null && almacen?.getItem(CLAVES_CINE.idioma) === null) {
-      // Primera visita: hereda del navegador (es por defecto, la casa).
-      const delNavegador = typeof navigator !== "undefined" ? navigator.language?.slice(0, 2) : "es";
-      const inicial = delNavegador === "de" || delNavegador === "fr" || delNavegador === "en" ? delNavegador : "es";
-      setIdioma(inicial as IdiomaCine);
-      guardarColeccion(CLAVES_CINE.idioma, inicial, almacen);
-    } else {
-      setIdioma(idiomaGuardado.valor);
-    }
+    // Primera visita o visita con idioma guardado: «sistema» se resuelve
+    // al vuelo en cada render (resolverIdiomaCine), sin copiar el idioma
+    // del navegador a storage — si el usuario cambia el idioma de su
+    // dispositivo, la ficha le sigue sin tocar nada.
+    setIdiomaElegido(idiomaGuardado.valor);
 
     const prefFondo = leerColeccion<boolean>(CLAVES_CINE.fondo, false, esBooleano, almacen);
     if (prefFondo.reparacion) avisarReparacion("Segundo plano", prefFondo.reparacion);
@@ -314,7 +315,7 @@ export default function Cine() {
   /* ── ACCIONES ── */
 
   const cambiarIdioma = (nuevo: IdiomaCine): void => {
-    setIdioma(nuevo);
+    setIdiomaElegido(nuevo);
     guardarColeccion(CLAVES_CINE.idioma, nuevo, typeof localStorage !== "undefined" ? localStorage : null);
   };
 
@@ -412,22 +413,98 @@ export default function Cine() {
     document.getElementById(`fila-cine-${i}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  /** Diálogo motivador: secciones de la hoja de ruta. */
-  const TEXTOS_DIALOGO: Record<string, string> = {
+  /** Descripciones motivadoras de cada ficha (i18n ×4). */
+  const TEXTOS_FICHA: Record<FichaSeccionId, string> = {
     deportes: t("Los deportes llegan a StreamDog: partidos, marcadores y emoción en directo, con la misma calidad que ya tienes en cine y series. Cada hora que pasa estamos más cerca del saque inicial. ⚽"),
     viajes: t("Rutas, destinos y rincones del mundo libre: la brújula de StreamDog está sobre la mesa. Pronto viajar será tan fácil como dar al play. ✈️"),
     juegos: t("El arcade en tiempo real de StreamDog está en desarrollo: partidas rápidas, récords y diversión sin esperas. El mando se está calibrando. 🎮"),
     apps: t("Una caja de apps libres y herramientas de la casa, al estilo StreamDog: útiles, rápidas y sin letra pequeña. Se está compilando. 📱"),
     webs: t("Un radar de webs útiles, seguras y gratuitas para acompañar al catálogo infinito. Estamos afinando la antena. 🌐"),
   };
-  const ETIQUETA_SECCION: Record<string, string> = {
+  const ETIQUETA_SECCION: Record<FichaSeccionId, string> = {
     deportes: t("Deportes en vivo"),
     viajes: t("Viajes"),
     juegos: t("Juegos"),
     apps: t("Apps"),
     webs: t("Webs"),
   };
-  const abrirDialogo = (seccion: string): void => setDialogo({ seccion, texto: TEXTOS_DIALOGO[seccion] ?? "" });
+
+  /** Salta a una pestaña hermana de StreamDog vía hash (la página la sincroniza). */
+  const irAPestaña = (id: "parrilla" | "sportia"): void => {
+    if (typeof window === "undefined") return;
+    window.location.hash = id;
+  };
+
+  /** Búsqueda real de documentales de viaje en el catálogo infinito. */
+  const buscarViajes = (): void => {
+    setFicha(null);
+    setConsulta("travel documentary");
+    setQDebounce("travel documentary");
+    setVista("inicio");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  /**
+   * FICHAS EXPANDIDAS (v1.38.0): cada sección deja de ser un «muy pronto»
+   * mudo y pasa a ofrecer acciones que YA funcionan, con estado honesto.
+   */
+  const FICHAS: Record<FichaSeccionId, { estado: "ya" | "pronto"; caracteristicas: string[]; acciones: AccionFicha[] }> = {
+    deportes: {
+      estado: "ya",
+      caracteristicas: [t("Marcadores en directo"), t("Parrilla deportiva con IA"), t("Cuenta atrás de cada partido")],
+      acciones: [
+        { etiqueta: t("Abrir la parrilla"), onClick: () => irAPestaña("parrilla"), primaria: true },
+        { etiqueta: t("Abrir SportIA"), onClick: () => irAPestaña("sportia") },
+      ],
+    },
+    viajes: {
+      estado: "pronto",
+      caracteristicas: [
+        t("Documentales de viajes del archivo libre"),
+        t("Destinos de dominio público"),
+        t("Búsqueda real en el catálogo"),
+      ],
+      acciones: [{ etiqueta: t("Buscar documentales de viajes"), onClick: buscarViajes, primaria: true }],
+    },
+    juegos: {
+      estado: "ya",
+      caracteristicas: [t("Arcade en tiempo real"), t("Récords guardados en tu dispositivo"), t("Sin esperas ni instalaciones")],
+      acciones: [{ etiqueta: t("Jugar ahora"), href: "/games", primaria: true }],
+    },
+    apps: {
+      estado: "ya",
+      caracteristicas: [
+        t("Instalación como app nativa (PWA)"),
+        t("Todo StreamDog en tu bolsillo"),
+        t("Segundo plano y pantalla completa"),
+      ],
+      acciones: [
+        instalada
+          ? { etiqueta: t("Instalada"), desactivada: true }
+          : {
+              etiqueta: t("Instalar la app"),
+              onClick: () => void instalar(),
+              desactivada: !instalador,
+              pista: instalador ? undefined : t("No aparece el botón: usa el menú de tu navegador → «Instalar app»"),
+              primaria: true,
+            },
+      ],
+    },
+    webs: {
+      estado: "ya",
+      caracteristicas: [t("Herramientas propias y libres"), t("Salta a cada web en un clic"), t("Todo gratis, como siempre")],
+      acciones: [
+        { etiqueta: t("Calculadora"), href: "/calculadora" },
+        { etiqueta: t("Cuánticas"), href: "/cuanticas" },
+        { etiqueta: t("Pruebas"), href: "/pruebas" },
+        { etiqueta: t("Labs"), href: "/labs" },
+        { etiqueta: t("Conectores"), href: "/conectores" },
+        { etiqueta: t("Leaderboard"), href: "/leaderboard" },
+        { etiqueta: t("Novedades"), href: "/novedades" },
+        { etiqueta: t("API pública"), href: "/api-publica" },
+      ],
+    },
+  };
 
   const chipFuente = (id: string, etiqueta: string) => {
     const info = fuentes[id];
@@ -490,7 +567,7 @@ export default function Cine() {
             <Globe className="h-3.5 w-3.5 text-cyan-300" aria-hidden />
             <span className="sr-only">{t("Idioma")}</span>
             <select
-              value={idioma}
+              value={idiomaElegido}
               onChange={(e) => cambiarIdioma(e.target.value as IdiomaCine)}
               className="bg-transparent text-[12px] font-medium text-slate-200 focus:outline-none"
               aria-label={t("Idioma")}
@@ -754,12 +831,13 @@ export default function Cine() {
             !cargando && <p className="py-10 text-center text-[13.5px] text-slate-400">{t("Catálogo vacío por ahora")}</p>
           )}
 
-          {/* Hoja de ruta premium: deportes con cuenta atrás + muy pronto */}
-          <FilaDeportes t={t} onAbrir={() => abrirDialogo("deportes")} />
+          {/* Hoja de ruta premium: deportes con cuenta atrás + fichas que SE USAN */}
+          <FilaDeportes t={t} onAbrir={() => setFicha("deportes")} />
           <FilaProximamente
             t={t}
-            textos={TEXTOS_DIALOGO}
-            onAbrir={(s: SeccionPronto) => abrirDialogo(s)}
+            textos={TEXTOS_FICHA}
+            estados={{ viajes: "pronto", juegos: "ya", apps: "ya", webs: "ya" }}
+            onAbrir={(s: SeccionPronto) => setFicha(s)}
           />
         </div>
       ) : (
@@ -796,17 +874,22 @@ export default function Cine() {
       )}
 
       {/* Modales */}
-      <DialogoProximamente
-        abierto={dialogo !== null}
-        seccion={dialogo ? (ETIQUETA_SECCION[dialogo.seccion] ?? dialogo.seccion) : ""}
-        texto={dialogo?.texto ?? ""}
-        etiquetas={{ titulo: t("Esto se está cocinando"), badge: t("Muy pronto"), cta: t("Ver el catálogo"), cerrar: t("Cerrar") }}
-        onCerrar={() => setDialogo(null)}
-        onVerCatalogo={() => {
-          setDialogo(null);
-          setVista("inicio");
-          window.scrollTo({ top: 0, behavior: "smooth" });
+      <FichaExpandida
+        abierto={ficha !== null}
+        seccionId={ficha ?? "viajes"}
+        seccion={ficha ? (ETIQUETA_SECCION[ficha] ?? ficha) : ""}
+        estado={ficha ? FICHAS[ficha].estado : "pronto"}
+        descripcion={ficha ? (TEXTOS_FICHA[ficha] ?? "") : ""}
+        caracteristicas={ficha ? FICHAS[ficha].caracteristicas : []}
+        acciones={ficha ? FICHAS[ficha].acciones : []}
+        etiquetas={{
+          badgeYa: t("Disponible ya"),
+          badgePronto: t("Muy pronto"),
+          incluye: t("Qué incluye"),
+          acciones: t("Qué puedes hacer ya"),
+          cerrar: t("Cerrar"),
         }}
+        onCerrar={() => setFicha(null)}
       />
       {detalle && (
         <DetalleModal

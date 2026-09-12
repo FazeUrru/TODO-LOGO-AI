@@ -65,18 +65,26 @@ describe("v1.29.0 — el motor «el español es la clave»", () => {
     }
   });
 
-  it("idiomaValido sanea basura hacia el español", () => {
+  it("idiomaValido sanea basura hacia «sistema» (v1.38.0: se adapta)", () => {
     expect(idiomaValido("en")).toBe("en");
     expect(idiomaValido("es")).toBe("es");
-    expect(idiomaValido("fr")).toBe("es");
-    expect(idiomaValido(42)).toBe("es");
-    expect(idiomaValido(undefined)).toBe("es");
+    expect(idiomaValido("fr")).toBe("sistema");
+    expect(idiomaValido(42)).toBe("sistema");
+    expect(idiomaValido(undefined)).toBe("sistema");
   });
 
-  it("IDIOMAS_UI y el idioma base son coherentes", () => {
+  it("IDIOMAS_UI, el idioma base y el defecto son coherentes (v1.38.0)", () => {
     expect(IDIOMA_BASE).toBe("es");
-    expect(IDIOMAS_UI.map((i) => i.id)).toEqual(["es", "en"]);
+    expect(IDIOMAS_UI.map((i) => i.id)).toEqual(["sistema", "es", "en"]);
     expect(IDIOMAS_UI.every((i) => i.label.length > 0)).toBe(true);
+  });
+
+  it("resolverIdioma: «sistema» pregunta al dispositivo; los fijos se quedan (v1.38.0)", () => {
+    expect(resolverIdioma("es")).toBe("es");
+    expect(resolverIdioma("en")).toBe("en");
+    // En el sandbox/JSDOM sin navigator real, «sistema» cae al español (la casa).
+    expect(["es", "en"]).toContain(resolverIdioma("sistema"));
+    expect(idiomaDelNavegador()).toBe("es");
   });
 });
 
@@ -132,12 +140,12 @@ describe("v1.29.0 — el shell traducido, pieza a pieza", () => {
     expect(side).toContain("timeAgo(c.ts, idioma)");
   });
 
-  it("settings.tsx declara uiLang, lo sanea y lo aplica al <html lang>", () => {
+  it("settings.tsx declara uiLang (sistema por defecto), lo sanea y aplica el lang resuelto", () => {
     const s = leer("src/lib/settings.tsx");
     expect(s).toContain("uiLang: IdiomaUI");
-    expect(s).toContain('uiLang: "es"');
+    expect(s).toContain('uiLang: "sistema"');
     expect(s).toContain("idiomaValido(parsed.uiLang)");
-    expect(s).toContain("root.lang = settings.uiLang");
+    expect(s).toContain("root.lang = resolverIdioma(settings.uiLang)");
   });
 
   it("Ajustes trae el selector de idioma en Apariencia", () => {
