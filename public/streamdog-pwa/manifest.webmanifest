@@ -1,0 +1,22 @@
+{
+  "id": "../streamdog",
+  "scope": "../streamdog",
+  "start_url": "../streamdog",
+  "name": "StreamDog — parrilla deportiva con IA",
+  "short_name": "StreamDog",
+  "description": "La parrilla deportiva que se instala como app nativa: SportIA sugiere qué construir en función de lo que va de año, el laboratorio de parseo no explota jamás y el chat 1-a-1 es cifrado extremo a extremo.",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#050a12",
+  "theme_color": "#050a12",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["sports", "news", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "screenshots": []
+}

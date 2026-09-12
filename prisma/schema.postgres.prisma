@@ -250,3 +250,21 @@ model ApiKey {
 
   @@index([userId])
 }
+
+// Buzón del desarrollador de StreamDog (v1.26.0): sugerencias que la IA
+// SportIA y los usuarios mandan «en función de lo que va de año». Cada fila
+// apunta a un evento del calendario deportivo con su ventana del año.
+model SugerenciaDev {
+  id        String   @id @default(cuid())
+  origen    String   @default("sportia") // "sportia" | "usuario"
+  titulo    String
+  detalle   String
+  evento    String   @default("") // evento del calendario que la motiva
+  ventana   String   @default("") // ventana del año ("1 ene – 3 feb", "T3 de 2026")
+  prioridad String   @default("media") // alta | media | baja
+  mes       Int      @default(1) // mes del evento al que apunta (1..12)
+  estado    String   @default("nueva") // nueva | vista | hecha
+  createdAt DateTime @default(now())
+
+  @@index([estado, createdAt])
+}

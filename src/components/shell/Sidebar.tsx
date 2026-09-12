@@ -16,6 +16,7 @@ import {
   Building2,
   Calculator,
   CalendarDays,
+  Dog,
   KeyRound,
   History,
   MessagesSquare,
@@ -445,6 +446,7 @@ export default function Sidebar() {
           {navItem(pathname === "/conectores", "/conectores", "Conectores", Plug, "conectores")}
           {navItem(pathname === "/empresas", "/empresas", "Empresas", Building2)}
           {navItem(pathname === "/calculadora", "/calculadora", "Calculadora", Calculator)}
+          {navItem(pathname === "/streamdog", "/streamdog", "StreamDog", Dog)}
           {navItem(pathname === "/cuanticas", "/cuanticas", "Cuánticas", Atom)}
           {navItem(pathname === "/mcps", "/mcps", "MCPs", Server)}
           {navItem(pathname === "/pruebas", "/pruebas", "Pruebas", Activity)}

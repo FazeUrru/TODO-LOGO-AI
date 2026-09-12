@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.26.0",
+    fecha: "12 sept 2026",
+    hora: "01:05",
+    titulo: "StreamDog: la parrilla deportiva se instala como app nativa — con SportIA, chat extremo a extremo y el parseo que no explota",
+    tldr:
+      "Nace /streamdog: app web nativa instalable (manifest + service worker + icono propio + guía de dominio personalizado), la IA SportIA convierte lo que va de año en changelog y sugerencias al desarrollador con buzón persistente, el chat 1-a-1 va cifrado extremo a extremo (ECDH + AES-GCM con huella anti-MITM y relay que solo ve ruido) y el _a_entero del scraper del desarrollador llega a TypeScript sin explotar con ninguna entrada Unicode.",
+    diffDesde: "1.25.1",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.25.1",
     fecha: "12 sept 2026",
     hora: "02:25",

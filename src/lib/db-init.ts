@@ -305,6 +305,27 @@ async function createSchema(): Promise<void> {
     );
 
 
+    // Buzón del desarrollador de StreamDog (v1.26.0): sugerencias de la IA
+    // SportIA y de los usuarios, «en función de lo que va de año».
+    await crearTabla(
+      "SugerenciaDev",
+      `CREATE TABLE IF NOT EXISTS "SugerenciaDev" (
+        "id"        TEXT PRIMARY KEY,
+        "origen"    TEXT NOT NULL DEFAULT 'sportia',
+        "titulo"    TEXT NOT NULL,
+        "detalle"   TEXT NOT NULL,
+        "evento"    TEXT NOT NULL DEFAULT '',
+        "ventana"   TEXT NOT NULL DEFAULT '',
+        "prioridad" TEXT NOT NULL DEFAULT 'media',
+        "mes"       INTEGER NOT NULL DEFAULT 1,
+        "estado"    TEXT NOT NULL DEFAULT 'nueva',
+        "createdAt" ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "SugerenciaDev_estado_createdAt_idx" ON "SugerenciaDev"("estado", "createdAt");`
+    );
+
     // Columnas de perfil (v1.9.2) para bases creadas antes de esa versión
     const B = PG ? "BOOLEAN" : "BOOLEAN";
     const perfilCols: [string, string][] = [

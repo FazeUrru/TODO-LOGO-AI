@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="StreamDog">
+  <!-- Variante MASKABLE: fondo a sangre completa (sin esquinas redondeadas)
+       y contenido al 76 % dentro de la zona segura de los lanzadores. -->
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101b2e"/>
+      <stop offset="0.55" stop-color="#0a1220"/>
+      <stop offset="1" stop-color="#050a12"/>
+    </linearGradient>
+    <linearGradient id="acento" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2dd4bf"/>
+      <stop offset="0.5" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" fill="url(#fondo)"/>
+  <g transform="translate(61.5 61.5) scale(0.76)">
+    <path d="M152 216
+             C 138 158 136 118 148 96
+             C 154 85 168 84 178 92
+             C 198 108 220 132 232 152
+             C 204 162 172 186 152 216 Z" fill="#f8fafc"/>
+    <path d="M360 216
+             C 374 158 376 118 364 96
+             C 358 85 344 84 334 92
+             C 314 108 292 132 280 152
+             C 308 162 340 186 360 216 Z" fill="#f8fafc"/>
+    <path d="M162 196 C 154 158 154 132 162 116 C 174 128 190 146 202 164 C 188 172 174 182 162 196 Z" fill="#94a3b8" opacity="0.55"/>
+    <path d="M350 196 C 358 158 358 132 350 116 C 338 128 322 146 310 164 C 324 172 338 182 350 196 Z" fill="#94a3b8" opacity="0.55"/>
+    <path d="M256 148
+             C 340 148 386 210 386 278
+             C 386 352 330 398 256 398
+             C 182 398 126 352 126 278
+             C 126 210 172 148 256 148 Z" fill="#f8fafc"/>
+    <circle cx="212" cy="258" r="15" fill="#0a1220"/>
+    <circle cx="300" cy="258" r="15" fill="#0a1220"/>
+    <circle cx="217" cy="252" r="5" fill="#f8fafc"/>
+    <circle cx="305" cy="252" r="5" fill="#f8fafc"/>
+    <path d="M224 258 L 316 312 L 224 366 Z" fill="url(#acento)" stroke="url(#acento)" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M344 140 A 24 24 0 0 1 368 164" fill="none" stroke="url(#acento)" stroke-width="13" stroke-linecap="round"/>
+    <path d="M344 124 A 40 40 0 0 1 384 164" fill="none" stroke="url(#acento)" stroke-width="13" stroke-linecap="round" opacity="0.72"/>
+    <path d="M344 108 A 56 56 0 0 1 400 164" fill="none" stroke="url(#acento)" stroke-width="13" stroke-linecap="round" opacity="0.45"/>
+    <path d="M206 392 C 224 402 240 406 256 406 C 272 406 288 402 306 392 L 306 404 C 288 414 272 418 256 418 C 240 418 224 414 206 404 Z" fill="url(#acento)" opacity="0.9"/>
+  </g>
+</svg>
