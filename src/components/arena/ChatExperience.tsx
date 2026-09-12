@@ -79,6 +79,14 @@ import { isStaticDemo } from "@/lib/static-mode";
 import { registrarVotoJurado } from "@/lib/jurado-client";
 import { ExternalLink, Brain } from "lucide-react";
 import ErrorBoundary from "./ErrorBoundary";
+import {
+  quitarSolape,
+  cargarInmunidad,
+  ajustarInmunidad,
+  guardarInmunidad,
+  type MemoriaInmunidad,
+  type EventoInmunidad,
+} from "@/lib/stream-inmunidad";
 
 const Viewer3D = dynamic(() => import("./Viewer3D"), {
   ssr: false,
@@ -387,6 +395,12 @@ export default function ChatExperience() {
   const [fiestaRevelacion, setFiestaRevelacion] = useState(false);
   /* v1.19.1 — Recuperación de streaming: badge «intento N/50» mientras se repara */
   const [recuperando, setRecuperando] = useState<{ n: number; max: number; motivo: string } | null>(null);
+  // v1.24.0 — STREAM FOREVER: cortes curados en este dispositivo (memoria
+  // inmunitaria). Se carga tras el montaje para no romper la hidratación.
+  const [curadosAqui, setCuradosAqui] = useState(0);
+  useEffect(() => {
+    setCuradosAqui(cargarInmunidad().cortesCurados);
+  }, []);
   const [followDismissed, setFollowDismissed] = useState(false);
   const [promoDismissed, setPromoDismissed] = useState(false);
 
@@ -762,8 +776,29 @@ export default function ChatExperience() {
     }
 
     // Acumuladores del streaming (texto y razonamiento por lado)
+    // v1.24.0 — STREAM FOREVER: `base` es el texto confirmado de tramos
+    // anteriores; `nuevo` es lo que llega en el tramo en curso. accA/accB se
+    // derivan SIEMPRE como base + quitarSolape(base, nuevo): si el modelo
+    // repite la cola al reanudar, no se duplica ni un carácter. En tramo 1
+    // base está vacío y acc === nuevo (comportamiento clásico intacto).
     let accA = "";
     let accB = "";
+    let baseA = "";
+    let baseB = "";
+    let nuevoA = "";
+    let nuevoB = "";
+    let corteA = false;
+    let corteB = false;
+    // v1.24.0 — finLado por lado: qué lados terminaron LIMPIO en la cadena
+    // actual (solo se reanudan los lados sin fin y sin corte).
+    let finA = false;
+    let finB = isDirect; // en directo solo existe el lado A
+    const empalmaA = () => {
+      accA = baseA + quitarSolape(baseA, nuevoA);
+    };
+    const empalmaB = () => {
+      accB = baseB + quitarSolape(baseB, nuevoB);
+    };
     let thinkA: string | undefined;
     let thinkB: string | undefined;
     let finalSources: WebSource[] | undefined;
@@ -817,6 +852,177 @@ export default function ChatExperience() {
     const rollback = () => {
       setTurnsA(nextA.slice(0, -1));
       setTurnsB(nextB.slice(0, -1));
+    };
+
+    // v1.24.0 — memoria inmunitaria: umbrales que aprenden de los cortes
+    // reales de este dispositivo (umbralSilencioMs y tramosMax evolutivos).
+    const mem: MemoriaInmunidad = cargarInmunidad();
+
+    /** v1.24.0 — lectura vigilada de UN tramo SSE, reutilizable por la
+     * reanudación Stream Forever (tramo 1 y tramos de continuación usan el
+     * mismo camino). Devuelve true si la LECTURA murió (silencio > umbral
+     * adaptativo o techo de turno), false si la conexión cerró limpio.
+     *
+     * El vigilante es ADAPTATIVO: con latidos cada 2s, un stream vivo jamás
+     * calla más de un par de segundos — si el umbral estalla, la conexión
+     * está muerta de verdad, y detectarlo tarda mem.umbralSilencioMs, no 45s. */
+    const consumirSSE = async (res: Response): Promise<boolean> => {
+      if (!res.body) return false; // sin cuerpo: nada que leer, cierre limpio
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+      // Pinta como máximo cada 80 ms: fluidez visual sin renderizar cada token
+      const flush = () => {
+        flushTimer = null;
+        const paint = (acc: string) => `${acc}\u258D`;
+        // v1.17.0 — si ya se está escribiendo un juego, el panel aparece en vivo
+        const kindA = kindDe(accA);
+        const kindB = kindDe(accB);
+        setTurnsA((t) => {
+          const n = [...t];
+          const last = n.length > 0 ? n[n.length - 1] : undefined;
+          if (last?.role === "assistant") {
+            n[n.length - 1] = { ...last, content: paint(accA), thinking: thinkA, sources: finalSources, kind: kindA };
+          }
+          return n;
+        });
+        if (!isDirect) {
+          setTurnsB((t) => {
+            const n = [...t];
+            const last = n.length > 0 ? n[n.length - 1] : undefined;
+            if (last?.role === "assistant") {
+              n[n.length - 1] = { ...last, content: paint(accB), thinking: thinkB, sources: finalSources, kind: kindB };
+            }
+            return n;
+          });
+        }
+      };
+      const schedule = () => {
+        if (flushTimer === null) flushTimer = setTimeout(flush, 80);
+      };
+      // v1.23.0 — vida al instante: el cursor parpadea desde el primer
+      // milisegundo, antes de que el upstream diga la primera palabra.
+      flush();
+
+      const handleEvent = (payload: Record<string, unknown>) => {
+        const type = payload.t as string;
+        if (type === "meta") {
+          if (mode === "battle") {
+            const prev = battle;
+            setBattle({
+              aId: payload.aId as string,
+              bId: (payload.bId as string) ?? null,
+              battleId:
+                prev && prev.aId === payload.aId
+                  ? prev.battleId
+                  : (payload.battleId as string),
+              revealed: false,
+            });
+          }
+          const s = payload.sources as WebSource[] | undefined;
+          if (s && s.length > 0) finalSources = s;
+        } else if (type === "dA") {
+          nuevoA += payload.v as string;
+          empalmaA();
+          schedule();
+        } else if (type === "dB") {
+          nuevoB += payload.v as string;
+          empalmaB();
+          schedule();
+        } else if (type === "tA") {
+          thinkA = (thinkA ?? "") + (payload.v as string);
+          schedule();
+        } else if (type === "tB") {
+          thinkB = (thinkB ?? "") + (payload.v as string);
+          schedule();
+        } else if (type === "reintento") {
+          // v1.19.1 — el servidor se está autorreparando: mostrar «intento N/50»
+          setRecuperando({
+            n: (payload.n as number) ?? 1,
+            max: (payload.max as number) ?? 50,
+            motivo: (payload.motivo as string) ?? "upstream caído",
+          });
+        } else if (type === "limpiar") {
+          // v1.19.1 + v1.24.0 — el reintento repinta el TRAMO desde cero: lo
+          // confirmado (base) jamás se borra; solo el tramo en curso se vacía.
+          if (payload.lado === "A") {
+            nuevoA = "";
+            empalmaA();
+          } else {
+            nuevoB = "";
+            empalmaB();
+          }
+          schedule();
+        } else if (type === "error") {
+          aborted = true;
+        } else if (type === "finLado") {
+          // v1.24.0 — este lado terminó LIMPIO en este tramo (sin corte):
+          // el cliente solo reanuda los lados sin fin y sin corte.
+          if (payload.lado === "A") finA = true;
+          else finB = true;
+        } else if (type === "end") {
+          recibioFin = true;
+          // v1.24.0 — señal de corte: el cliente encadena el tramo siguiente.
+          corteA = Boolean(payload.corteA);
+          corteB = Boolean(payload.corteB);
+        }
+        /* el cierre del lector dispara la finalización */
+      };
+
+      // Vigilante ADAPTATIVO (v1.24.0): SILENCIO = mem.umbralSilencioMs
+      // (aprendido; 25s de base con latidos de 2s), TURNO = 90s por tramo.
+      const SILENCIO_CLIENTE_MS = mem.umbralSilencioMs;
+      const TURNO_CLIENTE_MS = 90_000;
+      const t0Intento = Date.now();
+      const restanteIntento = () => TURNO_CLIENTE_MS - (Date.now() - t0Intento);
+
+      let falloLectura = false;
+      while (!falloLectura) {
+        const espera = Math.max(0, Math.min(SILENCIO_CLIENTE_MS, restanteIntento()));
+        let despertar: ReturnType<typeof setTimeout> | undefined;
+        const goteo = new Promise<"silencio">((resolve) => {
+          despertar = setTimeout(() => resolve("silencio"), espera);
+        });
+        let lect: ReadableStreamReadResult<Uint8Array> | "silencio";
+        try {
+          lect = await Promise.race([reader.read(), goteo]);
+        } finally {
+          if (despertar) clearTimeout(despertar);
+        }
+        if (lect === "silencio") {
+          // Conexión zombi: cancelación directa (nunca await: el cancel de un
+          // stream muerto podría no resolver) y fuera de este intento.
+          try {
+            void reader.cancel().catch(() => {});
+          } catch {
+            /* ya muerto */
+          }
+          vigilanteDisparado = true;
+          falloLectura = true;
+          break;
+        }
+        const { done, value } = lect;
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let idx: number;
+        while ((idx = buf.indexOf("\n\n")) !== -1) {
+          const raw = buf.slice(0, idx).trim();
+          buf = buf.slice(idx + 2);
+          if (!raw.startsWith("data:")) continue;
+          try {
+            handleEvent(JSON.parse(raw.slice(5).trim()) as Record<string, unknown>);
+          } catch {
+            /* evento malformado: ignorar */
+          }
+        }
+      }
+      if (flushTimer !== null) {
+        clearTimeout(flushTimer);
+        flushTimer = null;
+      }
+      return falloLectura;
     };
 
     try {
@@ -903,167 +1109,13 @@ export default function ChatExperience() {
       setThinking(false);
       setStreaming({ A: true, B: !isDirect });
 
-      const reader = res.body.getReader();
-      const dec = new TextDecoder();
-      let buf = "";
-      let flushTimer: ReturnType<typeof setTimeout> | null = null;
+      const falloLectura = await consumirSSE(res);
 
-      // Pinta como máximo cada 80 ms: fluidez visual sin renderizar cada token
-      const flush = () => {
-        flushTimer = null;
-        const paint = (acc: string) => `${acc}\u258D`;
-        // v1.17.0 — si ya se está escribiendo un juego, el panel aparece en vivo
-        const kindA = kindDe(accA);
-        const kindB = kindDe(accB);
-        setTurnsA((t) => {
-          const n = [...t];
-          const last = n.length > 0 ? n[n.length - 1] : undefined;
-          if (last?.role === "assistant") {
-            n[n.length - 1] = { ...last, content: paint(accA), thinking: thinkA, sources: finalSources, kind: kindA };
-          }
-          return n;
-        });
-        if (!isDirect) {
-          setTurnsB((t) => {
-            const n = [...t];
-            const last = n.length > 0 ? n[n.length - 1] : undefined;
-            if (last?.role === "assistant") {
-              n[n.length - 1] = { ...last, content: paint(accB), thinking: thinkB, sources: finalSources, kind: kindB };
-            }
-            return n;
-          });
-        }
-      };
-      const schedule = () => {
-        if (flushTimer === null) flushTimer = setTimeout(flush, 80);
-      };
-      // v1.23.0 — vida al instante: el cursor parpadea desde el primer
-      // milisegundo, antes de que el upstream diga la primera palabra.
-      flush();
-
-      const handleEvent = (payload: Record<string, unknown>) => {
-        const type = payload.t as string;
-        if (type === "meta") {
-          if (mode === "battle") {
-            const prev = battle;
-            setBattle({
-              aId: payload.aId as string,
-              bId: (payload.bId as string) ?? null,
-              battleId:
-                prev && prev.aId === payload.aId
-                  ? prev.battleId
-                  : (payload.battleId as string),
-              revealed: false,
-            });
-          }
-          const s = payload.sources as WebSource[] | undefined;
-          if (s && s.length > 0) finalSources = s;
-        } else if (type === "dA") {
-          accA += payload.v as string;
-          schedule();
-        } else if (type === "dB") {
-          accB += payload.v as string;
-          schedule();
-        } else if (type === "tA") {
-          thinkA = (thinkA ?? "") + (payload.v as string);
-          schedule();
-        } else if (type === "tB") {
-          thinkB = (thinkB ?? "") + (payload.v as string);
-          schedule();
-        } else if (type === "reintento") {
-          // v1.19.1 — el servidor se está autorreparando: mostrar «intento N/50»
-          setRecuperando({
-            n: (payload.n as number) ?? 1,
-            max: (payload.max as number) ?? 50,
-            motivo: (payload.motivo as string) ?? "upstream caído",
-          });
-        } else if (type === "limpiar") {
-          // v1.19.1 — el reintento repinta desde cero: borrar el panel afectado
-          if (payload.lado === "A") {
-            accA = "";
-            thinkA = undefined;
-          } else {
-            accB = "";
-            thinkB = undefined;
-          }
-          schedule();
-        } else if (type === "error") {
-          aborted = true;
-        } else if (type === "end") {
-          recibioFin = true;
-        }
-        /* el cierre del lector dispara la finalización */
-      };
-
-      // v1.19.2 — VIGILANTES DEL CLIENTE: la capa de servidor ya se
-      // autorrepara, pero si la CONEXIÓN SSE muere sin FIN (función serverless
-      // asesinada por maxDuration, proxy que traga la conexión, red agujero
-      // negro), `reader.read()` quedaría pendiente para siempre y la UI
-      // clavada a mitad de código, sin error y sin avance. Dos techos:
-      //  · SILENCIO (45s): el peor hueco legítimo del servidor es ~28s
-      //    (conexión 25s + pausa de reintento 3s) — por encima de eso, muerto.
-      //  · TURNO (90s): techo absoluto del intento aunque lleguen bytes goteando.
-      // Al dispararse: cancel() del reader (resuelve el read() pendiente) y
-      // salida del intento — sin contenido, el bucle de recuperación reintenta;
-      // con contenido parcial, se queda marcado «(generación interrumpida)».
-      const SILENCIO_CLIENTE_MS = 45_000;
-      const TURNO_CLIENTE_MS = 90_000;
-      const t0Intento = Date.now();
-      const restanteIntento = () => TURNO_CLIENTE_MS - (Date.now() - t0Intento);
-
-      let falloLectura = false;
-      while (!falloLectura) {
-        const espera = Math.max(0, Math.min(SILENCIO_CLIENTE_MS, restanteIntento()));
-        let despertar: ReturnType<typeof setTimeout> | undefined;
-        const goteo = new Promise<"silencio">((resolve) => {
-          despertar = setTimeout(() => resolve("silencio"), espera);
-        });
-        let lect: ReadableStreamReadResult<Uint8Array> | "silencio";
-        try {
-          lect = await Promise.race([reader.read(), goteo]);
-        } finally {
-          if (despertar) clearTimeout(despertar);
-        }
-        if (lect === "silencio") {
-          // Conexión zombi: cancelación directa (nunca await: el cancel de un
-          // stream muerto podría no resolver) y fuera de este intento.
-          try {
-            void reader.cancel().catch(() => {});
-          } catch {
-            /* ya muerto */
-          }
-          vigilanteDisparado = true;
-          falloLectura = true;
-          break;
-        }
-        const { done, value } = lect;
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-        let idx: number;
-        while ((idx = buf.indexOf("\n\n")) !== -1) {
-          const raw = buf.slice(0, idx).trim();
-          buf = buf.slice(idx + 2);
-          if (!raw.startsWith("data:")) continue;
-          try {
-            handleEvent(JSON.parse(raw.slice(5).trim()) as Record<string, unknown>);
-          } catch {
-            /* evento malformado: ignorar */
-          }
-        }
-      }
       if (falloLectura) {
-        if (flushTimer !== null) {
-          clearTimeout(flushTimer);
-          flushTimer = null;
-        }
         // Sin contenido y hay intentos: el bucle exterior repinta y reintenta.
         if (!accA.trim() && !accB.trim() && intentoRed < MAX_INTENTOS_RED) continue;
         generado = true;
         break;
-      }
-      if (flushTimer !== null) {
-        clearTimeout(flushTimer);
-        flushTimer = null;
       }
 
       // v1.19.1 — veredicto del intento: sin «end» y sin contenido, el stream
@@ -1082,7 +1134,110 @@ export default function ChatExperience() {
         throw new Error("La arena no pudo conectar tras 50 intentos. Revísala más tarde.");
       }
       setRecuperando(null);
-      if (aborted || !recibioFin) {
+
+      /* ── v1.24.0 · STREAM FOREVER — encadenado autoevolutivo de tramos ──
+       * Si el `end` trae señal de corte (techo de plataforma, upstream muerto
+       * con texto a medias) o la conexión murió con contenido en pantalla, la
+       * respuesta NO se da por acabada: se reanuda el hilo automáticamente.
+       * El parcial viaja al servidor; el modelo CONTINÚA desde el carácter
+       * exacto; el panel sigue pintando sin borrar nada. Cada tramo aporta
+       * hasta 55s más de generación: el techo de la plataforma deja de
+       * existir. Solo se reanudan los lados pendientes (sin finLado y sin
+       * corte); el anti-solape recorta repeticiones; y la memoria inmunitaria
+       * registra el incidente para reaccionar más rápido la próxima vez. */
+      let tramo = 1;
+      let eventoFinal: EventoInmunidad | null = null;
+      while (
+        !aborted &&
+        tramo < mem.tramosMax &&
+        Boolean(accA.trim() || accB.trim()) &&
+        (corteA || corteB || !finA || !finB)
+      ) {
+        tramo++;
+        setRecuperando({
+          n: tramo,
+          max: mem.tramosMax,
+          motivo: "el stream se cortó — reanudando el hilo desde el último carácter",
+        });
+        await new Promise((r) => setTimeout(r, 350));
+
+        const reanudarA = corteA || !finA;
+        const reanudarB = !isDirect && (corteB || !finB);
+        const cuerpo = {
+          ...body,
+          continuacion: {
+            reanudarA,
+            reanudarB,
+            parcialA: reanudarA ? accA : "",
+            parcialB: reanudarB ? accB : "",
+            tramo,
+          },
+        };
+        let res2: Response | null = null;
+        for (let i = 0; i < 3 && !res2; i++) {
+          try {
+            const r = await fetch("/api/battle", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(cuerpo),
+            });
+            const ct = r.headers.get("content-type") ?? "";
+            if (r.ok && ct.includes("text/event-stream") && r.body) res2 = r;
+          } catch {
+            /* red caída: siguiente intento */
+          }
+          if (!res2 && i < 2) await new Promise((r) => setTimeout(r, 700));
+        }
+        if (!res2) {
+          eventoFinal = "corte-sin-curar";
+          break;
+        }
+
+        // Nuevo tramo: lo confirmado pasa a base; el tramo arranca vacío.
+        baseA = accA;
+        baseB = accB;
+        nuevoA = "";
+        nuevoB = "";
+        recibioFin = false;
+        corteA = false;
+        corteB = false;
+        finA = isDirect;
+        finB = isDirect;
+        vigilanteDisparado = false;
+        await consumirSSE(res2);
+        // La marca [FIN] significa «ya estaba terminada cuando se cortó»:
+        // no es contenido nuevo — se retira antes de pintar el cierre.
+        if (nuevoA) {
+          nuevoA = nuevoA.replace(/^\s*\[FIN\]\s*/u, "");
+          empalmaA();
+        }
+        if (nuevoB) {
+          nuevoB = nuevoB.replace(/^\s*\[FIN\]\s*/u, "");
+          empalmaB();
+        }
+        const anadio = Boolean(nuevoA.trim() || nuevoB.trim());
+
+        if (recibioFin && !corteA && !corteB && finA && finB) {
+          // La respuesta terminó limpia en este tramo: corte curado.
+          eventoFinal = "corte-curado";
+          break;
+        }
+        if (!anadio) {
+          // El tramo no aportó ni un carácter: no martillear al upstream.
+          eventoFinal = "corte-sin-curar";
+          break;
+        }
+        // Hubo avance real: el corte anterior se superó. Si este tramo también
+        // se cortó, el while re-cadena el siguiente.
+        eventoFinal = "corte-curado";
+      }
+      if (eventoFinal) {
+        const mem2 = ajustarInmunidad(mem, eventoFinal);
+        guardarInmunidad(mem2);
+        setCuradosAqui(mem2.cortesCurados);
+      }
+
+      if (aborted || !recibioFin || corteA || corteB || !finA || !finB) {
         if (accA.trim()) accA = `${accA}\n\n_(generación interrumpida)_`;
         if (accB.trim()) accB = `${accB}\n\n_(generación interrumpida)_`;
       }
@@ -1881,7 +2036,10 @@ export default function ChatExperience() {
                   ? "Los modelos compiten de forma anónima. Tu voto revela sus identidades y ajusta el ELO."
                   : mode === "agent"
                     ? "El escuadrón de agentes planifica y ejecuta sin excusas: juegos AAA, apps, webs y más."
-                    : "Las respuestas son generadas por IA y pueden contener errores; el código generado se usa bajo tu responsabilidad.";
+                    : "Las respuestas son generadas por IA y pueden contener errores; el código generado se usa bajo tu responsabilidad." +
+                      (curadosAqui > 0
+                        ? ` · Stream Forever: ${curadosAqui} ${curadosAqui === 1 ? "corte curado" : "cortes curados"} en este dispositivo.`
+                        : "");
 
   /* ── Copa Todólogo (Modo Torneo): vista propia y completa ── */
   if (mode === "torneo") {
@@ -2172,7 +2330,11 @@ export default function ChatExperience() {
             <div className="fade-up mx-auto mt-2 max-w-[820px]">
               <div className="copa-pulse flex items-center justify-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[12.5px] text-amber-800">
                 <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-                <span className="font-medium">Recuperando señal · intento {recuperando.n}/{recuperando.max}</span>
+                <span className="font-medium">
+                  {recuperando.motivo.startsWith("el stream se cortó")
+                    ? `Stream Forever · reanudando el hilo (tramo ${recuperando.n}/${recuperando.max})`
+                    : `Recuperando señal · intento ${recuperando.n}/${recuperando.max}`}
+                </span>
                 <span className="hidden truncate text-muted-foreground sm:inline">
                   — {recuperando.motivo}; la arena se autocorrige sola
                 </span>

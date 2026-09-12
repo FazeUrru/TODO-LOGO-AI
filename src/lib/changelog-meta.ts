@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.24.0",
+    fecha: "12 sept 2026",
+    hora: "02:10",
+    titulo: "STREAM FOREVER: el streaming que no se corta nunca y aprende de cada corte",
+    tldr:
+      "Adiós a las respuestas cortadas: cuando el stream muere (techo de plataforma, proxy, upstream caído), la IA REANUDA el hilo desde el último carácter y sigue pintando sin borrar nada — con latidos que mantienen viva la conexión y una memoria inmunitaria que reacciona cada vez más rápido.",
+    diffDesde: "1.23.0",
+    hash: null,
+    kinds: ["nuevo", "correccion"],
+  },
+  {
     version: "1.23.0",
     fecha: "12 sept 2026",
     hora: "01:20",

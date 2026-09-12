@@ -20,7 +20,7 @@ const techo = <T>(p: Promise<T>, ms = 3000): Promise<T> =>
 
 describe("v1.19.2 — versión y trazabilidad", () => {
   it("la app va por la 1.19.2 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.23.0");
+    expect(APP_VERSION).toBe("1.24.0");
   });
 
   it("changelog-meta y CHANGELOG.md incluyen la 1.19.2 como corrección", () => {
@@ -181,9 +181,9 @@ describe("v1.19.2 — vigilantes en la tubería real (server y cliente)", () => 
     expect(src).toContain("restanteGlobal"); // reloj global, no por intento
   });
 
-  it("ChatExperience: la lectura SSE tiene vigilantes propios (silencio 45s y turno 90s)", () => {
+  it("ChatExperience: la lectura SSE tiene vigilantes propios (silencio ADAPTATIVO y turno 90s)", () => {
     const src = leer("src/components/arena/ChatExperience.tsx");
-    expect(src).toContain("SILENCIO_CLIENTE_MS = 45_000");
+    expect(src).toContain("SILENCIO_CLIENTE_MS = mem.umbralSilencioMs");
     expect(src).toContain("TURNO_CLIENTE_MS = 90_000");
     expect(src).toContain("reader.cancel()"); // cancelación directa del zombi
     expect(src).toContain("el servidor dejó de emitir"); // motivo honesto en la UI

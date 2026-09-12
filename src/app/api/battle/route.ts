@@ -12,6 +12,7 @@ import {
   vigilanteDeLectura,
   REINTENTOS_MAX,
 } from "@/lib/reintentos";
+import { promptReanudacion } from "@/lib/stream-inmunidad";
 
 export const maxDuration = 60;
 
@@ -33,6 +34,20 @@ interface BattleRequest {
   stream?: boolean;
   /** v1.17.0 — imágenes adjuntas (data URLs) que el motor de visión analiza. */
   images?: string[];
+  /**
+   * v1.24.0 — STREAM FOREVER: reanudación de un tramo cortado. El cliente
+   * reenvía el texto ya pintado y el modelo continúa desde el carácter exacto
+   * (los tramos se encadenan: ningún techo de plataforma puede cortar la
+   * respuesta definitivamente). reanudarA/reanudarB marcan qué lados siguen
+   * pendientes: los lados ya terminados NO se regeneran.
+   */
+  continuacion?: {
+    reanudarA?: boolean;
+    reanudarB?: boolean;
+    parcialA?: string;
+    parcialB?: string;
+    tramo?: number;
+  };
 }
 
 interface WebSource {
@@ -225,6 +240,8 @@ interface StreamSideResult {
   thinking: string;
   empty: boolean;
   voz: string | null;
+  /** v1.24.0 — el tramo quedó a medias (reloj o reintentos agotados con texto parcial): el cliente lo reanuda. */
+  cortado: boolean;
 }
 
 /**
@@ -325,6 +342,8 @@ async function streamSide(
   let thinking = "";
   // v1.19.2 — origen del reloj GLOBAL del lado (connect + lectura + reintentos)
   const t0Stream = Date.now();
+  // v1.24.0 — el tramo murió por reloj agotado con texto a medias
+  let cortePorReloj = false;
 
   const push = (kind: string, v: string) => {
     send({ t: kind, v });
@@ -409,7 +428,12 @@ async function streamSide(
         entreChunkMs: 12_000,
         cancelar,
       })) {
-        if (restanteGlobal() <= 0) break;
+        if (restanteGlobal() <= 0) {
+          // v1.24.0 — presupuesto agotado con texto a medias: NO es un fin, es
+          // un CORTE. Se marca para que el cliente encadene el tramo siguiente.
+          cortePorReloj = true;
+          break;
+        }
         if (d.reasoning) {
           thinking += d.reasoning;
           push(thinkKey, d.reasoning);
@@ -457,13 +481,21 @@ async function streamSide(
         }
       }
       const ok = await intentoUnico(n);
-      return ok ? { text, thinking, empty: false, voz: null } : null;
+      return ok ? { text, thinking, empty: false, voz: null, cortado: cortePorReloj } : null;
     },
     { presupuestoMs }
   );
 
   if (resultado) return resultado;
-  return { text: "", thinking: "", empty: text.trim().length === 0, voz: null };
+  // v1.24.0 — reintentos agotados: si quedó texto parcial, es un corte curable
+  // (el cliente lo reanuda); si no quedó nada, es un fallo completo (fallback).
+  return {
+    text,
+    thinking,
+    empty: text.trim().length === 0,
+    cortado: text.trim().length > 0,
+    voz: null,
+  };
 }
 
 /** Búsqueda web real vía el SDK; nunca rompe el flujo si falla (1 reintento). */
@@ -518,19 +550,25 @@ function newBattleId(): string {
 }
 
 export async function POST(req: NextRequest) {
-  // Rate-limit (v1.13.0): una batalla genera dos respuestas completas
-  const ip = ipDeHeader(req.headers.get("x-forwarded-for"));
-  if (!acumular(`batalla:${ip}`, GEN_LIMITE, Date.now())) {
-    return NextResponse.json(
-      { error: "Demasiadas batallas desde tu IP. Espera unos minutos e inténtalo de nuevo." },
-      { status: 429, headers: { "Retry-After": String(segundosRestantes(GEN_LIMITE)) } }
-    );
-  }
+  // v1.24.0 — el body se lee UNA vez al inicio: saber si el pedido es un tramo
+  // de reanudación decide el rate-limit (los tramos no vuelven a pagar peaje).
   let body: BattleRequest;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+  const esContinuacion = Boolean(body.continuacion?.parcialA || body.continuacion?.parcialB);
+  // Rate-limit (v1.13.0): una batalla genera dos respuestas completas
+  // v1.24.0 — los tramos de reanudación NO vuelven a pagar el peaje: el tramo
+  // original ya cobró, y cobrar cada tramo agotaría el límite a mitad de
+  // respuesta larga (exactamente el corte que este sistema elimina).
+  const ip = ipDeHeader(req.headers.get("x-forwarded-for"));
+  if (!esContinuacion && !acumular(`batalla:${ip}`, GEN_LIMITE, Date.now())) {
+    return NextResponse.json(
+      { error: "Demasiadas batallas desde tu IP. Espera unos minutos e inténtalo de nuevo." },
+      { status: 429, headers: { "Retry-After": String(segundosRestantes(GEN_LIMITE)) } }
+    );
   }
 
   const prompt = (body.prompt ?? "").trim();
@@ -630,6 +668,22 @@ export async function POST(req: NextRequest) {
     const encoder = new TextEncoder();
     const zai = await ZAI.create();
 
+    // v1.24.0 — STREAM FOREVER: si llega un tramo de reanudación, el texto
+    // parcial entra como turno assistant del historial y el prompt pide
+    // CONTINUAR desde el carácter exacto. Sin re-búsqueda web (el contexto
+    // ya está dentro del parcial) y sin fallback: el parcial se conserva.
+    // Los lados con reanudar=false NO se regeneran (su respuesta ya está
+    // completa en pantalla): solo devuelven finLado.
+    const parcialA = esContinuacion ? (body.continuacion?.parcialA ?? "").slice(0, 160_000) : "";
+    const parcialB = esContinuacion ? (body.continuacion?.parcialB ?? "").slice(0, 160_000) : "";
+    const tramo = Math.max(1, Math.min(body.continuacion?.tramo ?? 1, 60));
+    const reanudarA = esContinuacion ? (body.continuacion?.reanudarA ?? Boolean(parcialA)) : true;
+    const reanudarB = esContinuacion ? (body.continuacion?.reanudarB ?? Boolean(parcialB)) : true;
+    const histA = reanudarA && parcialA ? [...historyA, { role: "assistant" as const, content: parcialA }] : historyA;
+    const histB = reanudarB && parcialB ? [...historyB, { role: "assistant" as const, content: parcialB }] : historyB;
+    const promptEfectivo = esContinuacion ? `${prompt}\n\n${promptReanudacion(tramo)}` : finalPrompt;
+    const ladoNeutro: StreamSideResult = { text: "", thinking: "", empty: false, cortado: false, voz: null };
+
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         const send = (ev: Record<string, unknown>) => {
@@ -639,6 +693,16 @@ export async function POST(req: NextRequest) {
             /* cliente desconectado */
           }
         };
+        // v1.24.0 — LATIDO SSE: un ping cada 2s mantiene viva la conexión
+        // (ningún proxy la traga por inactividad) y alimenta el vigilante
+        // del cliente, que distingue «vivo pensando» de «muerto» en segundos.
+        const latido = setInterval(() => {
+          try {
+            controller.enqueue(encoder.encode(": ping\n\n"));
+          } catch {
+            /* cliente desconectado */
+          }
+        }, 2_000);
         try {
           send({
             t: "meta",
@@ -648,23 +712,27 @@ export async function POST(req: NextRequest) {
             sources: sources.length > 0 ? sources : undefined,
           });
 
-          const resA = streamSide(
-            zai, "A", sys(modelA.name), finalPrompt, 0.65, historyA, think, send, vozA, images
-          );
+          const resA = reanudarA
+            ? streamSide(
+                zai, "A", sys(modelA.name), promptEfectivo, 0.65, histA, think, send, vozA, images
+              )
+            : Promise.resolve(ladoNeutro);
           const resB =
             !single && modelB
-              ? streamSide(
-                  zai,
-                  "B",
-                  sys(modelB.name, " Aporta un ángulo distinto al típico."),
-                  finalPrompt,
-                  0.9,
-                  historyB,
-                  think,
-                  send,
-                  vozB,
-                  images
-                )
+              ? reanudarB
+                ? streamSide(
+                    zai,
+                    "B",
+                    sys(modelB.name, " Aporta un ángulo distinto al típico."),
+                    promptEfectivo,
+                    0.9,
+                    histB,
+                    think,
+                    send,
+                    vozB,
+                    images
+                  )
+                : Promise.resolve(ladoNeutro)
               : null;
 
           const [outA, outB] = await Promise.all([
@@ -672,15 +740,26 @@ export async function POST(req: NextRequest) {
             resB ?? Promise.resolve(null),
           ]);
 
-          const usedA = outA.empty;
-          const usedB = Boolean(modelB) && (!outB || outB.empty);
+          // v1.24.0 — en reanudación el parcial ya está pintado: si el tramo
+          // muere sin aportar nada, NO se planta el fallback (destruiría la
+          // respuesta viva); el corte queda señalizado y el cliente re-cadena.
+          const usedA = outA.empty && !parcialA;
+          const usedB = Boolean(modelB) && (!outB || outB.empty) && !parcialB;
           if (usedA) send({ t: "dA", v: fallbackResponse("Modelo Alfa", prompt) });
           if (usedB) send({ t: "dB", v: fallbackResponse("Modelo Beta", prompt) });
+
+          // v1.24.0 — finLado: cada lado que termina LIMPIO lo avisa antes del
+          // end; el cliente solo reanuda los lados sin fin y sin corte.
+          if (!outA.cortado) send({ t: "finLado", lado: "A" });
+          if (outB && !outB.cortado) send({ t: "finLado", lado: "B" });
 
           send({
             t: "end",
             usedFallback: usedA || usedB,
             engine: engineNote(outA.voz, outB?.voz ?? null),
+            // v1.24.0 — señal de corte: el cliente reanuda automáticamente.
+            corteA: outA.cortado && !usedA,
+            corteB: Boolean(modelB) && Boolean(outB?.cortado) && !usedB,
           });
         } catch {
           send({
@@ -688,6 +767,7 @@ export async function POST(req: NextRequest) {
             message: "La arena no pudo generar las respuestas. Inténtalo de nuevo.",
           });
         } finally {
+          clearInterval(latido);
           try {
             controller.close();
           } catch {
