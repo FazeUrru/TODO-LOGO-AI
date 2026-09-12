@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { acumular, ipDeHeader, segundosRestantes, type LimiteCfg } from "@/lib/rate-limit";
-import { buscar, catalogoOCache, carteleraPeliculas, top100, type RespuestaCatalogo, type VistaCine } from "@/lib/streamdog/cine-catalogo";
+import { buscar, catalogoOCache, carteleraPeliculas, explorar, top100, type RespuestaCatalogo, type VistaCine } from "@/lib/streamdog/cine-catalogo";
 
 /**
  * CINE&SERIES · /api/streamdog/cine (v1.33.0) — el catálogo agregado.
@@ -22,6 +22,9 @@ import { buscar, catalogoOCache, carteleraPeliculas, top100, type RespuestaCatal
  *                                    filtro = general | famosos | animacion
  *                                    | recientes | populares | ambiguedad
  *                                    (inválido → general)
+ *  · GET ?vista=explorar&cat=X     → EXPLORAR ∞ (v1.38.0): TODAS las fichas
+ *                                    de UNA categoría, página a página
+ *                                    (cat inválido → la primera categoría)
  *  · GET ?q=texto                  → búsqueda global en las 3 fuentes
  *
  * La agregación vive en cine-catalogo.ts para que el CRON EMPRESARIAL
@@ -65,6 +68,14 @@ export async function GET(req: Request) {
     if (vistaCruda === "peliculas" && searchParams.has("filtro")) {
       const cartelera = await carteleraPeliculas(searchParams.get("filtro"));
       return NextResponse.json({ ...cartelera, ok: true, vista: "peliculas" as const, q, pagina });
+    }
+
+    /* EXPLORAR ∞ (v1.38.0): ?vista=explorar&cat=X&pagina=N → TODAS las
+     * fichas de una categoría, paginadas sin fondo (scroll infinito). */
+    if (vistaCruda === "explorar") {
+      const pagina = Math.min(50, Math.max(1, Number.parseInt(searchParams.get("pagina") ?? "1", 10) || 1));
+      const resultado = await explorar(searchParams.get("cat"), pagina);
+      return NextResponse.json({ ...resultado, ok: true, vista: "explorar" as const, q, pagina });
     }
 
     const resultado = await catalogoOCache(vista, q, pagina);

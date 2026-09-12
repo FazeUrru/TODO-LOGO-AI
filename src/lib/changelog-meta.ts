@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.38.0",
+    fecha: "12 sept 2026",
+    hora: "13:45",
+    titulo: "StreamDog ∞ infinito de verdad: Explorar ∞ en todas las categorías, reproductor turbo con lazyload y autoguardado total",
+    tldr:
+      "El catálogo ya NO tiene fondo: la vista «Explorar» abre TODAS las categorías (clásicos, film noir, animación, TV clásica, documentales, cortos libres, todas las series…) con scroll infinito y ~2 000 fichas por categoría; el reproductor se carga con lazy() y arranca con TU velocidad y TU volumen autoguardados, con preload progresivo (metadata al abrir, búfer agresivo al dar al play); y la casa aprende lo que te gusta: «Porque te gusta» recomienda por afinidad real de géneros y fuentes — todo en tu dispositivo, sin cuentas ni seguimiento.",
+    diffDesde: "1.37.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.37.0",
     fecha: "12 sept 2026",
     hora: "14:40",

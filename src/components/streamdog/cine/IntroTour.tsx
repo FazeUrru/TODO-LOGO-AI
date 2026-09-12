@@ -78,7 +78,9 @@ export function IntroStreamDog({ onTerminar }: PropsIntro) {
   const [ocultando, setOcultando] = useState(false);
   const t = useCallback((clave: string) => traducirCine(clave, idioma), [idioma]);
   const silencioRef = useRef(silencio);
-  silencioRef.current = silencio;
+  useEffect(() => {
+    silencioRef.current = silencio;
+  }, [silencio]);
 
   const cerrar = useCallback(() => {
     setOcultando(true);

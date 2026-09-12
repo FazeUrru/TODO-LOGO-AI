@@ -48,6 +48,7 @@ export default function HeroeDestacado({ item, idioma, etiquetas, enMiLista, onA
           onError={() => setImagenViva(false)}
           className="sdc-kenburns absolute inset-0 h-full w-full object-cover opacity-70"
           loading="eager"
+          fetchPriority="high"
         />
       ) : null}
       <div className="absolute inset-0 bg-gradient-to-t from-[#070d18] via-[#070d18]/55 to-transparent" aria-hidden />

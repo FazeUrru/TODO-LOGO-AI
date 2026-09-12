@@ -289,9 +289,9 @@ describe("v1330 · diccionarios completos", () => {
 
 describe("v1330 · tríada de versiones coherente", () => {
   it("version.ts, changelog-meta.ts y CHANGELOG.md dicen 1.33.0", () => {
-    expect(APP_VERSION).toBe("1.37.0");
-    expect(VERSIONS[4].version).toBe("1.33.0");
-    expect(VERSIONS[4].diffDesde).toBe("1.32.0");
+    expect(APP_VERSION).toBe("1.38.0");
+    expect(VERSIONS[5].version).toBe("1.33.0");
+    expect(VERSIONS[5].diffDesde).toBe("1.32.0");
     const changelog = readFileSync(join(RAIZ, "CHANGELOG.md"), "utf8");
     expect(changelog).toContain("## [1.33.0]");
     expect(changelog.indexOf("## [1.33.0]")).toBeLessThan(changelog.indexOf("## [1.32.0]"));

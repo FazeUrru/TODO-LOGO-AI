@@ -164,6 +164,53 @@ export const COLECCIONES_ARCHIVE: ColeccionArchivo[] = [
   { id: "documentaryfilms", claveI18n: "Documentales", tipo: "pelicula", filas: 12 },
 ];
 
+/* ═════════ EXPLORAR ∞ (v1.38.0) — TODAS las categorías, sin fondo ═════════ */
+
+/**
+ * Una categoría del modo EXPLORAR: grilla paginada SIN límite práctico
+ * (50 páginas × 40 fichas = ~2 000 fichas por categoría, y el botón
+ * «Cargar más»/scroll infinito nunca deja de ofrecer más mientras la
+ * fuente aguante). Tres motores según `motor`:
+ *
+ *   · archive  → colección curada de Archive.org (consulta = id de colección)
+ *   · commons  → búsqueda paginada de vídeo en Wikimedia Commons
+ *                (consulta = texto libre; se pagina por offset)
+ *   · tvmaze   → el catálogo completo de series por peso real (250/página)
+ */
+export interface CategoriaExplorar {
+  /** Identificador canónico para la URL (?vista=explorar&cat=id). */
+  id: string;
+  claveI18n: string;
+  motor: "archive" | "commons" | "tvmaze";
+  /** Id de colección Archive o texto de búsqueda Commons (tvmaze lo ignora). */
+  consulta: string;
+  /** Fichas por página (cada motor ajusta a su máximo sano). */
+  porPagina: number;
+}
+
+export const CATEGORIAS_EXPLORAR: CategoriaExplorar[] = [
+  /* — Archive.org: colecciones eternas, página tras página — */
+  { id: "clasicos", claveI18n: "Cine clásico libre", motor: "archive", consulta: "feature_films", porPagina: 40 },
+  { id: "film-noir", claveI18n: "Film noir", motor: "archive", consulta: "film_noir", porPagina: 40 },
+  { id: "ciencia-ficcion", claveI18n: "Ciencia ficción y terror", motor: "archive", consulta: "sci-fi_horror", porPagina: 40 },
+  { id: "animacion-clasica", claveI18n: "Dibujos animados clásicos", motor: "archive", consulta: "classic_cartoons", porPagina: 40 },
+  { id: "tv-clasica", claveI18n: "Televisión clásica", motor: "archive", consulta: "classic_tv", porPagina: 40 },
+  { id: "documentales", claveI18n: "Documentales", motor: "archive", consulta: "documentaryfilms", porPagina: 40 },
+  /* — Wikimedia Commons: vídeo libre paginado por offset — */
+  { id: "cortos-libres", claveI18n: "Cortos libres", motor: "commons", consulta: "short film", porPagina: 24 },
+  { id: "animacion-libre", claveI18n: "Animación libre", motor: "commons", consulta: "animated film OR cartoon", porPagina: 24 },
+  { id: "documentales-libres", claveI18n: "Documentales libres", motor: "commons", consulta: "documentary film", porPagina: 24 },
+  /* — TVMaze: TODO el catálogo de series, por peso real — */
+  { id: "series-todas", claveI18n: "Todas las series", motor: "tvmaze", consulta: "", porPagina: 40 },
+];
+
+/** El id canónico de la categoría pedida, o null si la entrada es basura. */
+export function categoriaExplorarValida(crudo: unknown): string | null {
+  if (typeof crudo !== "string") return null;
+  const limpia = crudo.trim().toLowerCase().slice(0, 40);
+  return CATEGORIAS_EXPLORAR.some((c) => c.id === limpia) ? limpia : null;
+}
+
 /* ═════════ LO MEJOR DE DISNEY+ (fichas TVMaze, metadatos legales) ═════════ */
 
 /**
@@ -676,6 +723,10 @@ export const CLAVES_CINE = {
   idioma: "streamdog.cine.v1.idioma",
   /** Preferencia de reproducción en segundo plano (MediaSession + PiP automático). */
   fondo: "streamdog.cine.v1.fondo",
+  /** Ajustes del reproductor y de la UI (v1.38.0): autoguardado total. */
+  ajustes: "streamdog.cine.v1.ajustes",
+  /** Gustos aprendidos (v1.38.0): géneros y fuentes que consumes, en tu dispositivo. */
+  gustos: "streamdog.cine.v1.gustos",
 } as const;
 
 /** Registro de «seguir viendo»: dónde se quedó cada título. */

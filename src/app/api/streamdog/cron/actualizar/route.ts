@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { catalogo, carteleraPeliculas, top100, type VistaCine } from "@/lib/streamdog/cine-catalogo";
+import { catalogo, carteleraPeliculas, explorar, top100, type VistaCine } from "@/lib/streamdog/cine-catalogo";
 import { CRON_SCHEDULE, autorizarCron, registrarEjecucion, type EjecucionCron } from "@/lib/streamdog/cine-cron";
 import { estadosFuentes } from "@/lib/streamdog/cine-servidor";
+import { CATEGORIAS_EXPLORAR } from "@/lib/streamdog/cine";
 import { FILTROS_PELICULAS, FILTROS_TOP100 } from "@/lib/streamdog/cine-top100";
 
 /**
@@ -128,6 +129,21 @@ export async function GET(req: Request) {
   } catch (e) {
     errores.push(`peliculas: ${e instanceof Error ? e.message : "error desconocido"}`);
   }
+
+  // 3c) EXPLORAR ∞ (v1.38.0): la primera página de CADA categoría caliente —
+  //     así el primer clic del usuario en «Explorar» ya cae en golpe seco.
+  await Promise.all(
+    CATEGORIAS_EXPLORAR.map(async ({ id }) => {
+      try {
+        const r = await explorar(id, 1);
+        items += r.items.length;
+        degradada = degradada || r.degradada;
+        vistas.push(`explorar:${id}:1`);
+      } catch (e) {
+        errores.push(`explorar:${id} — ${e instanceof Error ? e.message : "error desconocido"}`);
+      }
+    })
+  );
 
   const completado = Date.now();
   const ejecucion: EjecucionCron = {

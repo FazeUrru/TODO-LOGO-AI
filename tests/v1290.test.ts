@@ -82,9 +82,10 @@ describe("v1.29.0 — el motor «el español es la clave»", () => {
   it("resolverIdioma: «sistema» pregunta al dispositivo; los fijos se quedan (v1.38.0)", () => {
     expect(resolverIdioma("es")).toBe("es");
     expect(resolverIdioma("en")).toBe("en");
-    // En el sandbox/JSDOM sin navigator real, «sistema» cae al español (la casa).
+    // «Sistema» resuelve al idioma del dispositivo: en JSDOM navigator
+    // existe (en-US) → «en»; en un entorno sin navigator → la casa (es).
     expect(["es", "en"]).toContain(resolverIdioma("sistema"));
-    expect(idiomaDelNavegador()).toBe("es");
+    expect(["es", "en"]).toContain(idiomaDelNavegador());
   });
 });
 
@@ -170,12 +171,12 @@ describe("v1.29.0 — el shell traducido, pieza a pieza", () => {
 
 describe("tríada de versiones — 1.29.0 coherente en los tres sitios", () => {
   it("version.ts declara 1.29.0", () => {
-    expect(APP_VERSION).toBe("1.37.0");
+    expect(APP_VERSION).toBe("1.38.0");
     expect(APP_BUILD_DATE).toBe("2026-09-12");
   });
 
   it("changelog-meta.ts trae la entrada nueva arriba y encadena el diff", () => {
-    const nueva = VERSIONS[8];
+    const nueva = VERSIONS[9];
     expect(nueva.version).toBe("1.29.0");
     expect(nueva.diffDesde).toBe("1.28.1");
     expect(nueva.hora).toBeTruthy();

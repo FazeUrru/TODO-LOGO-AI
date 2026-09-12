@@ -465,7 +465,10 @@ describe("v1320 · invariantes estáticos del backend, la UI y el SW", () => {
   it("la página de StreamDog monta el módulo de cine con pestaña propia", () => {
     const pagina = readFileSync(join(RAIZ, "src/app/streamdog/page.tsx"), "utf8");
     expect(pagina).toContain("Cine");
-    expect(pagina).toContain('Pestaña>("cine")');
+    // v1.38.0: la pestaña se sincroniza con el hash (#parrilla → parrilla),
+    // con enlaces compartibles y caída a «cine».
+    expect(pagina).toContain('pestañaDelHash() ?? "cine"');
+    expect(pagina).toContain('"cine", "parrilla", "sportia"');
     expect(pagina).toContain("APP_VERSION");
   });
 });
@@ -474,10 +477,10 @@ describe("v1320 · invariantes estáticos del backend, la UI y el SW", () => {
 
 describe("v1320 · tríada de versiones coherente", () => {
   it("version.ts, changelog-meta.ts y CHANGELOG.md dicen 1.32.0", () => {
-    expect(APP_VERSION).toBe("1.37.0");
-    expect(VERSIONS[5].version).toBe("1.32.0");
-    expect(VERSIONS[5].diffDesde).toBe("1.31.0");
-    expect(VERSIONS[5].kinds).toContain("nuevo");
+    expect(APP_VERSION).toBe("1.38.0");
+    expect(VERSIONS[6].version).toBe("1.32.0");
+    expect(VERSIONS[6].diffDesde).toBe("1.31.0");
+    expect(VERSIONS[6].kinds).toContain("nuevo");
     const changelog = readFileSync(join(RAIZ, "CHANGELOG.md"), "utf8");
     expect(changelog).toContain("## [1.32.0]");
     expect(changelog).toContain("StreamDog Cine&Series");

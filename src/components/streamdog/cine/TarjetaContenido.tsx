@@ -11,6 +11,11 @@ import { cn } from "@/lib/utils";
  * panorámico para películas de archivo), valoración, insignia de fuente,
  * botón de reproducción al pasar el ratón y acceso rápido a «Mi lista».
  * Con barra de progreso si el título está a medias («Seguir viendo»).
+ *
+ * LAZYLOAD (v1.38.0): la imagen viaja con loading="lazy" + decoding="async"
+ * nativos y añade BLUR-UP — mientras baja, el hueco brilla (sdc-shimmer)
+ * y al llegar hace fade-in suave. Cero saltos de layout: el aspecto está
+ * reservado por la caja antes de que la imagen exista.
  */
 
 interface Props {
@@ -41,6 +46,7 @@ function claseMedalla(puesto: number): string {
 
 export default function TarjetaContenido({ item, idioma, enMiLista, progresoPct, puesto, onAbrir, onMiLista }: Props) {
   const [imagenRota, setImagenRota] = useState(false);
+  const [imagenViva, setImagenViva] = useState(false); // blur-up: true cuando el <img> termina de bajar
   const vertical = item.fuente === "tvmaze";
   const dominioPublico = item.fuente !== "tvmaze";
 
@@ -69,14 +75,22 @@ export default function TarjetaContenido({ item, idioma, enMiLista, progresoPct,
       >
         <div className={cn("relative w-full overflow-hidden bg-slate-900", vertical ? "aspect-[2/3]" : "aspect-video")}>
           {item.imagen && !imagenRota ? (
-            <img
-              src={item.imagen}
-              alt={`Póster de ${item.titulo}`}
-              loading="lazy"
-              decoding="async"
-              onError={() => setImagenRota(true)}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
+            <>
+              {/* Placeholder shimmer: brilla mientras la imagen baja (lazyload) */}
+              {!imagenViva && <span className="sdc-shimmer absolute inset-0 bg-white/5" aria-hidden />}
+              <img
+                src={item.imagen}
+                alt={`Póster de ${item.titulo}`}
+                loading="lazy"
+                decoding="async"
+                onError={() => setImagenRota(true)}
+                onLoad={() => setImagenViva(true)}
+                className={cn(
+                  "h-full w-full object-cover transition-all duration-500 group-hover:scale-105",
+                  imagenViva ? "opacity-100 blur-0" : "opacity-0 blur-md"
+                )}
+              />
+            </>
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800 via-slate-800/60 to-slate-900 p-3 text-center">
               <span className="line-clamp-3 text-[12.5px] font-medium text-slate-300">{item.titulo}</span>

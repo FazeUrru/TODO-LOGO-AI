@@ -296,6 +296,20 @@ export const CLAVES_CINE_UI = [
   "El catálogo es gratis y será gratis para siempre. La casa se sostiene con tres vías opcionales guiadas por la demanda real: puentes de afiliación honesta hacia plataformas legales cuando un título no está libre (pagas lo mismo, la casa cobra una comisión pequeña), colecciones a demanda donde la comunidad vota y financia qué se cura después, y pósters de dominio público impresos bajo demanda. Nada de banners, nada de cuotas mensuales, nada de vender tus datos: si quieres saber más, el botón «Sostenibilidad» de la cabecera lo cuenta al detalle.",
   "Las reglas de la casa",
   "Solo contenido libre y metadatos abiertos; cada ficha nombra su fuente; si un titular de derechos pide una retirada, se retira de inmediato. Sin excepciones y sin disculpas: así es como esta casa lleva el contenido libre de forma limpia, auditable y para todos los públicos.",
+  /* v1.38.0 — Explorar ∞ + autoguardado total (ajustes + gustos) */
+  "Ver todo",
+  "Todas las categorías, todas las fichas: baja y baja, el catálogo no se acaba.",
+  "Cortos libres",
+  "Animación libre",
+  "Documentales libres",
+  "Todas las series",
+  "Porque te gusta",
+  "Ajustes",
+  "Autoguardado activo: tus ajustes y gustos viven en tu dispositivo.",
+  "Reproducción automática",
+  "Carga infinita",
+  "Velocidad por defecto",
+  "Volumen por defecto",
 ] as const;
 
 /** Diccionario destino: clave española → cadena en el idioma destino. */
@@ -540,7 +554,7 @@ export const DICCIONARIOS_CINE: Record<IdiomaCineFijo, Record<string, string>> =
     "El buscador pega en las tres fuentes a la vez (Commons, Archive y TVMaze) y muestra resultados reales: escribe y da al botón verde.":
       "The search box hits all three sources at once (Commons, Archive and TVMaze) and shows real results: type and hit the green button.",
     "Cinco vistas, un catálogo": "Five views, one catalog",
-    "Inicio con filas, el Top 100 con 6 filtros, Películas con constructive criticism, Series y tu Mi lista: todo salta con un toque.":
+    "Inicio con filas, el Top 100 con 6 filtros, Películas con crítica constructiva, Series y tu Mi lista: todo salta con un toque.":
       "Home with rows, the Top 100 with 6 filters, Movies with constructive criticism, Series and your My List: everything jumps with a tap.",
     "La hoja de ruta se PUEDE usar": "The roadmap is USABLE",
     "Deportes, viajes, juegos, apps y webs no son carteles mudos: cada ficha abre acciones reales — jugar, instalar, explorar, escuchar.":
@@ -587,6 +601,22 @@ export const DICCIONARIOS_CINE: Record<IdiomaCineFijo, Record<string, string>> =
     "Las reglas de la casa": "The house rules",
     "Solo contenido libre y metadatos abiertos; cada ficha nombra su fuente; si un titular de derechos pide una retirada, se retira de inmediato. Sin excepciones y sin disculpas: así es como esta casa lleva el contenido libre de forma limpia, auditable y para todos los públicos.":
       "Free content and open metadata only; every card names its source; if a rights holder requests a removal, it's removed immediately. No exceptions, no apologies: that's how this house keeps free content clean, auditable and for all audiences.",
+    /* v1.38.0 — Explorar ∞ + autoguardado total (ajustes + gustos) */
+    "Ver todo": "See all",
+    "Todas las categorías, todas las fichas: baja y baja, el catálogo no se acaba.":
+      "All the categories, all the cards: keep scrolling, the catalog never ends.",
+    "Cortos libres": "Free shorts",
+    "Animación libre": "Free animation",
+    "Documentales libres": "Free documentaries",
+    "Todas las series": "All series",
+    "Porque te gusta": "Because you like it",
+    Ajustes: "Settings",
+    "Autoguardado activo: tus ajustes y gustos viven en tu dispositivo.":
+      "Autosave on: your settings and tastes live on your device.",
+    "Reproducción automática": "Autoplay",
+    "Carga infinita": "Infinite scroll",
+    "Velocidad por defecto": "Default speed",
+    "Volumen por defecto": "Default volume",
   },
 
   de: {
@@ -826,7 +856,7 @@ export const DICCIONARIOS_CINE: Record<IdiomaCineFijo, Record<string, string>> =
     "El buscador pega en las tres fuentes a la vez (Commons, Archive y TVMaze) y muestra resultados reales: escribe y da al botón verde.":
       "Die Suche greift alle drei Quellen gleichzeitig (Commons, Archive und TVMaze) und zeigt echte Ergebnisse: tippen, grünen Knopf drücken.",
     "Cinco vistas, un catálogo": "Fünf Ansichten, ein Katalog",
-    "Inicio con filas, el Top 100 con 6 filtros, Películas con konstruktiver Kritik, Serien und deine Meine Liste: alles ein Tipp entfernt.":
+    "Inicio con filas, el Top 100 con 6 filtros, Películas con crítica constructiva, Series y tu Mi lista: todo salta con un toque.":
       "Start mit Reihen, die Top 100 mit 6 Filtern, Filme mit konstruktiver Kritik, Serien und deine Meine Liste: alles ein Tipp entfernt.",
     "La hoja de ruta se PUEDE usar": "Die Roadmap ist BENUTZBAR",
     "Deportes, viajes, juegos, apps y webs no son carteles mudos: cada ficha abre acciones reales — jugar, instalar, explorar, escuchar.":
@@ -873,6 +903,22 @@ export const DICCIONARIOS_CINE: Record<IdiomaCineFijo, Record<string, string>> =
     "Las reglas de la casa": "Die Hausregeln",
     "Solo contenido libre y metadatos abiertos; cada ficha nombra su fuente; si un titular de derechos pide una retirada, se retira de inmediato. Sin excepciones y sin disculpas: así es como esta casa lleva el contenido libre de forma limpia, auditable y para todos los públicos.":
       "Nur freie Inhalte und offene Metadaten; jede Karte nennt ihre Quelle; verlangt ein Rechteinhaber die Entfernung, passiert sie sofort. Ohne Ausnahmen, ohne Entschuldigung: So führt dieses Haus freie Inhalte sauber, prüfbar und für alle Publika.",
+    /* v1.38.0 — Explorar ∞ + autoguardado total (ajustes + gustos) */
+    "Ver todo": "Alles ansehen",
+    "Todas las categorías, todas las fichas: baja y baja, el catálogo no se acaba.":
+      "Alle Kategorien, alle Karten: scroll weiter und weiter, der Katalog hört nie auf.",
+    "Cortos libres": "Freie Kurzfilme",
+    "Animación libre": "Freie Animation",
+    "Documentales libres": "Freie Dokumentationen",
+    "Todas las series": "Alle Serien",
+    "Porque te gusta": "Weil es dir gefällt",
+    Ajustes: "Einstellungen",
+    "Autoguardado activo: tus ajustes y gustos viven en tu dispositivo.":
+      "Autospeichern aktiv: Deine Einstellungen und Vorlieben leben auf deinem Gerät.",
+    "Reproducción automática": "Automatisch abspielen",
+    "Carga infinita": "Infinite Scroll",
+    "Velocidad por defecto": "Standardgeschwindigkeit",
+    "Volumen por defecto": "Standardlautstärke",
   },
 
   fr: {
@@ -1112,7 +1158,7 @@ export const DICCIONARIOS_CINE: Record<IdiomaCineFijo, Record<string, string>> =
     "El buscador pega en las tres fuentes a la vez (Commons, Archive y TVMaze) y muestra resultados reales: escribe y da al botón verde.":
       "La recherche frappe les trois sources en même temps (Commons, Archive et TVMaze) et montre des résultats réels : tape et appuie sur le bouton vert.",
     "Cinco vistas, un catálogo": "Cinq vues, un catalogue",
-    "Inicio con filas, el Top 100 con 6 filtros, Películas avec critique constructive, Séries et ta Ma liste : tout saute d'un geste.":
+    "Inicio con filas, el Top 100 con 6 filtros, Películas con crítica constructiva, Series y tu Mi lista: todo salta con un toque.":
       "Accueil avec des rangées, le Top 100 avec 6 filtres, Films avec critique constructive, Séries et ta Ma liste : tout saute d'un geste.",
     "La hoja de ruta se PUEDE usar": "La feuille de route s'UTILISE",
     "Deportes, viajes, juegos, apps y webs no son carteles mudos: cada ficha abre acciones reales — jugar, instalar, explorar, escuchar.":
@@ -1159,6 +1205,22 @@ export const DICCIONARIOS_CINE: Record<IdiomaCineFijo, Record<string, string>> =
     "Las reglas de la casa": "Les règles de la maison",
     "Solo contenido libre y metadatos abiertos; cada ficha nombra su fuente; si un titular de derechos pide una retirada, se retira de inmediato. Sin excepciones y sin disculpas: así es como esta casa lleva el contenido libre de forma limpia, auditable y para todos los públicos.":
       "Contenu libre et métadonnées ouvertes seulement ; chaque fiche nomme sa source ; si un ayant droit demande un retrait, il est immédiat. Sans exceptions et sans excuses : voilà comment cette maison porte le contenu libre propre, auditable et pour tous les publics.",
+    /* v1.38.0 — Explorar ∞ + autoguardado total (ajustes + gustos) */
+    "Ver todo": "Tout voir",
+    "Todas las categorías, todas las fichas: baja y baja, el catálogo no se acaba.":
+      "Toutes les catégories, toutes les fiches : descends et descends, le catalogue ne s'arrête jamais.",
+    "Cortos libres": "Courts libres",
+    "Animación libre": "Animation libre",
+    "Documentales libres": "Documentaires libres",
+    "Todas las series": "Toutes les séries",
+    "Porque te gusta": "Parce que tu aimes",
+    Ajustes: "Réglages",
+    "Autoguardado activo: tus ajustes y gustos viven en tu dispositivo.":
+      "Sauvegarde auto active : tes réglages et tes goûts vivent sur ton appareil.",
+    "Reproducción automática": "Lecture automatique",
+    "Carga infinita": "Défilement infini",
+    "Velocidad por defecto": "Vitesse par défaut",
+    "Volumen por defecto": "Volume par défaut",
   },
 };
 

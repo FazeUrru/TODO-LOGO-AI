@@ -137,14 +137,14 @@ describe("cirugía estática v1.25.1 — nada de .json() crudo en el cliente exp
 
 describe("tríada de versiones v1.25.1", () => {
   it("APP_VERSION coincide con la entrada más reciente del changelog", () => {
-    expect(APP_VERSION).toBe("1.37.0");
-    expect(VERSIONS[12].version).toBe("1.26.0");
+    expect(APP_VERSION).toBe("1.38.0");
+    expect(VERSIONS[13].version).toBe("1.26.0");
   });
 
   it("el orden del changelog sigue siendo estrictamente descendente", () => {
     for (let i = 1; i < VERSIONS.length; i++) {
       expect(VERSIONS[i - 1].version).not.toBe(VERSIONS[i].version);
     }
-    expect(VERSIONS[12].diffDesde).toBe("1.25.1");
+    expect(VERSIONS[13].diffDesde).toBe("1.25.1");
   });
 });

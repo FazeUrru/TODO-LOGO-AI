@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.37.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.38.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
   <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI"><img alt="cobertura" src="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI/graph/badge.svg"></a>
@@ -221,6 +221,9 @@ StreamDog es el estudio de entretenimiento del proyecto. Su módulo **Cine y ser
 
 Lo que incluye el módulo:
 
+- **Explorar ∞ (v1.38.0)**: la vista que abre **TODAS las categorías** — clásicos, film noir, ciencia ficción y terror, animación clásica, TV clásica, documentales, cortos libres, animación libre, documentales libres y **todas las series** — con **scroll infinito** (IntersectionObserver + botón accesible), ~2 000 fichas por categoría y caché calentada por el cron. Cada fila del inicio con categoría propia estrena su botón **«Ver todo»**.
+- **Autoguardado total (v1.38.0)**: **seguir viendo** (dónde lo dejaste, con reanudación), **ajustes** (autoplay, carga infinita, velocidad y volumen por defecto desde el panel ⚙️) y **gustos** — la fila **«Porque te gusta»** aprende de lo que ves por afinidad de géneros y fuentes. Todo vive en tu dispositivo con autoreparación, sin cuentas ni seguimiento.
+- **Reproductor turbo + lazyload (v1.38.0)**: code-splitting con `lazy()` + `Suspense`, **preload progresivo** (metadata al abrir, búfer agresivo al dar al play), filas que montan al asomarse con skeleton shimmer, **blur-up** en las tarjetas y héroe con prioridad de fetch.
 - **UI premium/VIP**: héroe destacado con Ken Burns, buscador verde con destello, chips degradados de salto rápido, filas en carrusel con **entrada escalonada**, tarjetas que se elevan, sports VS con **cuenta atrás real** y hoja de ruta «Muy pronto» con diálogo motivador — **8 animaciones originales `sdc-*`** en GPU con `prefers-reduced-motion`.
 - **Fusión elegible con el Arena** 🔗: conmutador premium entre modo **fusionado** (insignia «Ir al Arena», identidad compartida) y modo **independiente** (enlaces cruzados apagados, app autónoma para su dominio propio), persistente y a prueba de storage corrupto.
 - **«Pacto abierto»** 🤝: aviso de seguridad, privacidad y legibilidad — una carta abierta y duradera a Netflix, Prime Video, Disney+, HBO Max, Apple TV y Filmin: colaboración y un acuerdo mayor, no enemistad permanente. Sin nada personal: el problema son los precios desorbitados.

@@ -202,7 +202,7 @@ describe("v1.28.1 — invariantes estáticos de la cura", () => {
 
 describe("tríada de versiones — 1.28.1 coherente en los tres sitios", () => {
   it("version.ts declara 1.28.1", () => {
-    expect(APP_VERSION).toBe("1.37.0");
+    expect(APP_VERSION).toBe("1.38.0");
     expect(APP_BUILD_DATE).toBe("2026-09-12");
   });
 

@@ -191,11 +191,11 @@ describe("GamePanel — la ejecución canónica al terminar queda intacta", () =
 });
 
 describe("Tríada de versiones 1.27.0", () => {
-  it("APP_VERSION y VERSIONS[0] cuentan la misma verdad", () => {
-    expect(APP_VERSION).toBe("1.37.0");
-    expect(VERSIONS[11].version).toBe("1.27.0");
-    expect(VERSIONS[11].diffDesde).toBe("1.26.0");
-    expect(VERSIONS[11].kinds).toContain("nuevo");
+  it("APP_VERSION y VERSIONS[1] cuentan la misma verdad", () => {
+    expect(APP_VERSION).toBe("1.38.0");
+    expect(VERSIONS[12].version).toBe("1.27.0");
+    expect(VERSIONS[12].diffDesde).toBe("1.26.0");
+    expect(VERSIONS[12].kinds).toContain("nuevo");
     for (let i = 1; i < VERSIONS.length; i++) {
       expect(VERSIONS[i - 1].version).not.toBe(VERSIONS[i].version);
     }

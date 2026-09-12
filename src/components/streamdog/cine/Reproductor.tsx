@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { jsonSeguro } from "@/lib/fetch-seguro";
 import { detalleCommonsCliente } from "@/lib/streamdog/cine-cliente";
+import { VELOCIDADES_CINE, type AjustesCine } from "@/lib/streamdog/cine-gustos";
 import type { ItemCine } from "@/lib/streamdog/cine";
 import { traducirCine, type IdiomaCine } from "@/lib/streamdog/cine-i18n";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,16 @@ import { cn } from "@/lib/utils";
  *     `visibilitychange`). El audio sigue — y si prefieres verlo,
  *     en la ventana flotante también. Preferencia persistida con
  *     autoreparación (cine.ts).
+ *
+ * NUEVO v1.38.0 — TURBO:
+ *  · PRELOAD PROGRESIVO: empieza en «metadata» (carga instantánea del
+ *    modal, sin megas de más) y pasa a «auto» en cuanto hay play — el
+ *    búfer crece agressivo SOLO cuando el usuario quiere ver, no antes.
+ *  · VELOCIDAD Y VOLUMEN del ajuste autoguardado: si dejaste el volumen
+ *    al 40 % y velocidad 1.5×, así arranca la próxima sesión. Cada cambio
+ *    se persiste al vuelo (onAjuste → localStorage con autoreparación).
+ *  · AUTOPLAY elegible: la reproducción no empieza sola si el ajuste
+ *    lo prohíbe (política de datos / autoplay de navegador friendly).
  */
 
 interface Props {
@@ -59,13 +70,17 @@ interface Props {
   /** Segundos donde se quedó el usuario la última vez. */
   posicionInicialSeg: number;
   fondoPref: boolean;
+  /** Ajustes autoguardados (v1.38.0): autoplay, velocidad y volumen por defecto. */
+  ajustes: AjustesCine;
   onCerrar: () => void;
   /** Guarda progreso (el padre lo persiste con autoreparación). */
   onProgreso: (posicionSeg: number, duracionSeg: number) => void;
   onFondoPref: (activa: boolean) => void;
+  /** Persiste un ajuste al vuelo (velocidad, volumen, autoplay…). */
+  onAjuste: (parcial: Partial<AjustesCine>) => void;
 }
 
-const VELOCIDADES = [0.75, 1, 1.25, 1.5, 2] as const;
+const VELOCIDADES = VELOCIDADES_CINE;
 
 function minutosDe(segundos: number): number {
   return Math.max(1, Math.round(segundos / 60));
@@ -87,9 +102,11 @@ export default function Reproductor({
   mime: mimeInicial,
   posicionInicialSeg,
   fondoPref,
+  ajustes,
   onCerrar,
   onProgreso,
   onFondoPref,
+  onAjuste,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const envoltorioRef = useRef<HTMLDivElement>(null);
@@ -106,12 +123,14 @@ export default function Reproductor({
   const [actual, setActual] = useState(0);
   const [duracion, setDuracion] = useState(0);
   const [bufferedPct, setBufferedPct] = useState(0);
-  const [volumen, setVolumen] = useState(1);
-  const [silenciado, setSilenciado] = useState(false);
-  const [velocidadIdx, setVelocidadIdx] = useState(1);
+  const [volumen, setVolumen] = useState(ajustes.volumen);
+  const [silenciado, setSilenciado] = useState(ajustes.volumen === 0);
+  const [velocidadIdx, setVelocidadIdx] = useState(() => Math.min(VELOCIDADES.length - 1, Math.max(0, ajustes.velocidadIdx)));
   const [pantallaCompleta, setPantallaCompleta] = useState(false);
   const [controlesVisibles, setControlesVisibles] = useState(true);
   const [reanudado, setReanudado] = useState(false);
+  /** Preload progresivo (v1.38.0): metadata al abrir, auto en cuanto hay play. */
+  const [nivelPreload, setNivelPreload] = useState<HTMLVideoElement["preload"]>("metadata");
 
   const t = useCallback((clave: string, vars?: Record<string, string | number>) => traducirCine(clave, idioma, vars), [idioma]);
 
@@ -278,6 +297,8 @@ export default function Reproductor({
     video.muted = v === 0;
     setVolumen(v);
     setSilenciado(video.muted);
+    // Autoguardado (v1.38.0): el volumen que eliges es tu volumen de siempre.
+    onAjuste({ volumen: v });
   }
 
   async function alternarPip(): Promise<void> {
@@ -354,6 +375,10 @@ export default function Reproductor({
       video.currentTime = posicionInicialSeg;
       ultimoGuardado.current = posicionInicialSeg;
     }
+    // Ajustes autoguardados al medio real: velocidad y volumen elegidos.
+    video.playbackRate = VELOCIDADES[velocidadIdx];
+    video.volume = volumen;
+    video.muted = silenciado || volumen === 0;
     setReanudado(true);
   }
 
@@ -424,14 +449,18 @@ export default function Reproductor({
               ref={videoRef}
               src={url}
               poster={item.imagen ?? undefined}
-              autoPlay
+              autoPlay={ajustes.autoplay}
               playsInline
-              preload="metadata"
+              preload={nivelPreload}
               className={cn("mx-auto w-full bg-black", pantallaCompleta ? "h-full object-contain" : "aspect-video")}
               onLoadedMetadata={alCargadoMetadatos}
               onTimeUpdate={alTimeUpdate}
               onProgress={alBuffered}
-              onPlay={() => setReproduciendo(true)}
+              onPlay={() => {
+                // TURBO (v1.38.0): con play real el búfer crece agresivo.
+                setNivelPreload("auto");
+                setReproduciendo(true);
+              }}
               onPause={() => setReproduciendo(false)}
               onWaiting={() => setTampón(true)}
               onPlaying={() => setTampón(false)}
@@ -578,6 +607,8 @@ export default function Reproductor({
                     const siguiente = (velocidadIdx + 1) % VELOCIDADES.length;
                     setVelocidadIdx(siguiente);
                     if (videoRef.current) videoRef.current.playbackRate = VELOCIDADES[siguiente];
+                    // Autoguardado (v1.38.0): tu velocidad es tu velocidad.
+                    onAjuste({ velocidadIdx: siguiente });
                   }}
                   aria-label="Velocidad de reproducción"
                   className="flex h-9 items-center gap-1 rounded-lg px-2 text-[12px] font-semibold hover:bg-white/10"

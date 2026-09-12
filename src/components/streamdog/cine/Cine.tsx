@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Globe, Infinity as InfinityIcon, Loader2, RefreshCw, Search, WifiOff } from "lucide-react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Download, Globe, Infinity as InfinityIcon, Loader2, RefreshCw, Search, Settings2, WifiOff } from "lucide-react";
 import { asset } from "@/lib/asset-path";
 import { jsonSeguro } from "@/lib/fetch-seguro";
 import { isStaticDemo } from "@/lib/static-mode";
 import {
   CLAVES_CINE,
+  CATEGORIAS_EXPLORAR,
   apuntarProgreso,
   avisarReparacion,
   dedupeItems,
@@ -22,6 +23,17 @@ import {
   type ItemCine,
   type ProgresoVer,
 } from "@/lib/streamdog/cine";
+import {
+  AJUSTES_CINE_DEFECTO,
+  VELOCIDADES_CINE,
+  apuntarGustos,
+  esAjustesCine,
+  esGustosCine,
+  gustosVacios,
+  recomendadosPara,
+  type AjustesCine,
+  type GustosCine,
+} from "@/lib/streamdog/cine-gustos";
 import { coleccionOroCliente, explorarCliente } from "@/lib/streamdog/cine-cliente";
 import { IDIOMAS_CINE, resolverIdiomaCine, traducirCine, type IdiomaCine } from "@/lib/streamdog/cine-i18n";
 import { cn } from "@/lib/utils";
@@ -32,7 +44,6 @@ import FilaCarrusel from "./FilaCarrusel";
 import FilaDeportes from "./FilaDeportes";
 import FilaProximamente, { type SeccionPronto } from "./FilaProximamente";
 import HeroeDestacado from "./HeroeDestacado";
-import Reproductor from "./Reproductor";
 import TarjetaContenido from "./TarjetaContenido";
 import Top100 from "./Top100";
 import EnlaceArena from "@/components/streamdog/EnlaceArena";
@@ -54,7 +65,26 @@ import Sostenibilidad from "./Sostenibilidad";
  *    viajes → búsqueda real y webs → las herramientas de la casa.
  */
 
-type Vista = "inicio" | "top100" | "peliculas" | "series" | "milista";
+type Vista = "inicio" | "top100" | "peliculas" | "series" | "explorar" | "milista";
+
+/**
+ * CODE-SPLITTING (v1.38.0): el reproductor pesa (controles, MediaSession,
+ * PiP) y casi nadie lo abre al entrar — se carga con lazy() en el momento
+ * exacto del primer play. El catálogo entero carga MÁS RÁPIDO.
+ */
+const Reproductor = lazy(() => import("./Reproductor"));
+
+/** Fila del inicio → su categoría EXPLORAR ∞ (botón «Ver todo»). */
+const CATEGORIA_POR_FILA: Record<string, string> = {
+  "Cine clásico libre": "clasicos",
+  "Film noir": "film-noir",
+  "Ciencia ficción y terror": "ciencia-ficcion",
+  "Dibujos animados clásicos": "animacion-clasica",
+  "Televisión clásica": "tv-clasica",
+  Documentales: "documentales",
+  "Explorar el archivo libre": "cortos-libres",
+  "Series del momento": "series-todas",
+};
 
 /** Degradados de los chips de salto rápido (uno por fila, ciclando). */
 const GRADIENTES_FILA = [
@@ -73,6 +103,7 @@ const VISTAS: { id: Vista; clave: string }[] = [
   { id: "top100", clave: "Top 100" },
   { id: "peliculas", clave: "Películas" },
   { id: "series", clave: "Series" },
+  { id: "explorar", clave: "Explorar" },
   { id: "milista", clave: "Mi lista" },
 ];
 
@@ -139,6 +170,15 @@ export default function Cine() {
   /** Películas: false → cartelera con 4 filtros; true → grilla paginada. */
   const [explorarPeliculas, setExplorarPeliculas] = useState(false);
 
+  /* ── AUTOGUARDADO TOTAL (v1.38.0): ajustes + gustos ── */
+  const [ajustes, setAjustes] = useState<AjustesCine>(AJUSTES_CINE_DEFECTO);
+  const [gustos, setGustos] = useState<GustosCine>(gustosVacios());
+  const [panelAjustes, setPanelAjustes] = useState(false);
+
+  /* ── EXPLORAR ∞ (v1.38.0): TODAS las categorías, sin fondo ── */
+  const [explorarCat, setExplorarCat] = useState<string>(CATEGORIAS_EXPLORAR[0].id);
+  const centinelaRef = useRef<HTMLDivElement>(null);
+
   const t = useCallback((clave: string, vars?: Record<string, string | number>) => traducirCine(clave, idioma, vars), [idioma]);
 
   /* ── CARGA INICIAL: storage con autoreparación + SW + instalador ── */
@@ -164,6 +204,14 @@ export default function Cine() {
     const prefFondo = leerColeccion<boolean>(CLAVES_CINE.fondo, false, esBooleano, almacen);
     if (prefFondo.reparacion) avisarReparacion("Segundo plano", prefFondo.reparacion);
     setFondo(prefFondo.valor);
+
+    const ajustesGuardados = leerColeccion<AjustesCine>(CLAVES_CINE.ajustes, AJUSTES_CINE_DEFECTO, esAjustesCine, almacen);
+    if (ajustesGuardados.reparacion) avisarReparacion("Ajustes", ajustesGuardados.reparacion);
+    setAjustes(ajustesGuardados.valor);
+
+    const gustosGuardados = leerColeccion<GustosCine>(CLAVES_CINE.gustos, gustosVacios(), esGustosCine, almacen);
+    if (gustosGuardados.reparacion) avisarReparacion("Gustos", gustosGuardados.reparacion);
+    setGustos(gustosGuardados.valor);
 
     setEnLinea(typeof navigator === "undefined" ? true : navigator.onLine);
     const alCambio = () => setEnLinea(navigator.onLine);
@@ -228,11 +276,19 @@ export default function Cine() {
    * API de Commons es CORS-abierta: si el backend la trae degradada, el
    * NAVEGADOR repite la consulta y fusiona el resultado en las filas. */
   const reforzarConCliente = useCallback(
-    async (q: string, vista: string, pagina: number, signal: AbortSignal) => {
+    async (q: string, vista: string, pagina: number, signal: AbortSignal, explorarCat = "") => {
       try {
         if (q) {
           const extra = await explorarCliente(q, 12, 0, signal);
           if (extra.length > 0) setItems((prev) => dedupeItems([...prev, ...extra]).slice(0, 40));
+        } else if (vista === "explorar") {
+          /* EXPLORAR ∞ con motor Commons degradado: el navegador repite la
+           * consulta (CORS abierto) y fusiona — misma disciplina del plan B. */
+          const cat = CATEGORIAS_EXPLORAR.find((c) => c.id === explorarCat);
+          if (cat?.motor === "commons") {
+            const extra = await explorarCliente(cat.consulta, 12, (pagina - 1) * 12, signal);
+            if (extra.length > 0) setItems((prev) => dedupeItems([...prev, ...extra]));
+          }
         } else if (vista === "peliculas") {
           const extra =
             pagina === 1
@@ -281,7 +337,10 @@ export default function Cine() {
 
       const params = new URLSearchParams({ pagina: String(pagina) });
       if (qDebounce) params.set("q", qDebounce);
-      else if (vista === "peliculas" || vista === "series") params.set("vista", vista);
+      else if (vista === "explorar") {
+        params.set("vista", "explorar");
+        params.set("cat", explorarCat);
+      } else if (vista === "peliculas" || vista === "series") params.set("vista", vista);
 
       try {
         const datos = await jsonSeguro<RespuestaCatalogo>(
@@ -298,7 +357,7 @@ export default function Cine() {
         if (datos.filas) setFilas(datos.filas);
         setItems((prev) => (modo === "mas" ? [...prev, ...(datos.items ?? [])] : datos.items ?? []));
         const commonsViva = Object.entries(datos.fuentes ?? {}).some(([k, v]) => k === "commons" && v.estado === "ok");
-        if (!commonsViva) void reforzarConCliente(qDebounce, vista, pagina, control.signal);
+        if (!commonsViva) void reforzarConCliente(qDebounce, vista, pagina, control.signal, explorarCat);
       } catch (e) {
         if ((e as Error).name !== "AbortError") {
           setError(e instanceof Error ? e.message : "Error inesperado.");
@@ -307,15 +366,51 @@ export default function Cine() {
         setCargando(false);
       }
     },
-    [qDebounce, vista, reforzarConCliente]
+    [qDebounce, vista, explorarCat, reforzarConCliente]
   );
 
   useEffect(() => {
     if (vista === "milista" || vista === "top100") return; // locales o con su propia carga: no pegan aquí
     void cargar("reset");
-  }, [vista, qDebounce, cargar]);
+  }, [vista, qDebounce, explorarCat, cargar]);
+
+  /* ── SCROLL INFINITO (v1.38.0): el centinela baja la página siguiente ──
+   * Solo si el ajuste «cargaInfinita» lo permite (autoguardado) y con el
+   * botón «Cargar más» siempre presente como respaldo accesible. */
+  useEffect(() => {
+    if (!hayMas || cargando || !ajustes.cargaInfinita) return;
+    const el = centinelaRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (entradas) => {
+        if (entradas.some((e) => e.isIntersecting)) void cargar("mas");
+      },
+      { rootMargin: "600px 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [hayMas, cargando, ajustes.cargaInfinita, cargar]);
 
   /* ── ACCIONES ── */
+
+  /** AUTOGUARDADO (v1.38.0): cada cambio de ajuste se persiste al vuelo. */
+  const cambiarAjuste = useCallback((parcial: Partial<AjustesCine>): void => {
+    setAjustes((prev) => {
+      const nueva = { ...prev, ...parcial };
+      guardarColeccion(CLAVES_CINE.ajustes, nueva, typeof localStorage !== "undefined" ? localStorage : null);
+      return nueva;
+    });
+  }, []);
+
+  /** AUTOGUARDADO DE GUSTOS (v1.38.0): abrir o añadir a Mi lista enseña a
+   * StreamDog qué géneros y fuentes te mueven — todo en tu dispositivo. */
+  const apuntarGustoDe = useCallback((item: ItemCine): void => {
+    setGustos((prev) => {
+      const nueva = apuntarGustos(prev, item, Date.now());
+      guardarColeccion(CLAVES_CINE.gustos, nueva, typeof localStorage !== "undefined" ? localStorage : null);
+      return nueva;
+    });
+  }, []);
 
   const cambiarIdioma = (nuevo: IdiomaCine): void => {
     setIdiomaElegido(nuevo);
@@ -333,10 +428,11 @@ export default function Cine() {
         const existe = prev.some((x) => x.id === item.id);
         const nueva = existe ? prev.filter((x) => x.id !== item.id) : [...prev, item].slice(-300);
         guardarColeccion(CLAVES_CINE.miLista, nueva, typeof localStorage !== "undefined" ? localStorage : null);
+        if (!existe) apuntarGustoDe(item); // gusto apuntado al añadir
         return nueva;
       });
     },
-    []
+    [apuntarGustoDe]
   );
 
   const guardarProgreso = useCallback((item: ItemCine, posicionSeg: number, duracionSeg: number): void => {
@@ -348,8 +444,16 @@ export default function Cine() {
   }, []);
 
   const abrirSesion = (item: ItemCine, url: string | null, mime: string | null, posicion = 0): void => {
+    apuntarGustoDe(item); // gusto apuntado al abrir (v1.38.0)
     setDetalle(null);
     setSesion({ item, url, mime, posicion });
+  };
+
+  /** Salta a una categoría del modo EXPLORAR ∞ (chips o «Ver todo» de una fila). */
+  const irACategoria = (catId: string): void => {
+    setExplorarCat(catId);
+    setVista("explorar");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   /* ── DERIVADOS ── */
@@ -363,6 +467,12 @@ export default function Cine() {
     }
     return mapa;
   }, [progresos]);
+
+  /** «PORQUE TE GUSTA» (v1.38.0): afinidad real sobre el pool ya cargado. */
+  const recomendados = useMemo(() => {
+    const pool = [...filas.flatMap((f) => f.items), ...items];
+    return recomendadosPara(gustos, pool, 14);
+  }, [gustos, filas, items]);
 
   const seguirViendo = useMemo(() => {
     return progresos
@@ -583,6 +693,77 @@ export default function Cine() {
               ))}
             </select>
           </label>
+          {/* AJUSTES con AUTOGUARDADO (v1.38.0): panel flotante premium */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setPanelAjustes((v) => !v)}
+              aria-expanded={panelAjustes}
+              aria-label={t("Ajustes")}
+              title={t("Ajustes")}
+              className={cn(
+                "flex h-[34px] w-[34px] items-center justify-center rounded-lg border transition-colors",
+                panelAjustes ? "border-cyan-300/50 bg-cyan-400/10 text-cyan-100" : "border-white/10 bg-white/[0.04] text-slate-300 hover:border-white/30 hover:text-white"
+              )}
+            >
+              <Settings2 className="h-4 w-4" aria-hidden />
+            </button>
+            {panelAjustes && (
+              <div className="absolute right-0 top-[42px] z-40 w-72 space-y-3 rounded-2xl border border-white/10 bg-[#0d1728]/95 p-4 shadow-2xl shadow-cyan-500/10 backdrop-blur-md">
+                <div>
+                  <p className="text-[13px] font-bold text-slate-100">{t("Ajustes")}</p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-emerald-300/90">{t("Autoguardado activo: tus ajustes y gustos viven en tu dispositivo.")}</p>
+                </div>
+                <label className="flex items-center justify-between gap-3">
+                  <span className="text-[12.5px] font-medium text-slate-200">{t("Reproducción automática")}</span>
+                  <input
+                    type="checkbox"
+                    checked={ajustes.autoplay}
+                    onChange={(e) => cambiarAjuste({ autoplay: e.target.checked })}
+                    className="h-4 w-4 accent-cyan-400"
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-3">
+                  <span className="text-[12.5px] font-medium text-slate-200">{t("Carga infinita")}</span>
+                  <input
+                    type="checkbox"
+                    checked={ajustes.cargaInfinita}
+                    onChange={(e) => cambiarAjuste({ cargaInfinita: e.target.checked })}
+                    className="h-4 w-4 accent-cyan-400"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-[12.5px] font-medium text-slate-200">{t("Velocidad por defecto")}</span>
+                  <select
+                    value={ajustes.velocidadIdx}
+                    onChange={(e) => cambiarAjuste({ velocidadIdx: Number.parseInt(e.target.value, 10) })}
+                    className="w-full rounded-lg border border-white/15 bg-white/[0.06] px-2 py-1.5 text-[12.5px] text-slate-100 focus:outline-none"
+                  >
+                    {VELOCIDADES_CINE.map((v, i) => (
+                      <option key={v} value={i} className="bg-[#0d1728]">
+                        {v}×
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-[12.5px] font-medium text-slate-200">
+                    {t("Volumen por defecto")} · {Math.round(ajustes.volumen * 100)} %
+                  </span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={ajustes.volumen}
+                    onChange={(e) => cambiarAjuste({ volumen: Number.parseFloat(e.target.value) })}
+                    aria-label={t("Volumen por defecto")}
+                    className="h-1 w-full appearance-none rounded-full bg-white/20 accent-cyan-300 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-300"
+                  />
+                </label>
+              </div>
+            )}
+          </div>
           {instalador && !instalada && (
             <button
               type="button"
@@ -736,6 +917,64 @@ export default function Cine() {
           modo="peliculas"
           onExplorarTodo={() => setExplorarPeliculas(true)}
         />
+      ) : vista === "explorar" && !buscando ? (
+        /* EXPLORAR ∞ (v1.38.0): TODAS las fichas de TODAS las categorías,
+         * con scroll infinito (centinela) y botón accesible de respaldo. */
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-[15px] font-semibold tracking-tight text-slate-100">{t("Explorar todo")}</h2>
+            <p className="text-[11.5px] text-slate-500">{t("Todas las categorías, todas las fichas: baja y baja, el catálogo no se acaba.")}</p>
+          </div>
+          <nav aria-label={t("Explorar todo")} className="scrollbar-thin flex items-center gap-2 overflow-x-auto pb-1">
+            {CATEGORIAS_EXPLORAR.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setExplorarCat(cat.id)}
+                aria-pressed={explorarCat === cat.id}
+                className={cn(
+                  "min-h-[34px] shrink-0 rounded-xl border px-3 text-[12.5px] font-medium transition-colors",
+                  explorarCat === cat.id
+                    ? "border-cyan-300/50 bg-cyan-400/10 text-cyan-100"
+                    : "border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/25 hover:bg-white/[0.06]"
+                )}
+              >
+                {t(cat.claveI18n)}
+              </button>
+            ))}
+          </nav>
+          {itemsGrilla.length > 0 ? (
+            <>
+              <div className="flex flex-wrap gap-3">
+                {itemsGrilla.map((item) => (
+                  <TarjetaContenido
+                    key={item.id}
+                    item={item}
+                    idioma={idioma}
+                    enMiLista={idsEnLista.has(item.id)}
+                    progresoPct={pctProgresos.get(item.id) ?? null}
+                    onAbrir={setDetalle}
+                    onMiLista={alternarMiLista}
+                  />
+                ))}
+              </div>
+              {/* Centinela del scroll infinito (IntersectionObserver) */}
+              <div ref={centinelaRef} aria-hidden />
+              {hayMas && (
+                <button
+                  type="button"
+                  onClick={() => void cargar("mas")}
+                  className="mx-auto flex min-h-[42px] items-center gap-2 rounded-xl border border-white/15 bg-white/[0.05] px-5 text-[13px] font-semibold text-slate-100 transition-colors hover:border-white/30"
+                >
+                  {cargando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <InfinityIcon className="h-4 w-4 text-cyan-300" aria-hidden />}
+                  {t("Cargar más")}
+                </button>
+              )}
+            </>
+          ) : (
+            !cargando && <p className="py-10 text-center text-[13.5px] text-slate-400">{t("Catálogo vacío por ahora")}</p>
+          )}
+        </div>
       ) : vista === "milista" ? (
         /* Mi lista (local, instantáneo) */
         miLista.length > 0 ? (
@@ -793,6 +1032,20 @@ export default function Cine() {
             </section>
           )}
 
+          {/* «PORQUE TE GUSTA» (v1.38.0): recomendaciones por afinidad real,
+           * aprendidas de lo que ves y guardadas en tu dispositivo. */}
+          {recomendados.length > 0 && (
+            <FilaCarrusel
+              titulo={t("Porque te gusta")}
+              items={recomendados}
+              idioma={idioma}
+              miLista={idsEnLista}
+              progresos={pctProgresos}
+              onAbrir={setDetalle}
+              onMiLista={alternarMiLista}
+            />
+          )}
+
           {/* Chips de salto rápido (estilo «Chequeo» premium) */}
           {filas.length > 1 && (
             <nav aria-label="Saltar a una fila" className="scrollbar-thin flex items-center gap-2 overflow-x-auto pb-1">
@@ -842,6 +1095,7 @@ export default function Cine() {
                   progresos={pctProgresos}
                   onAbrir={setDetalle}
                   onMiLista={alternarMiLista}
+                  onExplorar={CATEGORIA_POR_FILA[fila.claveI18n] ? () => irACategoria(CATEGORIA_POR_FILA[fila.claveI18n]) : undefined}
                 />
               </div>
             ))
@@ -886,6 +1140,8 @@ export default function Cine() {
                 />
               ))}
             </div>
+            {/* Centinela del scroll infinito (IntersectionObserver) */}
+            <div ref={centinelaRef} aria-hidden />
             {hayMas && (
               <button
                 type="button"
@@ -931,17 +1187,27 @@ export default function Cine() {
         />
       )}
       {sesion && (
-        <Reproductor
-          item={sesion.item}
-          idioma={idioma}
-          videoUrl={sesion.url}
-          mime={sesion.mime}
-          posicionInicialSeg={sesion.posicion}
-          fondoPref={fondo}
-          onCerrar={() => setSesion(null)}
-          onProgreso={(pos, dur) => guardarProgreso(sesion.item, pos, dur)}
-          onFondoPref={activarFondo}
-        />
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/95" role="dialog" aria-label={`${sesion.item.titulo}: reproductor`}>
+              <Loader2 className="h-8 w-8 animate-spin text-cyan-300" aria-hidden />
+            </div>
+          }
+        >
+          <Reproductor
+            item={sesion.item}
+            idioma={idioma}
+            videoUrl={sesion.url}
+            mime={sesion.mime}
+            posicionInicialSeg={sesion.posicion}
+            fondoPref={fondo}
+            ajustes={ajustes}
+            onCerrar={() => setSesion(null)}
+            onProgreso={(pos, dur) => guardarProgreso(sesion.item, pos, dur)}
+            onFondoPref={activarFondo}
+            onAjuste={cambiarAjuste}
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -29,13 +29,13 @@ const leer = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf8")
 
 describe("v1.22.0 — versión y trazabilidad", () => {
   it("la app va por la 1.22.0 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.37.0");
+    expect(APP_VERSION).toBe("1.38.0");
   });
 
   it("changelog-meta y CHANGELOG.md relatan la 1.22.0", () => {
-    expect(VERSIONS[17].version).toBe("1.22.0");
-    expect(VERSIONS[17].diffDesde).toBe("1.21.0");
-    expect(VERSIONS[17].kinds).toContain("nuevo");
+    expect(VERSIONS[18].version).toBe("1.22.0");
+    expect(VERSIONS[18].diffDesde).toBe("1.21.0");
+    expect(VERSIONS[18].kinds).toContain("nuevo");
     const md = leer("CHANGELOG.md");
     expect(md).toContain("Lado Oscuro");
     expect(md).toContain("LADO_OSCURO");

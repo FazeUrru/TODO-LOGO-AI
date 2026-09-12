@@ -30,6 +30,7 @@
  */
 
 import {
+  CATEGORIAS_EXPLORAR,
   COLECCIONES_ARCHIVE,
   COLECCION_ORO,
   EXITOSOS_MUNDIALES,
@@ -49,6 +50,7 @@ import {
   normalizarTvmazeShow,
   ordenarItems,
   reforjarOro,
+  type CategoriaExplorar,
   type ColeccionArchivo,
   type FilaCine,
   type ItemCine,
@@ -405,6 +407,67 @@ export async function catalogo(vista: VistaCine, pagina: number): Promise<Omit<R
     degradada: famosos === null || oro === null || tvmaze === null || clasicos === null,
     fuentes: estadosFuentes(),
   };
+}
+
+/* ══════════════════ EXPLORAR ∞ (v1.38.0) ══════════════════ */
+
+export interface RespuestaExplorar {
+  cat: string;
+  pagina: number;
+  items: ItemCine[];
+  hayMas: boolean;
+  degradada: boolean;
+  fuentes: Record<string, InfoFuente>;
+}
+
+export const TTL_EXPLORAR_MS = 30 * 60_000;
+
+/** Una página de UNA categoría: pega al motor que toque con su paginación nativa. */
+async function paginaExplorar(cat: CategoriaExplorar, pagina: number): Promise<{ items: ItemCine[]; hayMas: boolean; degradada: boolean }> {
+  if (cat.motor === "tvmaze") {
+    const datos = await pedirFuente<unknown[]>("tvmaze", tvmazeShowsUrl(pagina - 1), TOPE_LISTA_MS);
+    const items = seriesPorPeso(datos, cat.porPagina);
+    return { items, hayMas: pagina < 50, degradada: datos === null };
+  }
+
+  if (cat.motor === "commons") {
+    const offset = (pagina - 1) * cat.porPagina;
+    const datos = await pedirFuente<RespuestaCommons>("commons", commonsBuscarUrl(cat.consulta, cat.porPagina, 480, offset), TOPE_LISTA_MS);
+    const items = commonsDe(datos);
+    return { items, hayMas: items.length >= cat.porPagina, degradada: datos === null };
+  }
+
+  /* archive: colección curada, página nativa del advancedsearch. */
+  const datos = await pedirFuente<RespuestaArchive>("archive", archiveColeccionUrl(cat.consulta, pagina, cat.porPagina), TOPE_LISTA_MS);
+  const items = ordenarItems(archiveDe(datos)).slice(0, cat.porPagina);
+  return { items, hayMas: pagina < 50 && items.length >= 10, degradada: datos === null };
+}
+
+/**
+ * EXPLORAR ∞ (v1.38.0): TODAS las fichas de TODAS las categorías,
+ * página a página (scroll infinito + botón). Misma disciplina que el
+ * resto del catálogo: caché caliente 30 min por (cat, página) — el
+ * cron recalienta la primera página de cada categoría — y degradación
+ * elegante: si una página sale vacía por la fuente, la UI lo entiende.
+ */
+export async function explorar(catCrudo: string | null, pagina: number): Promise<RespuestaExplorar> {
+  const cat = CATEGORIAS_EXPLORAR.find((c) => c.id === catCrudo) ?? CATEGORIAS_EXPLORAR[0];
+  const pag = Math.min(50, Math.max(1, pagina));
+  const clave = `explorar:${cat.id}:${pag}`;
+  const golpe = cacheObtener<Omit<RespuestaExplorar, "ok">>(clave);
+  if (golpe) return golpe;
+
+  const cocinado = await paginaExplorar(cat, pag);
+  const respuesta: Omit<RespuestaExplorar, "ok"> = {
+    cat: cat.id,
+    pagina: pag,
+    items: cocinado.items,
+    hayMas: cocinado.hayMas,
+    degradada: cocinado.degradada,
+    fuentes: estadosFuentes(),
+  };
+  cacheGuardar(clave, respuesta, TTL_EXPLORAR_MS);
+  return respuesta;
 }
 
 /* ══════════════════ FACHADA CON CACHÉ ══════════════════ */
