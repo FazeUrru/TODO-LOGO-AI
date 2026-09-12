@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.28.1",
+    fecha: "12 sept 2026",
+    hora: "08:10",
+    titulo: "Adiós a los saltos de sección fantasma: la arena ya no cambia de sitio sola",
+    tldr:
+      "Si volvías a la arena tras navegar, a veces cargaba una conversación antigua y cambiaba de modo sin que tocaras nada — un chat pendiente huérfano en sessionStorage se reaplicaba en cada remonte. Ahora el pendiente caduca en 15 segundos y se limpia al aplicarse: la arena solo va donde TÚ la mandas.",
+    diffDesde: "1.28.0",
+    hash: null,
+    kinds: ["correccion"],
+  },
+  {
     version: "1.28.0",
     fecha: "12 sept 2026",
     hora: "06:30",

@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { jsonSeguro } from "@/lib/fetch-seguro";
 import { isStaticDemo } from "@/lib/static-mode";
+import { APP_VERSION } from "@/lib/version";
 import {
   METRICAS_DEMO,
   REGLAS_BASE,
@@ -108,7 +109,9 @@ function respuestaDemo(): RespuestaVigilancia {
   return {
     ok: true,
     modo: "demo",
-    version: "1.28.0",
+    // v1.28.1 — la versión del snapshot demo es la de la app, no un literal
+    // que haya que acordarse de subir en cada release.
+    version: APP_VERSION,
     generadoEn: new Date().toISOString(),
     metricas: METRICAS_DEMO,
     salud,

@@ -64,13 +64,13 @@ import {
 } from "lucide-react";
 import { getModel, PROVIDERS } from "@/lib/models-data";
 import { BATTLE_CATEGORIES, NEW_CATEGORIES } from "@/lib/elo";
-import { useArena } from "@/components/shell/arena-context";
+import { useArena, type ArenaMode } from "@/components/shell/arena-context";
 import FloatingPanel from "@/components/shell/FloatingPanel";
 import { useSettings, playDoneChime } from "@/lib/settings";
 import Confeti from "./Confeti";
 import { markUsed, useUsed, NewBadge } from "@/lib/badges";
 import { useRouter } from "next/navigation";
-import { saveChat, requestLoadChat, consumePendingChat, type SavedChat } from "@/lib/history";
+import { saveChat, requestLoadChat, consumePendingChat, clearPendingChat, type SavedChat } from "@/lib/history";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import Markdown from "./Markdown";
@@ -537,8 +537,11 @@ export default function ChatExperience() {
 
   // ── Restauración desde "Recientes" (evento directo o pendiente tras navegar) ──
   useEffect(() => {
+    // v1.28.1 — lista blanca de modos: un SavedChat corrupto u obsoleto jamás
+    // puede dejar la arena en un modo inválido.
+    const MODOS_VALIDOS: ArenaMode[] = ["battle", "agent", "sbs", "direct", "torneo"];
     const apply = (chat: SavedChat) => {
-      arena.setMode(chat.mode);
+      arena.setMode(MODOS_VALIDOS.includes(chat.mode) ? chat.mode : "battle");
       if (chat.mode === "battle") setCategoryState(chat.category || "global");
       setTurnsA((chat.turnsA ?? []) as Turn[]);
       setTurnsB((chat.turnsB ?? []) as Turn[]);
@@ -565,7 +568,15 @@ export default function ChatExperience() {
     };
     const onLoad = (e: Event) => {
       const chat = (e as CustomEvent<SavedChat>).detail;
-      if (chat) apply(chat);
+      if (chat) {
+        apply(chat);
+        // v1.28.1 — la restauración ya se aplicó vía evento: el pendiente de
+        // sessionStorage se limpia AQUÍ también. Antes solo se consumía al
+        // montar, así que el registro quedaba huérfano y el siguiente remonte
+        // de la arena reaplicaba el chat sin que nadie clickara nada — el
+        // «salto de sección fantasma» que este fix elimina.
+        clearPendingChat();
+      }
     };
     const pending = consumePendingChat();
     if (pending) apply(pending);

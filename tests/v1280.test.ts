@@ -315,17 +315,17 @@ describe("instrumentación — la batalla, la salud y el cliente hablan al vigil
 });
 
 describe("tríada de versiones — 1.28.0 coherente en los tres sitios", () => {
-  it("version.ts declara 1.28.0", () => {
-    expect(APP_VERSION).toBe("1.28.0");
+  it("version.ts declara 1.28.1 (la release actual; la entrada 1.28.0 sigue abajo)", () => {
+    expect(APP_VERSION).toBe("1.28.1");
     expect(APP_BUILD_DATE).toBe("2026-09-12");
   });
 
-  it("changelog-meta.ts trae la entrada nueva arriba y encadena el diff", () => {
-    const nueva = VERSIONS[0];
-    expect(nueva.version).toBe("1.28.0");
-    expect(nueva.diffDesde).toBe("1.27.0");
-    expect(nueva.hora).toBeTruthy();
-    expect(nueva.kinds).toContain("nuevo");
+  it("changelog-meta.ts conserva la entrada 1.28.0 con su diff encadenado", () => {
+    const nueva = VERSIONS.find((v) => v.version === "1.28.0");
+    expect(nueva).toBeTruthy();
+    expect(nueva?.diffDesde).toBe("1.27.0");
+    expect(nueva?.hora).toBeTruthy();
+    expect(nueva?.kinds).toContain("nuevo");
     const versiones = VERSIONS.map((v) => v.version);
     expect(new Set(versiones).size).toBe(versiones.length); // sin duplicados
   });

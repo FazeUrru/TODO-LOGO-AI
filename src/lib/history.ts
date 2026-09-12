@@ -133,24 +133,65 @@ export function subscribeChats(cb: () => void) {
   return () => window.removeEventListener(EVENT, cb);
 }
 
+const PENDING_KEY = "todologo.pending-chat";
+/**
+ * v1.28.1 — El pendiente CADUCA: si nadie lo consumió en 15 s, era basura
+ * (restauración ya aplicada por el evento y nunca limpiada) y aplicarla
+ * después hacía que la arena saltase de sección sola al remontar.
+ */
+const PENDING_CADUCIDAD_MS = 15_000;
+
+/** Sobre interno: el chat viaja con sello de tiempo para poder caducar. */
+interface SobrePendiente {
+  chat: SavedChat;
+  t: number;
+}
+
 /** Dispara la restauración de una conversación guardada (misma página o tras navegar). */
 export function requestLoadChat(chat: SavedChat) {
   try {
-    window.sessionStorage.setItem("todologo.pending-chat", JSON.stringify(chat));
+    const sobre: SobrePendiente = { chat, t: Date.now() };
+    window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(sobre));
   } catch {
     /* sin almacenamiento */
   }
   window.dispatchEvent(new CustomEvent("todologo-load-chat", { detail: chat }));
 }
 
-/** Lee y limpia una restauración pendiente (p. ej. tras cambiar de ruta). */
+/**
+ * v1.28.1 — Borra el pendiente SIN consumirlo. La restauración vía evento
+ * («todologo-load-chat») debe llamarla tras aplicar el chat: si no, el registro
+ * quedaba huérfano en sessionStorage y el PRÓXIMO remonte de la arena lo
+ * aplicaba de nuevo — la app cambiaba de sección sola, sin click alguno.
+ */
+export function clearPendingChat() {
+  try {
+    window.sessionStorage.removeItem(PENDING_KEY);
+  } catch {
+    /* sin almacenamiento */
+  }
+}
+
+/**
+ * Lee y limpia una restauración pendiente (p. ej. tras cambiar de ruta).
+ * v1.28.1: solo devuelve chats FRESCOS (menos de 15 s desde la petición) y
+ * descarta entradas legacy sin sobre (escritas por versiones anteriores) —
+ * por definición obsoletas, ya que el código nuevo siempre escribe el sobre.
+ */
 export function consumePendingChat(): SavedChat | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.sessionStorage.getItem("todologo.pending-chat");
+    const raw = window.sessionStorage.getItem(PENDING_KEY);
     if (!raw) return null;
-    window.sessionStorage.removeItem("todologo.pending-chat");
-    return JSON.parse(raw) as SavedChat;
+    window.sessionStorage.removeItem(PENDING_KEY);
+    const parsed = JSON.parse(raw) as Partial<SobrePendiente> | SavedChat;
+    // Sobre nuevo: caducidad estricta — un pendiente viejo NUNCA se aplica.
+    if (parsed && typeof parsed === "object" && "chat" in parsed && typeof parsed.t === "number") {
+      if (Date.now() - parsed.t > PENDING_CADUCIDAD_MS) return null;
+      return parsed.chat as SavedChat;
+    }
+    // Formato legacy (chat pelado, sin sello): obsoleto por definición.
+    return null;
   } catch {
     return null;
   }

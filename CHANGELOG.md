@@ -9,6 +9,18 @@
 >
 > 🧩 **Huecos de numeración**: no existen v1.1.x ni v1.3.x — eran iteraciones internas fusionadas dentro de la v1.2.0 y la v1.4.0 sin llegar a publicarse.
 
+## [1.28.1](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.28.0...v1.28.1) · 12 sept 2026, 08:10 — *Adiós a los saltos de sección fantasma: la arena ya no cambia de sitio sola*
+
+> 💡 **En una frase:** si dabas una vuelta por otras secciones y volvías a la arena, a veces te esperaba una conversación antigua en otro modo — Batalla por Torneo, Directo por Lado a Lado — **sin que hubieras tocado nada**: un chat pendiente huérfano en `sessionStorage` se reaplicaba en cada remonte del componente, y ahora ese pendiente **caduca a los 15 segundos** y se limpia al aplicarse.
+
+### Corregido
+- **El salto de sección fantasma, anatomía y cura** 👻 (en `src/lib/history.ts` + `ChatExperience.tsx`): al abrir un chat de «Recientes», `requestLoadChat` guarda el chat en `sessionStorage` Y dispara el evento de restauración. Si la arena ya estaba montada, el evento lo aplicaba… pero el registro de `sessionStorage` **nunca se limpiaba** (solo se consumía al montar). El siguiente remonte — navegar a `/novedades` y volver a `/`, o avanzar/retroceder en el navegador — reencontraba ese chat huérfano y lo aplicaba de nuevo: la arena cambiaba de modo y cargaba la conversación vieja **sin un solo click**. Tres capas de defensa: (1) el pendiente viaja ahora en un **sobre con sello de tiempo** y `consumePendingChat` lo descarta si tiene más de 15 s — un pendiente viejo es basura por definición; (2) la restauración vía evento llama a la nueva `clearPendingChat()` tras aplicar, así el mismo chat jamás se reaplica; (3) los pendientes del formato legacy (sin sobre, escritos por versiones anteriores) se descartan directamente.
+- **Lista blanca de modos en la restauración** 🛡️: `apply` valida `chat.mode` contra los cinco modos reales (`battle/agent/sbs/direct/torneo`) antes de tocar el estado — un `SavedChat` corrupto u obsoleto en localStorage ya no puede dejar la arena en un modo inválido: cae al modo Batalla, que es su puerto seguro.
+- **Regresión blindada** 🧪: `tests/v1281.test.ts` — el ciclo completo con storage real simulado: petición → consumo fresco, la caducidad de 15 s (un pendiente de hace una hora devuelve `null`), `clearPendingChat` borra sin consumir, el sobre legacy se descarta, el JSON roto no explota y el evento «todologo-load-chat» deja la sessionStorage LIMPIA tras aplicarse; invariantes estáticos: `ChatExperience` limpia el pendiente dentro del handler y valida la lista blanca de modos, y la tríada de versiones 1.28.1 coherente en los tres sitios.
+
+### Mejorado
+- **Un hardcode menos por release** 🧹: el snapshot demo del panel de vigilancia (`respuestaDemo`) declara ahora `version: APP_VERSION` importado de la tríada en vez de un literal `"1.28.0"` que había que recordar subir en cada versión.
+
 ## [1.28.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.27.0...v1.28.0) · 12 sept 2026, 06:30 — *Watchdog empresarial: la salud del negocio se juzga en vivo — con SLA, alertas y acciones*
 
 > 💡 **En una frase:** la página `/empresas` deja de prometer disponibilidad y la DEMUESTRA: un panel de vigilancia en vivo mide cada 15 segundos los signos vitales del arena (SLA, latencia P50/P99, tasa de error, latido de la base, cortes de stream y su tasa de curación), los juzga contra las reglas que la propia página anuncia, y convierte cada desvío en una alerta con severidad y **acción sugerida** — la tercera generación de la vigilancia de la casa, junto al `watchdog.sh` (v1.10.0, el proceso) y la inmunidad del stream (v1.24.0, el dispositivo).
