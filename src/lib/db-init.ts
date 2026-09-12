@@ -326,6 +326,24 @@ async function createSchema(): Promise<void> {
       `CREATE INDEX IF NOT EXISTS "SugerenciaDev_estado_createdAt_idx" ON "SugerenciaDev"("estado", "createdAt");`
     );
 
+    // Watchdog empresarial (v1.28.0): acta notarial de las alertas del
+    // negocio — los avisos graves sobreviven a los reinicios del proceso.
+    await crearTabla(
+      "VigilanciaIncidente",
+      `CREATE TABLE IF NOT EXISTS "VigilanciaIncidente" (
+        "id"        TEXT PRIMARY KEY,
+        "codigo"    TEXT NOT NULL,
+        "severidad" TEXT NOT NULL DEFAULT 'aviso',
+        "titulo"    TEXT NOT NULL,
+        "detalle"   TEXT NOT NULL DEFAULT '',
+        "origen"    TEXT NOT NULL DEFAULT 'servidor',
+        "createdAt" ${TS}
+      );`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "VigilanciaIncidente_codigo_createdAt_idx" ON "VigilanciaIncidente"("codigo", "createdAt");`
+    );
+
     // Columnas de perfil (v1.9.2) para bases creadas antes de esa versión
     const B = PG ? "BOOLEAN" : "BOOLEAN";
     const perfilCols: [string, string][] = [

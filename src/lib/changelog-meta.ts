@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.28.0",
+    fecha: "12 sept 2026",
+    hora: "06:30",
+    titulo: "Watchdog empresarial: la salud del negocio se juzga en vivo — con SLA, alertas y acciones",
+    tldr:
+      "El /empresas estrena un panel de vigilancia en vivo que mide los signos vitales del arena cada 15 s (SLA, latencia P99, tasa de error, cortes sin curar) y los juzga contra las reglas del negocio: cada alerta llega con su severidad y la ACCIÓN sugerida, y los avisos graves quedan auditados en base de datos.",
+    diffDesde: "1.27.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.27.0",
     fecha: "12 sept 2026",
     hora: "04:20",

@@ -268,3 +268,21 @@ model SugerenciaDev {
 
   @@index([estado, createdAt])
 }
+
+// Watchdog empresarial (v1.28.0): auditoría persistente de las alertas
+// del negocio. Los avisos severos (aviso/critico) del veredicto de salud
+// se escriben con deduplicación de 30 min por código, de modo que el
+// comité puede revisar incidentes que ocurrieron hace días aunque el
+// proceso en memoria se haya reiniciado. La telemetría fina (anillos de
+// eventos) vive en memoria; esto es solo el acta notarial.
+model VigilanciaIncidente {
+  id        String   @id @default(cuid())
+  codigo    String // "sla-bajo", "latencia-p99", "db-lenta", …
+  severidad String   @default("aviso") // info | aviso | critico
+  titulo    String
+  detalle   String   @default("")
+  origen    String   @default("servidor") // servidor | cliente
+  createdAt DateTime @default(now())
+
+  @@index([codigo, createdAt])
+}

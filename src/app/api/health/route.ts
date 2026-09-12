@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import { APP_VERSION, APP_BUILD_DATE } from "@/lib/version";
 import { MODELS } from "@/lib/models-data";
 import { cronReport } from "@/lib/cron";
+import { registrarEvento } from "@/lib/vigilancia-servidor";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,9 @@ export async function GET() {
     logger.error("health.db_down", {
       error: err instanceof Error ? err.message : String(err),
     });
+    // v1.28.0 — una BD caída es un incidente de negocio: el watchdog
+    // de /empresas lo verá en su instantánea aunque nadie abra el panel.
+    registrarEvento("error-5xx", "health: base de datos caída");
   }
 
   const body = {

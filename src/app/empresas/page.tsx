@@ -1,4 +1,5 @@
 import { Building2, ShieldCheck, Gauge, Lock, Network, FileCheck, Headset, Globe2, Server } from "lucide-react";
+import PanelVigilancia from "@/components/empresas/PanelVigilancia";
 
 export const metadata = {
   title: "Empresas — todólogo.ai",
@@ -118,6 +119,11 @@ export default function EmpresasPage() {
             </div>
           </div>
         </div>
+
+        {/* v1.28.0 — Watchdog empresarial: la vigilancia de la casa (el
+            watchdog.sh de v1.10.0 y la inmunidad de stream de v1.24.0)
+            elevada a panel de negocio en vivo, con SLA, alertas y acciones. */}
+        <PanelVigilancia />
       </div>
     </div>
   );

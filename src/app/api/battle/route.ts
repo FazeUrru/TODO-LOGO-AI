@@ -13,6 +13,7 @@ import {
   REINTENTOS_MAX,
 } from "@/lib/reintentos";
 import { promptReanudacion } from "@/lib/stream-inmunidad";
+import { registrarEvento, registrarLatencia } from "@/lib/vigilancia-servidor";
 
 export const maxDuration = 60;
 
@@ -565,11 +566,18 @@ export async function POST(req: NextRequest) {
   // respuesta larga (exactamente el corte que este sistema elimina).
   const ip = ipDeHeader(req.headers.get("x-forwarded-for"));
   if (!esContinuacion && !acumular(`batalla:${ip}`, GEN_LIMITE, Date.now())) {
+    // v1.28.0 — el bloqueo 429 también es un signo vital del negocio.
+    registrarEvento("bloqueo-429", ip);
     return NextResponse.json(
       { error: "Demasiadas batallas desde tu IP. Espera unos minutos e inténtalo de nuevo." },
       { status: 429, headers: { "Retry-After": String(segundosRestantes(GEN_LIMITE)) } }
     );
   }
+
+  // v1.28.0 — el colector del watchdog empresarial cuenta la actividad
+  // real: batallas nuevas y tramos de reanudación (Stream Forever).
+  registrarEvento(esContinuacion ? "reanudacion" : "batalla");
+  const inicioTramo = Date.now();
 
   const prompt = (body.prompt ?? "").trim();
   if (prompt.length < 2) {
@@ -739,6 +747,12 @@ export async function POST(req: NextRequest) {
             resA,
             resB ?? Promise.resolve(null),
           ]);
+
+          // v1.28.0 — telemetría del negocio: duración del tramo y cortes.
+          registrarLatencia(Date.now() - inicioTramo);
+          if (outA.cortado || outB?.cortado) {
+            registrarEvento("corte", outA.cortado && outB?.cortado ? "A+B" : outA.cortado ? "A" : "B");
+          }
 
           // v1.24.0 — en reanudación el parcial ya está pintado: si el tramo
           // muere sin aportar nada, NO se planta el fallback (destruiría la

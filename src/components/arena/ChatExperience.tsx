@@ -1264,6 +1264,14 @@ export default function ChatExperience() {
         const mem2 = ajustarInmunidad(mem, eventoFinal);
         guardarInmunidad(mem2);
         setCuradosAqui(mem2.cortesCurados);
+        // v1.28.0 — el incidente también alimenta al watchdog empresarial
+        // (fire-and-forget: la UI jamás espera a la telemetría; si falla,
+        // la memoria local de la inmunidad ya tiene la verdad).
+        void fetch("/api/vigilancia", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tipo: eventoFinal }),
+        }).catch(() => {});
       }
 
       if (aborted || !recibioFin || corteA || corteB || !finA || !finB) {
