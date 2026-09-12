@@ -119,7 +119,7 @@ export default function FilaDeportes({ t, onAbrir }: Props) {
               key={i}
               type="button"
               onClick={onAbrir}
-              className="group w-[240px] shrink-0 snap-start overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] text-left transition-colors hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+              className="sdc-frontera group w-[240px] shrink-0 snap-start overflow-hidden rounded-2xl bg-white/[0.04] text-left transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
             >
               {/* Cinta superior: proximidad + cuenta atrás real */}
               <div className="flex items-center justify-between bg-black/40 px-3 py-1.5">

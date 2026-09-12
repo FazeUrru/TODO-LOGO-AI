@@ -41,7 +41,7 @@ export default function TarjetaContenido({ item, idioma, enMiLista, progresoPct,
         onClick={() => onAbrir(item)}
         aria-label={`${item.titulo} — ${traducirCine("Reproducir", idioma)}`}
         className={cn(
-          "relative block w-full overflow-hidden rounded-xl border border-white/10 bg-slate-800/60 text-left transition-all duration-200",
+          "sdc-elevarse relative block w-full overflow-hidden rounded-xl border border-white/10 bg-slate-800/60 text-left",
           "hover:border-cyan-300/50 hover:shadow-lg hover:shadow-cyan-400/10 focus-visible:outline-2 focus-visible:outline-cyan-300"
         )}
       >

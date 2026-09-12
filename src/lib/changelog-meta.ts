@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.34.0",
+    fecha: "12 sept 2026",
+    hora: "14:10",
+    titulo: "StreamDog en movimiento: 8 animaciones originales y la fila «Lo mejor de Disney+» con El Encargado y 11 míticas más",
+    tldr:
+      "StreamDog Cine se pone en movimiento: suite propia de 8 animaciones originales (shimmer diagonal, entrada escalonada, Ken Burns del héroe, destello del botón verde, frontera viva en los partidos, ♾️ flotante, elevación de tarjetas y onda — todas en GPU y con prefers-reduced-motion) y la fila «Lo mejor de Disney+»: El Encargado (The Bear), Solo asesinatos, Loki, El Mandaloriano, Andor, WandaVision, Los Simpson, Gravity Falls, Phineas y Ferb, Bluey, X-Men '97 y Ahsoka como fichas legales de TVMaze con temporadas, episodios y «Ver en el origen».",
+    diffDesde: "1.33.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.33.0",
     fecha: "12 sept 2026",
     hora: "13:30",

@@ -463,7 +463,7 @@ export default function Cine() {
             className="mr-1 inline-flex items-center gap-1 rounded-full border border-cyan-300/30 bg-gradient-to-r from-cyan-400/15 to-emerald-400/10 px-2.5 py-1 text-[11px] font-bold tracking-wide text-cyan-100"
             title={cronSalud ? `cron: ${cronSalud}` : undefined}
           >
-            <InfinityIcon className="h-3.5 w-3.5" aria-hidden />
+            <InfinityIcon className="sdc-flotar h-3.5 w-3.5" aria-hidden />
             {t("Catálogo infinito")}
             {cronSalud && (
               <span
@@ -531,7 +531,7 @@ export default function Cine() {
         />
         <button
           type="submit"
-          className="min-h-[38px] shrink-0 rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-500 px-4 text-[13px] font-bold text-slate-950 shadow-md shadow-emerald-500/20 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+          className="sdc-brillo min-h-[38px] shrink-0 rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-500 px-4 text-[13px] font-bold text-slate-950 shadow-md shadow-emerald-500/20 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
         >
           {t("Buscar")}
         </button>
@@ -581,10 +581,10 @@ export default function Cine() {
         <div className="space-y-5" aria-busy="true" aria-label={t("Cargando catálogo…")}>
           {[0, 1].map((fila) => (
             <div key={fila} className="space-y-2">
-              <div className="h-4 w-40 animate-pulse rounded bg-white/5" />
+              <div className="sdc-shimmer h-4 w-40 rounded bg-white/5" />
               <div className="flex gap-3 overflow-hidden">
                 {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="h-[150px] w-[168px] shrink-0 animate-pulse rounded-xl bg-white/5 sm:w-[188px]" />
+                  <div key={i} className="sdc-shimmer h-[150px] w-[168px] shrink-0 rounded-xl bg-white/5 sm:w-[188px]" />
                 ))}
               </div>
             </div>
@@ -713,7 +713,12 @@ export default function Cine() {
 
           {filas.length > 0 ? (
             filas.map((fila, i) => (
-              <div key={fila.claveI18n} id={`fila-cine-${i}`} className="scroll-mt-6">
+              <div
+                key={fila.claveI18n}
+                id={`fila-cine-${i}`}
+                className="sdc-entrada scroll-mt-6"
+                style={{ "--sdc-retardo": `${Math.min(i * 70, 560)}ms` } as React.CSSProperties}
+              >
                 <FilaCarrusel
                   titulo={t(fila.claveI18n)}
                   items={fila.items}

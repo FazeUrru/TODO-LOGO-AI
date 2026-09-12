@@ -164,6 +164,32 @@ export const COLECCIONES_ARCHIVE: ColeccionArchivo[] = [
   { id: "documentaryfilms", claveI18n: "Documentales", tipo: "pelicula", filas: 12 },
 ];
 
+/* ═════════ LO MEJOR DE DISNEY+ (fichas TVMaze, metadatos legales) ═════════ */
+
+/**
+ * Las series MÍTICAS que el mundo ve en Disney+ — encabezadas por «El
+ * Encargado» (The Bear) — como fila de RECOMENDADAS. Cero vídeo pirata:
+ * se consultan a TVMaze (API abierta) por nombre exacto y se muestran
+ * como FICHAS completas (sinopsis, temporadas, episodios, valoración,
+ * «Ver en el origen»). El enlace manda a la ficha oficial de TVMaze y,
+ * desde ahí, a su plataforma legítima. Primera coincidencia = la serie
+ * correcta (TVMaze ordena por peso real).
+ */
+export const RECOMENDADAS_DISNEY: string[] = [
+  "The Bear", // «El Encargado» en Disney+ (España y Latinoamérica)
+  "Only Murders in the Building",
+  "Loki",
+  "The Mandalorian",
+  "Andor",
+  "WandaVision",
+  "The Simpsons",
+  "Gravity Falls",
+  "Phineas and Ferb",
+  "Bluey",
+  "X-Men '97",
+  "Ahsoka",
+];
+
 /* ═════════════════ LIMPIEZA Y UTILIDADES ═════════════════ */
 
 const ENTIDADES: Record<string, string> = {

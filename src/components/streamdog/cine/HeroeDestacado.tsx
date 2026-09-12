@@ -46,7 +46,7 @@ export default function HeroeDestacado({ item, idioma, etiquetas, enMiLista, onA
           alt=""
           aria-hidden
           onError={() => setImagenViva(false)}
-          className="absolute inset-0 h-full w-full object-cover opacity-70"
+          className="sdc-kenburns absolute inset-0 h-full w-full object-cover opacity-70"
           loading="eager"
         />
       ) : null}

@@ -24,6 +24,7 @@ import {
   COLECCIONES_ARCHIVE,
   COLECCION_ORO,
   EXITOSOS_MUNDIALES,
+  RECOMENDADAS_DISNEY,
   dedupeItems,
   normalizarArchiveDoc,
   normalizarCommonsPage,
@@ -143,6 +144,25 @@ async function filaColeccion(col: ColeccionArchivo): Promise<FilaCine | null> {
   return { claveI18n: col.claveI18n, items };
 }
 
+/**
+ * Fila «Lo mejor de Disney+»: una búsqueda TVMaze por título mítico, en
+ * paralelo, y nos quedamos con la PRIMERA coincidencia de cada una (la
+ * correcta: TVMaze ordena por peso). Solo fichas legales: sin vídeo,
+ * con enlace al origen. Si TVMaze no está, la fila no sale: sin ruido.
+ */
+async function filaRecomendadas(): Promise<FilaCine | null> {
+  const resultados = await Promise.all(
+    RECOMENDADAS_DISNEY.map((q) =>
+      pedirFuente<unknown[]>("tvmaze:disney", tvmazeBuscarUrl(q), TOPE_LISTA_MS).then((r) =>
+        Array.isArray(r) && r.length > 0 ? normalizarTvmazeSearch(r).slice(0, 1) : []
+      )
+    )
+  );
+  const items = ordenarItems(dedupeItems(resultados.flat()));
+  if (items.length === 0) return null;
+  return { claveI18n: "Lo mejor de Disney+", items: items.slice(0, 14) };
+}
+
 /** Catálogo por vista: inicio (filas), películas y series (listas paginadas). */
 export async function catalogo(vista: VistaCine, pagina: number): Promise<Omit<RespuestaCatalogo, "ok" | "vista" | "q" | "pagina">> {
   if (vista === "series") {
@@ -171,13 +191,14 @@ export async function catalogo(vista: VistaCine, pagina: number): Promise<Omit<R
     };
   }
 
-  /* ── INICIO: 10 filas en paralelo, contenido infinito ♾️ ── */
-  const [famosos, oro, tvmaze, clasicos, explorar, ...colecciones] = await Promise.all([
+  /* ── INICIO: 11 filas en paralelo, contenido infinito ♾️ ── */
+  const [famosos, oro, tvmaze, clasicos, explorar, recomendadas, ...colecciones] = await Promise.all([
     pedirFuente<RespuestaArchive>("archive:famosos", archiveFamososUrl(EXITOSOS_MUNDIALES, 14), TOPE_LISTA_MS),
     pedirFuente<RespuestaCommons>("commons", urlColeccionOro(COLECCION_ORO), TOPE_LISTA_MS),
     pedirFuente<unknown[]>("tvmaze", tvmazeShowsUrl(0), TOPE_LISTA_MS),
     pedirFuente<RespuestaArchive>("archive", archiveBuscarUrl("", 1, 12), TOPE_LISTA_MS),
     pedirFuente<RespuestaCommons>("commons", commonsBuscarUrl("short film OR animated film OR documentary film", 12), TOPE_LISTA_MS),
+    filaRecomendadas(),
     ...COLECCIONES_ARCHIVE.map((col) => filaColeccion(col)),
   ]);
 
@@ -188,6 +209,7 @@ export async function catalogo(vista: VistaCine, pagina: number): Promise<Omit<R
   if (oroItems.length > 0) filas.push({ claveI18n: "Colección de oro", items: oroItems });
   const series = seriesPorPeso(tvmaze, 18);
   if (series.length > 0) filas.push({ claveI18n: "Series del momento", items: series });
+  if (recomendadas) filas.push(recomendadas);
   for (const fila of colecciones) {
     if (fila) filas.push(fila);
   }

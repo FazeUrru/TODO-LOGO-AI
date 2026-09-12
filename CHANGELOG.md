@@ -9,6 +9,21 @@
 >
 > 🧩 **Huecos de numeración**: no existen v1.1.x ni v1.3.x — eran iteraciones internas fusionadas dentro de la v1.2.0 y la v1.4.0 sin llegar a publicarse.
 
+## [1.34.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.33.0...v1.34.0) · 12 sept 2026, 14:10 — *StreamDog en movimiento: 8 animaciones originales, la fila «Lo mejor de Disney+» con El Encargado y otras 11 míticas*
+
+> 💡 **En una frase:** StreamDog Cine se pone en movimiento con una suite propia de **8 animaciones originales** (shimmer diagonal, entrada escalonada de filas, Ken Burns del héroe, destello del botón verde, frontera viva en los partidos, ♾️ flotante, elevación de tarjetas y onda del héroe — todas en GPU y con `prefers-reduced-motion`), y estrena la fila **«Lo mejor de Disney+»**: El Encargado (The Bear), Solo asesinatos en el edificio, Loki, El Mandaloriano, Andor, WandaVision, Los Simpson, Gravity Falls, Phineas y Ferb, Bluey, X-Men '97 y Ahsoka como **fichas legales de TVMaze** con temporadas, episodios y «Ver en el origen».
+
+### Añadido
+- **Suite de animaciones originales `sdc-*`** ✨ (`globals.css`): ocho animaciones creadas para la casa, todas en `transform`/`opacity` (GPU, cero reflow) y desactivadas con `prefers-reduced-motion`: (1) **shimmer diagonal** que barre los esqueletos de carga; (2) **entrada escalonada** de las filas del catálogo (cada fila sube y aparece con retardo incremental hasta 560 ms); (3) **Ken Burns** del héroe destacado (zoom-pan lento de 26 s, sensación de gran pantalla); (4) **destello periódico** del botón verde BUSCAR, como en las apps VIP; (5) **frontera viva** en las tarjetas de deportes (degradado que recorre el borde sin parar); (6) **♾️ flotante** que respira en la insignia de catálogo infinito; (7) **elevación de tarjetas** hacia el dedo al pasar (alzado + sombra cian); (8) **onda** del héroe (rebote suave de entrada).
+- **Fila «Lo mejor de Disney+»** 🏰 (nuevas `RECOMENDADAS_DISNEY` en `cine.ts` + `filaRecomendadas()` en `cine-catalogo.ts`): las 12 series más míticas de Disney+ — encabezadas por **El Encargado (The Bear)** — consultadas a TVMaze por nombre exacto en paralelo, quedándonos con la primera coincidencia (la correcta: TVMaze ordena por peso real). **Solo fichas legales**: sin vídeo pirata — cada ficha trae sinopsis, temporadas, episodios, valoración y «Ver en el origen» que manda a la página oficial de la serie. La fila vive en el inicio entre «Series del momento» y las colecciones del archivo, la calienta el cron cada hora y si TVMaze no está, no sale: degradación sin ruido.
+
+### Mejorado
+- **i18n del módulo**: clave «Lo mejor de Disney+» en es/en/de/fr con test de completitud.
+- **Tarjetas y carruseles**: la elevación `sdc-elevarse` sustituye al hover plano en todas las tarjetas de contenido.
+
+### Regresión
+- `tests/v1340.test.ts`: invariantes de las 8 animaciones (clases y keyframes presentes en `globals.css`, respeto a `prefers-reduced-motion`, clases aplicadas en los componentes correctos), lista Disney saneada y sin duplicados, clave i18n en 4 idiomas, tríada 1.34.0 coherente y README actualizado.
+
 ## [1.33.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.32.0...v1.33.0) · 12 sept 2026, 13:30 — *StreamDog ∞: archivo infinito con colecciones de cine eterno, cron empresarial cada hora y UI premium/VIP con hoja de ruta motivadora*
 
 > 💡 **En una frase:** el cine de StreamDog se vuelve **infinito ♾️**: 5 colecciones nuevas de Internet Archive (film noir, ciencia ficción y terror, dibujos animados clásicos, televisión clásica y documentales) más la fila **«Los títulos más famosos»** (30 éxitos eternos del dominio público ordenados por descargas reales), todo **pre-cocinado cada hora** por un **cron empresarial** con informe y salud en vivo, preparado para **Vercel con cron horario + dominio propio** — y una UI de nivel Max/VIP: héroe destacado, buscador verde premium, chips degradados de salto rápido, deportes con cuenta atrás real y secciones «Muy pronto» con diálogo motivador.

@@ -473,10 +473,10 @@ describe("v1320 · invariantes estáticos del backend, la UI y el SW", () => {
 
 describe("v1320 · tríada de versiones coherente", () => {
   it("version.ts, changelog-meta.ts y CHANGELOG.md dicen 1.32.0", () => {
-    expect(APP_VERSION).toBe("1.33.0");
-    expect(VERSIONS[1].version).toBe("1.32.0");
-    expect(VERSIONS[1].diffDesde).toBe("1.31.0");
-    expect(VERSIONS[1].kinds).toContain("nuevo");
+    expect(APP_VERSION).toBe("1.34.0");
+    expect(VERSIONS[2].version).toBe("1.32.0");
+    expect(VERSIONS[2].diffDesde).toBe("1.31.0");
+    expect(VERSIONS[2].kinds).toContain("nuevo");
     const changelog = readFileSync(join(RAIZ, "CHANGELOG.md"), "utf8");
     expect(changelog).toContain("## [1.32.0]");
     expect(changelog).toContain("StreamDog Cine&Series");

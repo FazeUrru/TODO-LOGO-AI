@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.33.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.34.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
   <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI"><img alt="cobertura" src="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI/graph/badge.svg"></a>
@@ -54,22 +54,23 @@
 6. [Modos de la arena](#-modos-de-la-arena)
 7. [La Copa Todólogo (Modo Torneo)](#-la-copa-todólogo-modo-torneo)
 8. [Superpoderes del chat](#-superpoderes-del-chat)
-9. [Demostraciones animadas](#-demostraciones-animadas)
-10. [Honestidad: qué es real y qué no](#-honestidad-qué-es-real-y-qué-no)
-11. [Inicio rápido](#-inicio-rápido)
-12. [Tests y CI](#-tests-y-ci)
-13. [Docker](#-docker)
-14. [Despliegue en Vercel](#-despliegue-en-vercel)
-15. [Operar: watchdog y cron (nivel empresarial)](#%EF%B8%8F-operar-watchdog-y-cron-nivel-empresarial)
-16. [OAuth nativo (Google / GitHub)](#-oauth-nativo-google--github)
-17. [Arquitectura](#%EF%B8%8F-arquitectura)
-18. [El sistema ELO](#-el-sistema-elo)
-19. [Referencia de la API](#-referencia-de-la-api)
-20. [Estructura del repositorio](#-estructura-del-repositorio)
-21. [Roadmap y changelog](#-roadmap-y-changelog)
-22. [Contribuir](#-contribuir)
-23. [Seguridad](#-seguridad)
-24. [Licencia](#-licencia)
+9. [StreamDog: cine y series gratis, contenido infinito](#-streamdog-cine-y-series-gratis-contenido-infinito)
+10. [Demostraciones animadas](#-demostraciones-animadas)
+11. [Honestidad: qué es real y qué no](#-honestidad-qué-es-real-y-qué-no)
+12. [Inicio rápido](#-inicio-rápido)
+13. [Tests y CI](#-tests-y-ci)
+14. [Docker](#-docker)
+15. [Despliegue en Vercel](#-despliegue-en-vercel)
+16. [Operar: watchdog y cron (nivel empresarial)](#%EF%B8%8F-operar-watchdog-y-cron-nivel-empresarial)
+17. [OAuth nativo (Google / GitHub)](#-oauth-nativo-google--github)
+18. [Arquitectura](#%EF%B8%8F-arquitectura)
+19. [El sistema ELO](#-el-sistema-elo)
+20. [Referencia de la API](#-referencia-de-la-api)
+21. [Estructura del repositorio](#-estructura-del-repositorio)
+22. [Roadmap y changelog](#-roadmap-y-changelog)
+23. [Contribuir](#-contribuir)
+24. [Seguridad](#-seguridad)
+25. [Licencia](#-licencia)
 
 ---
 
@@ -207,6 +208,24 @@ El composer (disponible en Batalla, Lado a Lado y Directo) incluye:
 | 🎬 **Modo vídeo (beta)** | El modelo convierte tu idea en un guion de vídeo con escenas, planos, música y transiciones |
 
 Además: autoguardado del historial en `Recientes` (con restauración completa del modo y la batalla), insignias **¡NUEVO!** que desaparecen cuando usas la función, **30 ajustes persistentes en 9 categorías** (15 de perfil — identidad, presencia, privacidad y notificaciones — y 15 de la aplicación, todos con autoguardado y sincronización con la cuenta), página de conectores con 35 integraciones, login/registro con email cifrado (scrypt) o entrada social, calculadora de costes con comparador de eficiencia y canal de novedades.
+
+## 🎬 StreamDog: cine y series gratis, contenido infinito
+
+StreamDog es el estudio de entretenimiento del proyecto. Su módulo **Cine y series** (`/streamdog`) es un catálogo **REAL, legal y sin claves API** sobre fuentes públicas — cero piratería:
+
+| Fuente | Qué aporta |
+|---|---|
+| **Wikimedia Commons** | Películas de dominio público **reproducibles** (.webm/.mp4 directos): Nosferatu, Night of the Living Dead, Charade, The General… |
+| **Internet Archive** | Contenido infinito ♾️: éxitos eternos («Los títulos más famosos», 30 clásicos por nombre exacto) + colecciones de **film noir**, **ciencia ficción y terror**, **dibujos animados clásicos**, **televisión clásica** y **documentales** |
+| **TVMaze** | Series del momento y la fila **«Lo mejor de Disney+»** (El Encargado/The Bear, Solo asesinatos en el edificio, Loki, El Mandaloriano, Andor, WandaVision, Los Simpson, Gravity Falls, Phineas y Ferb, Bluey, X-Men '97, Ahsoka) como **fichas legales** con temporadas, episodios y «Ver en el origen» |
+
+Lo que incluye el módulo:
+
+- **UI premium/VIP**: héroe destacado con Ken Burns, buscador verde con destello, chips degradados de salto rápido, filas en carrusel con **entrada escalonada**, tarjetas que se elevan, sports VS con **cuenta atrás real** y hoja de ruta «Muy pronto» con diálogo motivador — **8 animaciones originales `sdc-*`** en GPU con `prefers-reduced-motion`.
+- **Reproductor completo**: segundo plano real (MediaSession + Picture-in-Picture automático), reanudar donde lo dejaste, velocidades, atajos de teclado.
+- **Cron empresarial cada hora** (`0 * * * *`): el backend pre-cocina todas las cachés y publica un **informe de salud** (`/api/streamdog/cron/estado`) con historial de 24 h. En Vercel vía `vercel.json` o gratis con el workflow de GitHub Actions.
+- **Multilenguaje es/en/de/fr** propio del módulo, PWA instalable con service worker que **audita y repara su caché solo**, y Mi lista + Seguir viendo con autoreparación real del storage.
+- **Despliegue**: guía completa en [`docs/DESPLIEGUE-VERCEL.md`](docs/DESPLIEGUE-VERCEL.md) — dashboard/CLI, **dominio propio** paso a paso y `CRON_SECRET`.
 
 ## Demostraciones animadas
 
@@ -476,6 +495,9 @@ Resumen rápido — la referencia completa con cuerpos de petición, respuestas 
 | `/api/auth/oauth/{provider}` | `GET` | Inicio del flujo OAuth 2.0 nativo (Google/GitHub; 501 sin credenciales) |
 | `/api/auth/oauth/{provider}/callback` | `GET` | Callback OAuth: valida state, intercambia código, abre sesión |
 | `/api/auth/oauth/status` | `GET` | Indica qué proveedores tienen OAuth nativo activo |
+| `/api/streamdog/cine` | `GET` | Catálogo de cine y series: `?vista=inicio\|peliculas\|series`, `?pagina=N`, `?q=texto` — Commons + Archive (♾️) + TVMaze con degradación por fuente |
+| `/api/streamdog/cron/actualizar` | `GET` | Cron empresarial: pre-cocina las cachés del catálogo y devuelve el informe JSON (protegido con `CRON_SECRET`) |
+| `/api/streamdog/cron/estado` | `GET` | Salud del planificador: última ejecución, historial 24 h, próxima recarga |
 
 ## Estructura del repositorio
 
@@ -484,12 +506,14 @@ TODO-LOGO-AI/
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx              # Portada de la arena
+│   │   ├── streamdog/            # 🎬 StreamDog: cine y series gratis (PWA propia)
 │   │   ├── leaderboard/          # Ranking ELO (10 categorías, Pareto, Labs)
 │   │   ├── novedades/  empresas/  calculadora/  conectores/
 │   │   ├── iniciar-sesion/  registro/  ajustes/  acerca/  changelog/
-│   │   └── api/                  # battle · tournament · vote · leaderboard · agent · image · news · stats · health · auth/* · auth/oauth/*
+│   │   └── api/                  # battle · tournament · vote · leaderboard · agent · image · news · stats · health · auth/* · auth/oauth/* · streamdog/*
 │   ├── components/
 │   │   ├── arena/                # ChatExperience · TournamentView · LeaderboardView · Markdown · Viewer3D · ProviderLogo
+│   │   ├── streamdog/            # Cine (héroe, carruseles, reproductor, cron UI) · Parrilla · SportIA · ChatE2E
 │   │   ├── shell/                # AppShell · Sidebar · TopBar (+ botón GitHub) · SearchDialog · arena-context
 │   │   └── auth/                 # SocialAuth (OAuth nativo + puente por correo)
 │   ├── lib/
@@ -512,13 +536,15 @@ TODO-LOGO-AI/
 ├── tests/elo.test.ts             # 18 tests (Vitest): ELO, categorías, integridad del catálogo
 ├── Dockerfile                    # Multi-stage (Bun, standalone, runner slim)
 ├── docker-compose.yml            # App + volumen ./db + healthcheck
-├── vercel.json                   # Región cdg1 + maxDuration de las APIs
+├── vercel.json                   # Región cdg1 + cron horario de StreamDog + maxDuration de las APIs
 ├── scripts/watchdog.sh           # Vigilante: /api/health → reinicio con backoff + logs JSON
 ├── .github/workflows/
 │   ├── ci.yml                    # Lint · tipos · tests · build (2 jobs)
-│   └── deploy-pages.yml          # Demo estática → GitHub Pages
+│   ├── deploy-pages.yml          # Demo estática → GitHub Pages
+│   └── cron-catalogo.yml         # 🎬 Cron horario de StreamDog (respaldo gratis a Vercel Hobby)
 ├── docs/
 │   ├── API.md                    # Referencia completa de la API
+│   ├── DESPLIEGUE-VERCEL.md      # 🎬 Vercel + dominio propio + CRON_SECRET (StreamDog)
 │   ├── screenshots/*.png         # Capturas reales de la app
 │   └── demos/*.svg               # Demostraciones animadas (CSS-SVG)
 ├── public/providers/             # Logotipos oficiales de las 28 organizaciones

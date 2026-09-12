@@ -278,3 +278,107 @@
 [data-motion="reducida"] .copa-pulse,
 [data-motion="reducida"] .copa-sweep { animation: none !important; }
 [data-motion="reducida"] .copa-confetti-piece { display: none !important; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   STREAMDOG CINE · suite de animaciones originales (v1.34.0)
+   Todas son transform/opacity (GPU, sin reflow) y respetan
+   prefers-reduced-motion. Prefijo sdc- para no pisar a nadie.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* 1 · Shimmer diagonal: el esqueleto de carga con luz que barre */
+@keyframes sdc-shimmer {
+  0% { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(240%) skewX(-12deg); }
+}
+.sdc-shimmer { position: relative; overflow: hidden; }
+.sdc-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(148, 233, 220, 0.10), rgba(255, 255, 255, 0.16), rgba(148, 233, 220, 0.10), transparent);
+  animation: sdc-shimmer 1.6s ease-in-out infinite;
+}
+
+/* 2 · Entrada escalonada: las filas del catálogo suben y aparecen una a una */
+@keyframes sdc-entrada {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.sdc-entrada {
+  opacity: 0;
+  animation: sdc-entrada 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--sdc-retardo, 0ms);
+}
+
+/* 3 · Ken Burns del héroe: zoom-pan lento, sensación de gran pantalla */
+@keyframes sdc-kenburns {
+  0% { transform: scale(1.02) translateX(0); }
+  50% { transform: scale(1.12) translateX(-1.6%); }
+  100% { transform: scale(1.02) translateX(0); }
+}
+.sdc-kenburns { animation: sdc-kenburns 26s ease-in-out infinite; will-change: transform; }
+
+/* 4 · Brillo del botón verde: destello periódico como en las apps VIP */
+@keyframes sdc-brillo {
+  0%, 55% { transform: translateX(-160%) skewX(-18deg); }
+  85%, 100% { transform: translateX(320%) skewX(-18deg); }
+}
+.sdc-brillo { position: relative; overflow: hidden; isolation: isolate; }
+.sdc-brillo::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 34%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  animation: sdc-brillo 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* 5 · Frontera viva de los partidos: degradado que recorre el borde */
+@keyframes sdc-frontera {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.sdc-frontera {
+  border: 1px solid transparent !important;
+  background:
+    linear-gradient(#0c1526, #0c1526) padding-box,
+    linear-gradient(115deg, #34d399, #22d3ee, #a78bfa, #f472b6, #34d399) border-box;
+  background-size: 100% 100%, 320% 320%;
+  animation: sdc-frontera 7s ease-in-out infinite;
+}
+
+/* 6 · Flotar del infinito: el ♾️ respira sin parar */
+@keyframes sdc-flotar {
+  0%, 100% { transform: translateY(0) rotate(-4deg) scale(1); }
+  50% { transform: translateY(-2.5px) rotate(4deg) scale(1.08); }
+}
+.sdc-flotar { display: inline-block; animation: sdc-flotar 3.2s ease-in-out infinite; }
+
+/* 7 · Elevación de tarjeta: se alza hacia el dedo al pasar */
+@keyframes sdc-elevarse {
+  from { transform: translateY(0); box-shadow: 0 0 0 rgba(34, 211, 238, 0); }
+  to { transform: translateY(-5px); box-shadow: 0 14px 30px -12px rgba(34, 211, 238, 0.35); }
+}
+.sdc-elevarse { transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease; }
+.sdc-elevarse:hover, .sdc-elevarse:focus-visible { transform: translateY(-5px); box-shadow: 0 14px 30px -12px rgba(34, 211, 238, 0.35); }
+
+/* 8 · Onda del diálogo motivador: el panel entra con rebote suave */
+@keyframes sdc-onda {
+  0% { opacity: 0; transform: translateY(22px) scale(0.94); }
+  60% { opacity: 1; transform: translateY(-4px) scale(1.015); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.sdc-onda { animation: sdc-onda 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* Respeto total a quien prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .sdc-shimmer::after, .sdc-entrada, .sdc-kenburns, .sdc-brillo::before,
+  .sdc-frontera, .sdc-flotar, .sdc-elevarse, .sdc-onda { animation: none !important; }
+  .sdc-entrada { opacity: 1; }
+  .sdc-elevarse:hover, .sdc-elevarse:focus-visible { transform: none; box-shadow: none; }
+}
