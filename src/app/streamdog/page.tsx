@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Bone, CalendarRange, Clapperboard, FlaskConical, LockKeyhole, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Bone, CalendarRange, Clapperboard, FlaskConical, LockKeyhole, Play, Sparkles } from "lucide-react";
 import { asset } from "@/lib/asset-path";
 import { APP_VERSION } from "@/lib/version";
 import { useT } from "@/lib/i18n";
@@ -11,6 +11,13 @@ import Parrilla from "@/components/streamdog/Parrilla";
 import PanelSportia from "@/components/streamdog/PanelSportia";
 import ChatE2E from "@/components/streamdog/ChatE2E";
 import Laboratorio from "@/components/streamdog/Laboratorio";
+import {
+  IntroStreamDog,
+  TourStreamDog,
+  introVista,
+  tourHecho,
+} from "@/components/streamdog/cine/IntroTour";
+import { traducirCine, type IdiomaCine } from "@/lib/streamdog/cine-i18n";
 
 type Pestaña = "cine" | "parrilla" | "sportia" | "chat" | "lab";
 
@@ -35,6 +42,30 @@ const PESTAÑAS: { id: Pestaña; nombre: string; icono: typeof Bone; pista: stri
 export default function StreamDogPage() {
   const { t } = useT();
   const [pestaña, setPestaña] = useState<Pestaña>(() => pestañaDelHash() ?? "cine");
+
+  /* INTRO + TOUR (v1.38.0): la bienvenida se ve UNA vez y el tour la
+   * sigue; los dos se pueden repetir desde la cabecera. */
+  const [intro, setIntro] = useState(false);
+  const [tour, setTour] = useState(false);
+  const [revisado, setRevisado] = useState(false);
+
+  useEffect(() => {
+    if (!introVista()) setIntro(true);
+    setRevisado(true);
+  }, []);
+
+  const alTerminarIntro = useCallback(() => {
+    setIntro(false);
+    if (!tourHecho()) setTour(true);
+  }, []);
+
+  /* El idioma del módulo de cine manda en la intro/tour (4 + sistema). */
+  const [idiomaIntro] = useState(() => {
+    const crudo = typeof localStorage !== "undefined" ? localStorage.getItem("streamdog.cine.v1.idioma") : null;
+    const elegido = crudo === "es" || crudo === "en" || crudo === "de" || crudo === "fr" || crudo === "sistema" ? crudo : "sistema";
+    return elegido === "sistema" ? (typeof navigator !== "undefined" && navigator.language?.startsWith("en") ? "en" : "es") : elegido;
+  });
+  const ti = useCallback((clave: string) => traducirCine(clave, idiomaIntro as IdiomaCine), [idiomaIntro]);
 
   /* v1.38.0 — las fichas expandidas saltan de pestaña vía hash (#parrilla):
    * se sincroniza con hashchange (enlaces compartibles incluidos). */
@@ -71,10 +102,33 @@ export default function StreamDogPage() {
               {t("Tu cine y series gratis de dominio público y tu parrilla deportiva con IA — se instala como app nativa y todo lo que traga, lo digiere sin explotar.")}
             </p>
           </div>
-          <span className="ml-auto hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[11.5px] font-medium text-emerald-300 sm:flex">
-            <Bone className="h-3.5 w-3.5" aria-hidden />
-            PWA nativa · v{APP_VERSION}
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            {/* INTRO + TOUR (v1.38.0): repetibles desde la cabecera */}
+            {revisado && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setTour(true)}
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[11.5px] font-semibold text-slate-300 transition-colors hover:text-white"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-cyan-300" aria-hidden />
+                  {ti("Tour de la casa")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIntro(true)}
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[11.5px] font-semibold text-slate-300 transition-colors hover:text-white"
+                >
+                  <Play className="h-3 w-3 text-emerald-300" aria-hidden />
+                  {ti("Ver la intro")}
+                </button>
+              </>
+            )}
+            <span className="hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[11.5px] font-medium text-emerald-300 sm:flex">
+              <Bone className="h-3.5 w-3.5" aria-hidden />
+              PWA nativa · v{APP_VERSION}
+            </span>
+          </div>
         </header>
 
         {/* Pestañas */}
@@ -127,6 +181,10 @@ export default function StreamDogPage() {
           </p>
         </footer>
       </div>
+
+      {/* INTRO + TOUR (v1.38.0): portada con música y recorrido guiado */}
+      {intro && <IntroStreamDog onTerminar={alTerminarIntro} />}
+      {tour && <TourStreamDog onTerminar={() => setTour(false)} />}
     </div>
   );
 }

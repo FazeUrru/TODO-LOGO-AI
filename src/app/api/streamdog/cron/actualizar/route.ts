@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { catalogo, top100, type VistaCine } from "@/lib/streamdog/cine-catalogo";
+import { catalogo, carteleraPeliculas, top100, type VistaCine } from "@/lib/streamdog/cine-catalogo";
 import { CRON_SCHEDULE, autorizarCron, registrarEjecucion, type EjecucionCron } from "@/lib/streamdog/cine-cron";
 import { estadosFuentes } from "@/lib/streamdog/cine-servidor";
-import { FILTROS_TOP100 } from "@/lib/streamdog/cine-top100";
+import { FILTROS_PELICULAS, FILTROS_TOP100 } from "@/lib/streamdog/cine-top100";
 
 /**
  * CRON EMPRESARIAL · /api/streamdog/cron/actualizar (v1.33.0).
@@ -108,6 +108,25 @@ export async function GET(req: Request) {
     );
   } catch (e) {
     errores.push(`top100: ${e instanceof Error ? e.message : "error desconocido"}`);
+  }
+
+  // 3b) CARTELERA PELÍCULAS (v1.38.0): los 4 filtros de películas salen
+  //     del MISMO pool — 4 cachés calientes más a golpe de cron.
+  try {
+    await Promise.all(
+      FILTROS_PELICULAS.map(async ({ id }) => {
+        try {
+          const r = await carteleraPeliculas(id);
+          items += r.puestos.length;
+          degradada = degradada || r.degradada;
+          vistas.push(`peliculas:${id}`);
+        } catch (e) {
+          errores.push(`peliculas:${id} — ${e instanceof Error ? e.message : "error desconocido"}`);
+        }
+      })
+    );
+  } catch (e) {
+    errores.push(`peliculas: ${e instanceof Error ? e.message : "error desconocido"}`);
   }
 
   const completado = Date.now();

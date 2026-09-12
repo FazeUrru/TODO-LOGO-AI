@@ -15,7 +15,7 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import { traducir, EN } from "../src/lib/i18n";
-import { idiomaValido, IDIOMAS_UI, IDIOMA_BASE } from "../src/lib/idioma";
+import { idiomaValido, IDIOMAS_UI, IDIOMA_BASE, resolverIdioma, idiomaDelNavegador } from "../src/lib/idioma";
 import { timeAgo } from "../src/lib/history";
 import { APP_VERSION, APP_BUILD_DATE } from "../src/lib/version";
 import { VERSIONS } from "../src/lib/changelog-meta";

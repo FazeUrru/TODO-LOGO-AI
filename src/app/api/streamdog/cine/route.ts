@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { acumular, ipDeHeader, segundosRestantes, type LimiteCfg } from "@/lib/rate-limit";
-import { buscar, catalogoOCache, top100, type RespuestaCatalogo, type VistaCine } from "@/lib/streamdog/cine-catalogo";
+import { buscar, catalogoOCache, carteleraPeliculas, top100, type RespuestaCatalogo, type VistaCine } from "@/lib/streamdog/cine-catalogo";
 
 /**
  * CINE&SERIES · /api/streamdog/cine (v1.33.0) — el catálogo agregado.
@@ -11,9 +11,12 @@ import { buscar, catalogoOCache, top100, type RespuestaCatalogo, type VistaCine 
  *                         cartoons + TV clásica + documentales (♾️)
  *   · TVMaze            → metadatos de series (fichas, peso, géneros)
  *
- *  · GET ?vista=inicio             → filas de carrusel (famosos, oro,
- *                                    series, 5 colecciones Archive…)
+ *  · GET ?vista=inicio             → filas de carrusel (HOY EN EMISIÓN,
+ *                                    famosos, oro, series, 5 colecciones…)
  *  · GET ?vista=peliculas&pagina=N → listado paginado de películas
+ *  · GET ?vista=peliculas&filtro=X → la cartelera de películas con 4
+ *                                    filtros (v1.38.0): populares
+ *                                    | recientes | ambiguas | critica
  *  · GET ?vista=series&pagina=N    → listado paginado de series
  *  · GET ?vista=top100&filtro=X    → la clasificación definitiva (v1.37.0):
  *                                    filtro = general | famosos | animacion
@@ -55,6 +58,13 @@ export async function GET(req: Request) {
     if (vistaCruda === "top100") {
       const clasificacion = await top100(searchParams.get("filtro"));
       return NextResponse.json({ ...clasificacion, ok: true, vista: "top100" as const, q, pagina });
+    }
+
+    /* CARTELERA PELÍCULAS (v1.38.0): ?vista=peliculas&filtro=X → ranking
+     * con 4 filtros; sin filtro sigue siendo la grilla paginada de siempre. */
+    if (vistaCruda === "peliculas" && searchParams.has("filtro")) {
+      const cartelera = await carteleraPeliculas(searchParams.get("filtro"));
+      return NextResponse.json({ ...cartelera, ok: true, vista: "peliculas" as const, q, pagina });
     }
 
     const resultado = await catalogoOCache(vista, q, pagina);

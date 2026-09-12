@@ -369,9 +369,10 @@ describe("v1320 · multilenguaje es/en/de/fr", () => {
     }
     // El español no lleva diccionario (identidad) pero sí selector.
     expect(DICCIONARIOS_CINE.es).toEqual({});
-    expect(IDIOMAS_CINE.map((i) => i.id)).toEqual(["es", "en", "de", "fr"]);
+    expect(IDIOMAS_CINE.map((i) => i.id)).toEqual(["sistema", "es", "en", "de", "fr"]);
     expect(idiomaCineValido("de")).toBe("de");
-    expect(idiomaCineValido("italiano")).toBe("es");
+    expect(idiomaCineValido("italiano")).toBe("sistema");
+    expect(idiomaCineValido("sistema")).toBe("sistema");
   });
 
   it("géneros traducidos; el desconocido se muestra tal cual", () => {

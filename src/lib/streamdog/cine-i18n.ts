@@ -232,6 +232,70 @@ export const CLAVES_CINE_UI = [
   "Leaderboard",
   "Novedades",
   "API pública",
+  /* Cartelera de películas + crítica constructiva (v1.38.0) */
+  "Películas del cine",
+  "Filtros de las películas",
+  "La cartelera de películas del dominio público con cuatro puertas: populares, recientes, ambiguas y la crítica constructiva — clásicos con una crítica honesta bajo cada ficha.",
+  "Ambiguas",
+  "Crítica constructiva",
+  "Las películas más pedidas de la casa: el consenso de los éxitos mundiales del dominio público.",
+  "Del año más nuevo al más viejo: el catálogo de películas ordenado por su año de estreno real.",
+  "Clásicos con crítica y éxitos mundiales, alternados sin reglas: una crítica, un éxito, otra crítica…",
+  "La sección que no existe en ningún otro catálogo: 12 clásicos con una crítica constructiva y honesta de qué envejeció y qué sigue vivo.",
+  "Volver a la clasificación",
+  "Hoy en emisión",
+  /* Intro + tour (v1.38.0) */
+  "Bienvenido a StreamDog",
+  "Cine y series libres, actualizados cada hora",
+  "Entrar",
+  "Saltar la intro",
+  "Sonido",
+  "Ver la intro",
+  "Tour de la casa",
+  "Saltar el tour",
+  "Anterior",
+  "Siguiente",
+  "Terminar",
+  "Tour: tu catálogo infinito",
+  "Un minuto y sabes usar toda la casa: qué es cada cosa, dónde está y cómo se usa. Puedes saltarlo cuando quieras.",
+  "Actualizado cada hora, de verdad",
+  "Este chip es el pulso de la casa: el cron empresarial recoge lo nuevo de las fuentes cada hora y el punto verde dice que todo va fino.",
+  "Busca entre millones de tdo",
+  "El buscador pega en las tres fuentes a la vez (Commons, Archive y TVMaze) y muestra resultados reales: escribe y da al botón verde.",
+  "Cinco vistas, un catálogo",
+  "Inicio con filas, el Top 100 con 6 filtros, Películas con crítica constructiva, Series y tu Mi lista: todo salta con un toque.",
+  "La hoja de ruta se PUEDE usar",
+  "Deportes, viajes, juegos, apps y webs no son carteles mudos: cada ficha abre acciones reales — jugar, instalar, explorar, escuchar.",
+  "En tu idioma, siempre",
+  "«Sistema» adapta la app al idioma de tu dispositivo y también puedes fijar Español, English, Deutsch o Français.",
+  "Y el pacto abierto",
+  "Aquí está la carta a las plataformas y la explicación completa de la app: qué es, cómo funciona y cómo se sostiene sin anuncios.",
+  /* Sostenibilidad (v1.38.0): monetizar sin anuncios ni suscripción */
+  "Sostenibilidad",
+  "Cómo se sostiene la casa sin anuncios ni suscripciones",
+  "Sin anuncios · Sin suscripción · Sin venta de datos",
+  "Cómo se sostiene StreamDog",
+  "El catálogo es gratis y será gratis para siempre. Estas tres vías — 100 % opcionales — pagan los servidores, el dominio y el cron que lo refresca cada hora. Tres formas nuevas de sostener contenido libre, guiadas por la demanda real de películas y series.",
+  "Puente legal (afiliación honesta)",
+  "Cuando un título que buscas no está en el catálogo libre, StreamDog te ofrece el camino legal a la plataforma que lo tiene — con enlace de afiliado. Tú pagas exactamente lo mismo; la casa recibe una comisión pequeña por el envío. Sin rastreadores, sin pop-ups, sin presión: el puente solo aparece cuando la demanda del título lo justifica, y jamás altera el catálogo ni el orden de las filas. Es la forma más limpia de que el catálogo libre y las plataformas convivan.",
+  "Colecciones a demanda (micro-mecenazgo)",
+  "La demanda manda de verdad: la comunidad vota qué colección se cura, restaura o digitaliza después — una temporada de cartoons, un ciclo de film noir, los documentales de viajes que pedís en el buscador. Quien apoya una colección concreta aparece en sus créditos dentro de la app. No hay cuotas ni niveles: cada campaña es una colección concreta con un coste claro, y el resultado entra al catálogo libre para todo el mundo, también para quien no aportó un céntimo.",
+  "Pósters del dominio público",
+  "Impresión bajo demanda con ARTE LIBRE: portadas, fotogramas y carteles de películas de dominio público convertidos en láminas y pósters de calidad, más el merchandising de la marca StreamDog. Los originales ya son de todos; nosotros solo los tratamos con cariño y los llevamos a la pared. El margen de cada lámina paga servidores, dominio y el cron que mantiene el catálogo fresco cada hora — sin tocar el precio de nadie.",
+  "Nada de esto es obligatorio para ver ni una sola ficha: la casa no cierra si un día nadie apoya — pero gracias a quien apoya, crece.",
+  /* Explicación de la app (v1.38.0): la guía completa dentro del pacto */
+  "Qué es StreamDog y cómo funciona",
+  "El pacto con las plataformas",
+  "Qué es StreamDog",
+  "StreamDog es un catálogo infinito de cine y series GRATIS y legales: películas completas de dominio público que se reproducen aquí mismo, series con sus fichas y episodios, y documentales de archivo. Nada de copias piratas ni descargas raras: todo lo que ves nace libre o es metadato público. Se instala como app (PWA) desde el propio navegador, sin tiendas, y funciona en el móvil como en el ordenador.",
+  "Cómo funciona por dentro",
+  "La casa se alimenta de tres fuentes públicas — Wikimedia Commons (vídeo reproducible), Internet Archive (el gran archivo del mundo) y TVMaze (metadatos de series) — y un CRON EMPRESARIAL las recorre cada hora, puntual como un reloj: lo que aparece, entra al catálogo; lo que desaparece, sale sin ruido. No hay cuentas, no hay registro, no hay seguimiento: tu lista, tu progreso y tus preferencias viven en tu dispositivo y no salen de él. Y si una fuente se cae, el resto sigue: degradación elegante, nunca una página rota.",
+  "Qué puedes hacer hoy mismo",
+  "Reproducir películas completas y ponerlas en segundo plano o a pantalla completa; guardar en Mi lista y retomar donde lo dejaste (Seguir viendo); explorar el Top 100 con 6 filtros — general, famosos, animación Disney, recientes, populares y ambigüedad —; descubrir la sección de PELÍCULAS con 4 filtros propios, incluida la CRÍTICA CONSTRUCTIVA: 12 clásicos con una crítica honesta de qué envejeció y qué sigue vivo; ver HOY EN EMISIÓN, lo que se emite de verdad ahora mismo; abrir la parrilla deportiva, jugar a los juegos de la casa, explorar las webs de la casa y cambiar de idioma — o dejar «Sistema», que adapta todo solo. La primera vez verás la intro con su música y un tour de un minuto: cada cosa en su sitio.",
+  "Cómo se sostiene (sin anuncios ni suscripción)",
+  "El catálogo es gratis y será gratis para siempre. La casa se sostiene con tres vías opcionales guiadas por la demanda real: puentes de afiliación honesta hacia plataformas legales cuando un título no está libre (pagas lo mismo, la casa cobra una comisión pequeña), colecciones a demanda donde la comunidad vota y financia qué se cura después, y pósters de dominio público impresos bajo demanda. Nada de banners, nada de cuotas mensuales, nada de vender tus datos: si quieres saber más, el botón «Sostenibilidad» de la cabecera lo cuenta al detalle.",
+  "Las reglas de la casa",
+  "Solo contenido libre y metadatos abiertos; cada ficha nombra su fuente; si un titular de derechos pide una retirada, se retira de inmediato. Sin excepciones y sin disculpas: así es como esta casa lleva el contenido libre de forma limpia, auditable y para todos los públicos.",
 ] as const;
 
 /** Diccionario destino: clave española → cadena en el idioma destino. */
@@ -437,6 +501,92 @@ export const DICCIONARIOS_CINE: Record<IdiomaCineFijo, Record<string, string>> =
     Leaderboard: "Leaderboard",
     Novedades: "What's new",
     "API pública": "Public API",
+    /* Cartelera películas + crítica (v1.38.0) */
+    "Películas del cine": "Movies",
+    "Filtros de las películas": "Movie filters",
+    "La cartelera de películas del dominio público con cuatro puertas: populares, recientes, ambiguas y la crítica constructiva — clásicos con una crítica honesta bajo cada ficha.":
+      "The public-domain movie lineup with four doors: popular, recent, ambiguous and constructive criticism — classics with an honest review under every card.",
+    Ambiguas: "Ambiguous",
+    "Crítica constructiva": "Constructive criticism",
+    "Las películas más pedidas de la casa: el consenso de los éxitos mundiales del dominio público.":
+      "The house's most requested movies: the consensus of the world's public-domain hits.",
+    "Del año más nuevo al más viejo: el catálogo de películas ordenado por su año de estreno real.":
+      "From the newest year to the oldest: the movie catalog ordered by its real release year.",
+    "Clásicos con crítica y éxitos mundiales, alternados sin reglas: una crítica, un éxito, otra crítica…":
+      "Classics with reviews and world hits, alternating without rules: a review, a hit, another review…",
+    "La sección que no existe en ningún otro catálogo: 12 clásicos con una crítica constructiva y honesta de qué envejeció y qué sigue vivo.":
+      "The section no other catalog has: 12 classics with a constructive, honest take on what aged and what still lives.",
+    "Volver a la clasificación": "Back to the ranking",
+    "Hoy en emisión": "On air today",
+    /* Intro + tour (v1.38.0) */
+    "Bienvenido a StreamDog": "Welcome to StreamDog",
+    "Cine y series libres, actualizados cada hora": "Free movies & series, refreshed every hour",
+    Entrar: "Come in",
+    "Saltar la intro": "Skip intro",
+    Sonido: "Sound",
+    "Ver la intro": "Replay the intro",
+    "Tour de la casa": "House tour",
+    "Saltar el tour": "Skip the tour",
+    Anterior: "Back",
+    Siguiente: "Next",
+    Terminar: "Finish",
+    "Tour: tu catálogo infinito": "Tour: your infinite catalog",
+    "Un minuto y sabes usar toda la casa: qué es cada cosa, dónde está y cómo se usa. Puedes saltarlo cuando quieras.":
+      "One minute and you know how the whole house works: what everything is, where it is and how to use it. Skip it anytime.",
+    "Actualizado cada hora, de verdad": "Refreshed every hour, for real",
+    "Este chip es el pulso de la casa: el cron empresarial recoge lo nuevo de las fuentes cada hora y el punto verde dice que todo va fino.":
+      "This chip is the house's pulse: the enterprise cron gathers what's new from the sources every hour, and the green dot says all is fine.",
+    "Busca entre millones de tdo": "Search across millions of titles",
+    "El buscador pega en las tres fuentes a la vez (Commons, Archive y TVMaze) y muestra resultados reales: escribe y da al botón verde.":
+      "The search box hits all three sources at once (Commons, Archive and TVMaze) and shows real results: type and hit the green button.",
+    "Cinco vistas, un catálogo": "Five views, one catalog",
+    "Inicio con filas, el Top 100 con 6 filtros, Películas con constructive criticism, Series y tu Mi lista: todo salta con un toque.":
+      "Home with rows, the Top 100 with 6 filters, Movies with constructive criticism, Series and your My List: everything jumps with a tap.",
+    "La hoja de ruta se PUEDE usar": "The roadmap is USABLE",
+    "Deportes, viajes, juegos, apps y webs no son carteles mudos: cada ficha abre acciones reales — jugar, instalar, explorar, escuchar.":
+      "Sports, travel, games, apps and websites are not mute posters: every card opens real actions — play, install, explore, listen.",
+    "En tu idioma, siempre": "In your language, always",
+    "«Sistema» adapta la app al idioma de tu dispositivo y también puedes fijar Español, English, Deutsch o Français.":
+      "“System” adapts the app to your device's language, and you can also pin Español, English, Deutsch or Français.",
+    "Y el pacto abierto": "And the open pact",
+    "Aquí está la carta a las plataformas y la explicación completa de la app: qué es, cómo funciona y cómo se sostiene sin anuncios.":
+      "Here is the letter to the platforms and the app's full explanation: what it is, how it works and how it sustains itself without ads.",
+    /* Sostenibilidad (v1.38.0) */
+    Sostenibilidad: "Sustainability",
+    "Cómo se sostiene la casa sin anuncios ni suscripciones": "How the house sustains itself without ads or subscriptions",
+    "Sin anuncios · Sin suscripción · Sin venta de datos": "No ads · No subscription · No data selling",
+    "Cómo se sostiene StreamDog": "How StreamDog sustains itself",
+    "El catálogo es gratis y será gratis para siempre. Estas tres vías — 100 % opcionales — pagan los servidores, el dominio y el cron que lo refresca cada hora. Tres formas nuevas de sostener contenido libre, guiadas por la demanda real de películas y series.":
+      "The catalog is free and will stay free forever. These three paths — 100% optional — pay for the servers, the domain and the cron that refreshes it hourly. Three new ways to sustain free content, guided by the real demand for movies and series.",
+    "Puente legal (afiliación honesta)": "Legal bridge (honest affiliation)",
+    "Cuando un título que buscas no está en el catálogo libre, StreamDog te ofrece el camino legal a la plataforma que lo tiene — con enlace de afiliado. Tú pagas exactamente lo mismo; la casa recibe una comisión pequeña por el envío. Sin rastreadores, sin pop-ups, sin presión: el puente solo aparece cuando la demanda del título lo justifica, y jamás altera el catálogo ni el orden de las filas. Es la forma más limpia de que el catálogo libre y las plataformas convivan.":
+      "When a title you want isn't in the free catalog, StreamDog offers the legal path to the platform that has it — with an affiliate link. You pay exactly the same; the house earns a small commission for the referral. No trackers, no pop-ups, no pressure: the bridge only appears when demand justifies it, and it never alters the catalog or the row order. It's the cleanest way for the free catalog and the platforms to coexist.",
+    "Colecciones a demanda (micro-mecenazgo)": "On-demand collections (micro-crowdfunding)",
+    "La demanda manda de verdad: la comunidad vota qué colección se cura, restaura o digitaliza después — una temporada de cartoons, un ciclo de film noir, los documentales de viajes que pedís en el buscador. Quien apoya una colección concreta aparece en sus créditos dentro de la app. No hay cuotas ni niveles: cada campaña es una colección concreta con un coste claro, y el resultado entra al catálogo libre para todo el mundo, también para quien no aportó un céntimo.":
+      "Demand truly rules: the community votes which collection gets curated, restored or digitized next — a cartoon season, a film-noir cycle, the travel documentaries you ask the search box for. Whoever backs a specific collection appears in its credits inside the app. No fees, no tiers: each campaign is one concrete collection with a clear cost, and the result enters the free catalog for everyone, including those who didn't chip in a cent.",
+    "Pósters del dominio público": "Public-domain posters",
+    "Impresión bajo demanda con ARTE LIBRE: portadas, fotogramas y carteles de películas de dominio público convertidos en láminas y pósters de calidad, más el merchandising de la marca StreamDog. Los originales ya son de todos; nosotros solo los tratamos con cariño y los llevamos a la pared. El margen de cada lámina paga servidores, dominio y el cron que mantiene el catálogo fresco cada hora — sin tocar el precio de nadie.":
+      "Print-on-demand with FREE ART: covers, frames and posters of public-domain movies turned into quality prints and posters, plus StreamDog brand merch. The originals already belong to everyone; we just treat them with care and take them to your wall. Each print's margin pays for servers, domain and the cron that keeps the catalog fresh every hour — without touching anyone's price.",
+    "Nada de esto es obligatorio para ver ni una sola ficha: la casa no cierra si un día nadie apoya — pero gracias a quien apoya, crece.":
+      "None of this is required to watch even a single card: the house won't close if nobody ever chips in — but thanks to those who do, it grows.",
+    /* Explicación de la app (v1.38.0) */
+    "Qué es StreamDog y cómo funciona": "What StreamDog is and how it works",
+    "El pacto con las plataformas": "The pact with the platforms",
+    "Qué es StreamDog": "What StreamDog is",
+    "StreamDog es un catálogo infinito de cine y series GRATIS y legales: películas completas de dominio público que se reproducen aquí mismo, series con sus fichas y episodios, y documentales de archivo. Nada de copias piratas ni descargas raras: todo lo que ves nace libre o es metadato público. Se instala como app (PWA) desde el propio navegador, sin tiendas, y funciona en el móvil como en el ordenador.":
+      "StreamDog is an infinite catalog of FREE, legal movies and series: full public-domain films that play right here, series with their cards and episodes, and archive documentaries. No pirate copies, no shady downloads: everything you see is born free or is public metadata. It installs as an app (PWA) straight from the browser, no stores, and works on phone and desktop alike.",
+    "Cómo funciona por dentro": "How it works inside",
+    "La casa se alimenta de tres fuentes públicas — Wikimedia Commons (vídeo reproducible), Internet Archive (el gran archivo del mundo) y TVMaze (metadatos de series) — y un CRON EMPRESARIAL las recorre cada hora, puntual como un reloj: lo que aparece, entra al catálogo; lo que desaparece, sale sin ruido. No hay cuentas, no hay registro, no hay seguimiento: tu lista, tu progreso y tus preferencias viven en tu dispositivo y no salen de él. Y si una fuente se cae, el resto sigue: degradación elegante, nunca una página rota.":
+      "The house feeds on three public sources — Wikimedia Commons (playable video), Internet Archive (the world's great archive) and TVMaze (series metadata) — and an ENTERPRISE CRON sweeps them every hour, punctual as a clock: whatever appears enters the catalog; whatever disappears leaves without a sound. No accounts, no signup, no tracking: your list, progress and preferences live on your device and never leave it. And if a source goes down, the rest keeps going: graceful degradation, never a broken page.",
+    "Qué puedes hacer hoy mismo": "What you can do right now",
+    "Reproducir películas completas y ponerlas en segundo plano o a pantalla completa; guardar en Mi lista y retomar donde lo dejaste (Seguir viendo); explorar el Top 100 con 6 filtros — general, famosos, animación Disney, recientes, populares y ambigüedad —; descubrir la sección de PELÍCULAS con 4 filtros propios, incluida la CRÍTICA CONSTRUCTIVA: 12 clásicos con una crítica honesta de qué envejeció y qué sigue vivo; ver HOY EN EMISIÓN, lo que se emite de verdad ahora mismo; abrir la parrilla deportiva, jugar a los juegos de la casa, explorar las webs de la casa y cambiar de idioma — o dejar «Sistema», que adapta todo solo. La primera vez verás la intro con su música y un tour de un minuto: cada cosa en su sitio.":
+      "Play full movies and keep them in background or fullscreen; save to My List and resume where you left off (Keep Watching); explore the Top 100 with 6 filters — overall, famous, Disney animation, recent, popular and ambiguity —; discover the MOVIES section with 4 filters of its own, including CONSTRUCTIVE CRITICISM: 12 classics with an honest take on what aged and what still lives; watch ON AIR TODAY, what's really broadcasting right now; open the sports grid, play the house games, explore the house websites and switch languages — or leave “System”, which adapts everything by itself. The first time you'll see the intro with its music and a one-minute tour: everything in its place.",
+    "Cómo se sostiene (sin anuncios ni suscripción)": "How it sustains itself (no ads, no subscription)",
+    "El catálogo es gratis y será gratis para siempre. La casa se sostiene con tres vías opcionales guiadas por la demanda real: puentes de afiliación honesta hacia plataformas legales cuando un título no está libre (pagas lo mismo, la casa cobra una comisión pequeña), colecciones a demanda donde la comunidad vota y financia qué se cura después, y pósters de dominio público impresos bajo demanda. Nada de banners, nada de cuotas mensuales, nada de vender tus datos: si quieres saber más, el botón «Sostenibilidad» de la cabecera lo cuenta al detalle.":
+      "The catalog is free and will stay free forever. The house sustains itself with three optional paths guided by real demand: honest affiliate bridges to legal platforms when a title isn't free (you pay the same, the house gets a small commission), on-demand collections where the community votes and funds what gets curated next, and public-domain posters printed on demand. No banners, no monthly fees, no selling your data: if you want more detail, the “Sustainability” button in the header spells it out.",
+    "Las reglas de la casa": "The house rules",
+    "Solo contenido libre y metadatos abiertos; cada ficha nombra su fuente; si un titular de derechos pide una retirada, se retira de inmediato. Sin excepciones y sin disculpas: así es como esta casa lleva el contenido libre de forma limpia, auditable y para todos los públicos.":
+      "Free content and open metadata only; every card names its source; if a rights holder requests a removal, it's removed immediately. No exceptions, no apologies: that's how this house keeps free content clean, auditable and for all audiences.",
   },
 
   de: {
@@ -637,6 +787,92 @@ export const DICCIONARIOS_CINE: Record<IdiomaCineFijo, Record<string, string>> =
     Leaderboard: "Leaderboard",
     Novedades: "Neuigkeiten",
     "API pública": "Öffentliche API",
+    /* Cartelera películas + crítica (v1.38.0) */
+    "Películas del cine": "Filme",
+    "Filtros de las películas": "Filmfilter",
+    "La cartelera de películas del dominio público con cuatro puertas: populares, recientes, ambiguas y la crítica constructiva — clásicos con una crítica honesta bajo cada ficha.":
+      "Das Gemeinfrei-Filmprogramm mit vier Türen: beliebt, neu, ambig und konstruktive Kritik — Klassiker mit ehrlicher Kritik unter jeder Karte.",
+    Ambiguas: "Ambig",
+    "Crítica constructiva": "Konstruktive Kritik",
+    "Las películas más pedidas de la casa: el consenso de los éxitos mundiales del dominio público.":
+      "Die meistgewünschten Filme des Hauses: der Konsens der weltweiten Gemeinfrei-Hits.",
+    "Del año más nuevo al más viejo: el catálogo de películas ordenado por su año de estreno real.":
+      "Vom neuesten zum ältesten Jahr: der Filmkatalog nach echtem Erscheinungsjahr sortiert.",
+    "Clásicos con crítica y éxitos mundiales, alternados sin reglas: una crítica, un éxito, otra crítica…":
+      "Klassiker mit Kritik und Welthits, regellos abwechselnd: eine Kritik, ein Hit, noch eine Kritik…",
+    "La sección que no existe en ningún otro catálogo: 12 clásicos con una crítica constructiva y honesta de qué envejeció y qué sigue vivo.":
+      "Die Sektion, die kein anderer Katalog hat: 12 Klassiker mit konstruktiver, ehrlicher Kritik — was gealtert ist und was weiterlebt.",
+    "Volver a la clasificación": "Zurück zum Ranking",
+    "Hoy en emisión": "Heute im Fernsehen",
+    /* Intro + tour (v1.38.0) */
+    "Bienvenido a StreamDog": "Willkommen bei StreamDog",
+    "Cine y series libres, actualizados cada hora": "Freie Filme & Serien, stündlich aktualisiert",
+    Entrar: "Eintreten",
+    "Saltar la intro": "Intro überspringen",
+    Sonido: "Ton",
+    "Ver la intro": "Intro nochmal ansehen",
+    "Tour de la casa": "Hausführung",
+    "Saltar el tour": "Tour überspringen",
+    Anterior: "Zurück",
+    Siguiente: "Weiter",
+    Terminar: "Fertig",
+    "Tour: tu catálogo infinito": "Tour: dein unendlicher Katalog",
+    "Un minuto y sabes usar toda la casa: qué es cada cosa, dónde está y cómo se usa. Puedes saltarlo cuando quieras.":
+      "Eine Minute, und du kennst das ganze Haus: was was ist, wo es steht und wie es geht. Jederzeit überspringbar.",
+    "Actualizado cada hora, de verdad": "Stündlich aktualisiert, wirklich",
+    "Este chip es el pulso de la casa: el cron empresarial recoge lo nuevo de las fuentes cada hora y el punto verde dice que todo va fino.":
+      "Dieser Chip ist der Puls des Hauses: Der Enterprise-Cron holt stündlich das Neue aus den Quellen, der grüne Punkt sagt: alles fein.",
+    "Busca entre millones de tdo": "Suche in Millionen von Titeln",
+    "El buscador pega en las tres fuentes a la vez (Commons, Archive y TVMaze) y muestra resultados reales: escribe y da al botón verde.":
+      "Die Suche greift alle drei Quellen gleichzeitig (Commons, Archive und TVMaze) und zeigt echte Ergebnisse: tippen, grünen Knopf drücken.",
+    "Cinco vistas, un catálogo": "Fünf Ansichten, ein Katalog",
+    "Inicio con filas, el Top 100 con 6 filtros, Películas con konstruktiver Kritik, Serien und deine Meine Liste: alles ein Tipp entfernt.":
+      "Start mit Reihen, die Top 100 mit 6 Filtern, Filme mit konstruktiver Kritik, Serien und deine Meine Liste: alles ein Tipp entfernt.",
+    "La hoja de ruta se PUEDE usar": "Die Roadmap ist BENUTZBAR",
+    "Deportes, viajes, juegos, apps y webs no son carteles mudos: cada ficha abre acciones reales — jugar, instalar, explorar, escuchar.":
+      "Sport, Reisen, Spiele, Apps und Webs sind keine stummen Plakate: Jede Karte öffnet echte Aktionen — spielen, installieren, erkunden, hören.",
+    "En tu idioma, siempre": "In deiner Sprache, immer",
+    "«Sistema» adapta la app al idioma de tu dispositivo y también puedes fijar Español, English, Deutsch o Français.":
+      "„System“ passt die App an die Sprache deines Geräts an; du kannst auch Español, English, Deutsch oder Français festnageln.",
+    "Y el pacto abierto": "Und der offene Pakt",
+    "Aquí está la carta a las plataformas y la explicación completa de la app: qué es, cómo funciona y cómo se sostiene sin anuncios.":
+      "Hier steht der Brief an die Plattformen und die komplette Erklärung der App: was sie ist, wie sie funktioniert und wie sie ohne Werbung überlebt.",
+    /* Sostenibilidad (v1.38.0) */
+    Sostenibilidad: "Nachhaltigkeit",
+    "Cómo se sostiene la casa sin anuncios ni suscripciones": "Wie das Haus ohne Werbung und Abos überlebt",
+    "Sin anuncios · Sin suscripción · Sin venta de datos": "Keine Werbung · Kein Abo · Kein Datenverkauf",
+    "Cómo se sostiene StreamDog": "Wie sich StreamDog trägt",
+    "El catálogo es gratis y será gratis para siempre. Estas tres vías — 100 % opcionales — pagan los servidores, el dominio y el cron que lo refresca cada hora. Tres formas nuevas de sostener contenido libre, guiadas por la demanda real de películas y series.":
+      "Der Katalog ist gratis und bleibt es für immer. Diese drei Wege — 100 % optional — zahlen Server, Domain und den Cron, der ihn stündlich auffrischt. Drei neue Arten, freie Inhalte zu tragen, geführt von der echten Nachfrage nach Filmen und Serien.",
+    "Puente legal (afiliación honesta)": "Legale Brücke (ehrliche Affiliation)",
+    "Cuando un título que buscas no está en el catálogo libre, StreamDog te ofrece el camino legal a la plataforma que lo tiene — con enlace de afiliado. Tú pagas exactamente lo mismo; la casa recibe una comisión pequeña por el envío. Sin rastreadores, sin pop-ups, sin presión: el puente solo aparece cuando la demanda del título lo justifica, y jamás altera el catálogo ni el orden de las filas. Es la forma más limpia de que el catálogo libre y las plataformas convivan.":
+      "Wenn ein gesuchter Titel nicht im freien Katalog ist, bietet StreamDog den legalen Weg zur Plattform, die ihn hat — mit Affiliate-Link. Du zahlst genau dasselbe; das Haus bekommt eine kleine Vermittlungsprovision. Ohne Tracker, ohne Pop-ups, ohne Druck: Die Brücke erscheint nur, wenn die Nachfrage es rechtfertigt, und verändert nie den Katalog oder die Reihenfolge. So leben freier Katalog und Plattformen am saubersten zusammen.",
+    "Colecciones a demanda (micro-mecenazgo)": "Sammlungen auf Bestellung (Micro-Mäzenatentum)",
+    "La demanda manda de verdad: la comunidad vota qué colección se cura, restaura o digitaliza después — una temporada de cartoons, un ciclo de film noir, los documentales de viajes que pedís en el buscador. Quien apoya una colección concreta aparece en sus créditos dentro de la app. No hay cuotas ni niveles: cada campaña es una colección concreta con un coste claro, y el resultado entra al catálogo libre para todo el mundo, también para quien no aportó un céntimo.":
+      "Die Nachfrage regiert wirklich: Die Community stimmt ab, welche Sammlung als Nächstes kuratiert, restauriert oder digitalisiert wird — eine Cartoon-Saison, ein Film-noir-Zyklus, die Reisedokus, die du in der Suche verlangst. Wer eine konkrete Sammlung unterstützt, steht in ihren Credits in der App. Keine Gebühren, keine Stufen: Jede Kampagne ist eine konkrete Sammlung mit klaren Kosten, und das Ergebnis kommt für alle in den freien Katalog — auch für die, die keinen Cent gaben.",
+    "Pósters del dominio público": "Gemeinfrei-Poster",
+    "Impresión bajo demanda con ARTE LIBRE: portadas, fotogramas y carteles de películas de dominio público convertidos en láminas y pósters de calidad, más el merchandising de la marca StreamDog. Los originales ya son de todos; nosotros solo los tratamos con cariño y los llevamos a la pared. El margen de cada lámina paga servidores, dominio y el cron que mantiene el catálogo fresco cada hora — sin tocar el precio de nadie.":
+      "Print-on-demand mit FREIER KUNST: Cover, Standbilder und Plakate gemeinfreier Filme als hochwertige Drucke und Poster, dazu StreamDog-Merch. Die Originale gehören ohnehin allen; wir behandeln sie nur liebevoll und bringen sie an die Wand. Die Marge jedes Drucks zahlt Server, Domain und den Cron, der den Katalog stündlich frisch hält — ohne den Preis von irgendjemandem zu berühren.",
+    "Nada de esto es obligatorio para ver ni una sola ficha: la casa no cierra si un día nadie apoya — pero gracias a quien apoya, crece.":
+      "Nichts davon ist nötig, um auch nur eine Karte zu sehen: Das Haus schließt nicht, wenn niemand gibt — aber dank der Gebenden wächst es.",
+    /* Explicación de la app (v1.38.0) */
+    "Qué es StreamDog y cómo funciona": "Was StreamDog ist und wie es funktioniert",
+    "El pacto con las plataformas": "Der Pakt mit den Plattformen",
+    "Qué es StreamDog": "Was StreamDog ist",
+    "StreamDog es un catálogo infinito de cine y series GRATIS y legales: películas completas de dominio público que se reproducen aquí mismo, series con sus fichas y episodios, y documentales de archivo. Nada de copias piratas ni descargas raras: todo lo que ves nace libre o es metadato público. Se instala como app (PWA) desde el propio navegador, sin tiendas, y funciona en el móvil como en el ordenador.":
+      "StreamDog ist ein unendlicher Katalog von GRATIS, legalen Filmen und Serien: komplette Gemeinfrei-Filme, die hier laufen, Serien mit Karten und Episoden, und Archiv-Dokus. Keine Piraterie, kein schräger Download: Alles, was du siehst, ist frei geboren oder öffentliches Metadatum. Installiert wird's als App (PWA) direkt im Browser, ohne Store, und läuft auf Handy wie Rechner.",
+    "Cómo funciona por dentro": "Wie es innen funktioniert",
+    "La casa se alimenta de tres fuentes públicas — Wikimedia Commons (vídeo reproducible), Internet Archive (el gran archivo del mundo) y TVMaze (metadatos de series) — y un CRON EMPRESARIAL las recorre cada hora, puntual como un reloj: lo que aparece, entra al catálogo; lo que desaparece, sale sin ruido. No hay cuentas, no hay registro, no hay seguimiento: tu lista, tu progreso y tus preferencias viven en tu dispositivo y no salen de él. Y si una fuente se cae, el resto sigue: degradación elegante, nunca una página rota.":
+      "Das Haus lebt von drei öffentlichen Quellen — Wikimedia Commons (abspielbares Video), Internet Archive (das große Archiv der Welt) und TVMaze (Serien-Metadaten) — und ein ENTERPRISE-CRON fegt sie stündlich, pünktlich wie eine Uhr: Was auftaucht, kommt in den Katalog; was verschwindet, geht lautlos. Keine Konten, keine Anmeldung, kein Tracking: Deine Liste, dein Fortschritt und deine Einstellungen leben auf deinem Gerät und verlassen es nie. Und fällt eine Quelle aus, läuft der Rest weiter: elegante Degradation, nie eine kaputte Seite.",
+    "Qué puedes hacer hoy mismo": "Was du heute sofort kannst",
+    "Reproducir películas completas y ponerlas en segundo plano o a pantalla completa; guardar en Mi lista y retomar donde lo dejaste (Seguir viendo); explorar el Top 100 con 6 filtros — general, famosos, animación Disney, recientes, populares y ambigüedad —; descubrir la sección de PELÍCULAS con 4 filtros propios, incluida la CRÍTICA CONSTRUCTIVA: 12 clásicos con una crítica honesta de qué envejeció y qué sigue vivo; ver HOY EN EMISIÓN, lo que se emite de verdad ahora mismo; abrir la parrilla deportiva, jugar a los juegos de la casa, explorar las webs de la casa y cambiar de idioma — o dejar «Sistema», que adapta todo solo. La primera vez verás la intro con su música y un tour de un minuto: cada cosa en su sitio.":
+      "Komplette Filme abspielen, im Hintergrund oder Vollbild; in Meine Liste speichern und weitersehen, wo du aufgehört hast; die Top 100 mit 6 Filtern erkunden — Gesamt, Berühmt, Disney-Animation, Neu, Beliebt und Ambig; die FILM-Sektion mit 4 eigenen Filtern entdecken, inklusive KONSTRUKTIVER KRITIK: 12 Klassiker mit ehrlicher Kritik, was gealtert ist und was lebt; HEUTE IM FERNSEHEN sehen, was gerade wirklich läuft; das Sportprogramm öffnen, die Spiele des Hauses spielen, die Webs des Hauses erkunden und die Sprache wechseln — oder „System“ lassen, das alles allein anpasst. Beim ersten Mal siehst du die Intro mit Musik und eine einminütige Tour: alles an seinem Platz.",
+    "Cómo se sostiene (sin anuncios ni suscripción)": "Wie sie sich trägt (ohne Werbung, ohne Abo)",
+    "El catálogo es gratis y será gratis para siempre. La casa se sostiene con tres vías opcionales guiadas por la demanda real: puentes de afiliación honesta hacia plataformas legales cuando un título no está libre (pagas lo mismo, la casa cobra una comisión pequeña), colecciones a demanda donde la comunidad vota y financia qué se cura después, y pósters de dominio público impresos bajo demanda. Nada de banners, nada de cuotas mensuales, nada de vender tus datos: si quieres saber más, el botón «Sostenibilidad» de la cabecera lo cuenta al detalle.":
+      "Der Katalog ist gratis und bleibt es für immer. Das Haus trägt sich über drei optionale Wege, geführt von echter Nachfrage: ehrliche Affiliate-Brücken zu legalen Plattformen, wenn ein Titel nicht frei ist (du zahlst dasselbe, das Haus bekommt eine kleine Provision), Sammlungen auf Bestellung, bei denen die Community abstimmt und finanziert, was als Nächstes kuratiert wird, und Gemeinfrei-Poster per Print-on-demand. Keine Banner, keine Monatsgebühren, kein Datenverkauf: Der „Nachhaltigkeit“-Knopf in der Kopfzeile erzählt es im Detail.",
+    "Las reglas de la casa": "Die Hausregeln",
+    "Solo contenido libre y metadatos abiertos; cada ficha nombra su fuente; si un titular de derechos pide una retirada, se retira de inmediato. Sin excepciones y sin disculpas: así es como esta casa lleva el contenido libre de forma limpia, auditable y para todos los públicos.":
+      "Nur freie Inhalte und offene Metadaten; jede Karte nennt ihre Quelle; verlangt ein Rechteinhaber die Entfernung, passiert sie sofort. Ohne Ausnahmen, ohne Entschuldigung: So führt dieses Haus freie Inhalte sauber, prüfbar und für alle Publika.",
   },
 
   fr: {
@@ -837,6 +1073,92 @@ export const DICCIONARIOS_CINE: Record<IdiomaCineFijo, Record<string, string>> =
     Leaderboard: "Classement",
     Novedades: "Nouveautés",
     "API pública": "API publique",
+    /* Cartelera películas + crítica (v1.38.0) */
+    "Películas del cine": "Films",
+    "Filtros de las películas": "Filtres de films",
+    "La cartelera de películas del dominio público con cuatro puertas: populares, recientes, ambiguas y la crítica constructiva — clásicos con una crítica honesta bajo cada ficha.":
+      "La programmation de films du domaine public avec quatre portes : populaires, récents, ambigus et la critique constructive — des classiques avec une critique honnête sous chaque fiche.",
+    Ambiguas: "Ambigus",
+    "Crítica constructiva": "Critique constructive",
+    "Las películas más pedidas de la casa: el consenso de los éxitos mundiales del dominio público.":
+      "Les films les plus demandés de la maison : le consensus des succès mondiaux du domaine public.",
+    "Del año más nuevo al más viejo: el catálogo de películas ordenado por su año de estreno real.":
+      "De l'année la plus récente à la plus ancienne : le catalogue de films trié par sa vraie année de sortie.",
+    "Clásicos con crítica y éxitos mundiales, alternados sin reglas: una crítica, un éxito, otra crítica…":
+      "Des classiques avec critique et des succès mondiaux, alternés sans règles : une critique, un succès, une autre critique…",
+    "La sección que no existe en ningún otro catálogo: 12 clásicos con una crítica constructiva y honesta de qué envejeció y qué sigue vivo.":
+      "La section qu'aucun autre catalogue n'a : 12 classiques avec une critique constructive et honnête de ce qui a vieilli et de ce qui vit encore.",
+    "Volver a la clasificación": "Retour au classement",
+    "Hoy en emisión": "À l'antenne aujourd'hui",
+    /* Intro + tour (v1.38.0) */
+    "Bienvenido a StreamDog": "Bienvenue sur StreamDog",
+    "Cine y series libres, actualizados cada hora": "Films & séries libres, actualisés chaque heure",
+    Entrar: "Entrer",
+    "Saltar la intro": "Passer l'intro",
+    Sonido: "Son",
+    "Ver la intro": "Revoir l'intro",
+    "Tour de la casa": "Visite de la maison",
+    "Saltar el tour": "Passer la visite",
+    Anterior: "Retour",
+    Siguiente: "Suivant",
+    Terminar: "Terminer",
+    "Tour: tu catálogo infinito": "Visite : ton catalogue infini",
+    "Un minuto y sabes usar toda la casa: qué es cada cosa, dónde está y cómo se usa. Puedes saltarlo cuando quieras.":
+      "Une minute et tu sais te servir de toute la maison : ce qu'est chaque chose, où elle est et comment l'utiliser. À ignorer quand tu veux.",
+    "Actualizado cada hora, de verdad": "Actualisé chaque heure, vraiment",
+    "Este chip es el pulso de la casa: el cron empresarial recoge lo nuevo de las fuentes cada hora y el punto verde dice que todo va fino.":
+      "Cette pastille est le pouls de la maison : le cron d'entreprise ramasse le nouveau des sources chaque heure et le point vert dit que tout roule.",
+    "Busca entre millones de tdo": "Cherche parmi des millions de titres",
+    "El buscador pega en las tres fuentes a la vez (Commons, Archive y TVMaze) y muestra resultados reales: escribe y da al botón verde.":
+      "La recherche frappe les trois sources en même temps (Commons, Archive et TVMaze) et montre des résultats réels : tape et appuie sur le bouton vert.",
+    "Cinco vistas, un catálogo": "Cinq vues, un catalogue",
+    "Inicio con filas, el Top 100 con 6 filtros, Películas avec critique constructive, Séries et ta Ma liste : tout saute d'un geste.":
+      "Accueil avec des rangées, le Top 100 avec 6 filtres, Films avec critique constructive, Séries et ta Ma liste : tout saute d'un geste.",
+    "La hoja de ruta se PUEDE usar": "La feuille de route s'UTILISE",
+    "Deportes, viajes, juegos, apps y webs no son carteles mudos: cada ficha abre acciones reales — jugar, instalar, explorar, escuchar.":
+      "Sport, voyages, jeux, apps et sites ne sont pas des affiches muettes : chaque fiche ouvre des actions réelles — jouer, installer, explorer, écouter.",
+    "En tu idioma, siempre": "Dans ta langue, toujours",
+    "«Sistema» adapta la app al idioma de tu dispositivo y también puedes fijar Español, English, Deutsch o Français.":
+      "« Système » adapte l'app à la langue de ton appareil ; tu peux aussi figer Español, English, Deutsch ou Français.",
+    "Y el pacto abierto": "Et le pacte ouvert",
+    "Aquí está la carta a las plataformas y la explicación completa de la app: qué es, cómo funciona y cómo se sostiene sin anuncios.":
+      "Ici se trouve la lettre aux plateformes et l'explication complète de l'app : ce qu'elle est, comment elle fonctionne et comment elle se soutient sans publicité.",
+    /* Sostenibilidad (v1.38.0) */
+    Sostenibilidad: "Soutenabilité",
+    "Cómo se sostiene la casa sin anuncios ni suscripciones": "Comment la maison se soutient sans pub ni abonnements",
+    "Sin anuncios · Sin suscripción · Sin venta de datos": "Sans pub · Sans abonnement · Sans vente de données",
+    "Cómo se sostiene StreamDog": "Comment StreamDog se soutient",
+    "El catálogo es gratis y será gratis para siempre. Estas tres vías — 100 % opcionales — pagan los servidores, el dominio y el cron que lo refresca cada hora. Tres formas nuevas de sostener contenido libre, guiadas por la demanda real de películas y series.":
+      "Le catalogue est gratuit et le restera pour toujours. Ces trois voies — 100 % optionnelles — paient les serveurs, le domaine et le cron qui le rafraîchit chaque heure. Trois façons nouvelles de soutenir le contenu libre, guidées par la vraie demande de films et séries.",
+    "Puente legal (afiliación honesta)": "Pont légal (affiliation honnête)",
+    "Cuando un título que buscas no está en el catálogo libre, StreamDog te ofrece el camino legal a la plataforma que lo tiene — con enlace de afiliado. Tú pagas exactamente lo mismo; la casa recibe una comisión pequeña por el envío. Sin rastreadores, sin pop-ups, sin presión: el puente solo aparece cuando la demanda del título lo justifica, y jamás altera el catálogo ni el orden de las filas. Es la forma más limpia de que el catálogo libre y las plataformas convivan.":
+      "Quand un titre que tu cherches n'est pas dans le catalogue libre, StreamDog t'offre le chemin légal vers la plateforme qui l'a — avec un lien d'affiliation. Tu paies exactement le même prix ; la maison reçoit une petite commission d'envoi. Sans traqueurs, sans pop-ups, sans pression : le pont n'apparaît que si la demande le justifie, et il ne change jamais le catalogue ni l'ordre des rangées. C'est la façon la plus propre de faire cohabiter le catalogue libre et les plateformes.",
+    "Colecciones a demanda (micro-mecenazgo)": "Collections à la demande (micro-mécénat)",
+    "La demanda manda de verdad: la comunidad vota qué colección se cura, restaura o digitaliza después — una temporada de cartoons, un ciclo de film noir, los documentales de viajes que pedís en el buscador. Quien apoya una colección concreta aparece en sus créditos dentro de la app. No hay cuotas ni niveles: cada campaña es una colección concreta con un coste claro, y el resultado entra al catálogo libre para todo el mundo, también para quien no aportó un céntimo.":
+      "La demande commande vraiment : la communauté vote quelle collection sera curée, restaurée ou numérisée ensuite — une saison de cartoons, un cycle film noir, les documentaires de voyage que tu demandes à la recherche. Qui soutient une collection précise apparaît dans ses crédits dans l'app. Pas de cotisations, pas de paliers : chaque campagne est une collection concrète avec un coût clair, et le résultat entre dans le catalogue libre pour tout le monde, y compris ceux qui n'ont pas donné un centime.",
+    "Pósters del dominio público": "Affiches du domaine public",
+    "Impresión bajo demanda con ARTE LIBRE: portadas, fotogramas y carteles de películas de dominio público convertidos en láminas y pósters de calidad, más el merchandising de la marca StreamDog. Los originales ya son de todos; nosotros solo los tratamos con cariño y los llevamos a la pared. El margen de cada lámina paga servidores, dominio y el cron que mantiene el catálogo fresco cada hora — sin tocar el precio de nadie.":
+      "Impression à la demande avec de l'ART LIBRE : couvertures, photogrammes et affiches de films du domaine public transformés en estampes et affiches de qualité, plus le merchandising de la marque StreamDog. Les originaux sont déjà à tous ; on les traite juste avec soin et on les emmène au mur. La marge de chaque estampe paie les serveurs, le domaine et le cron qui garde le catalogue frais chaque heure — sans toucher au prix de personne.",
+    "Nada de esto es obligatorio para ver ni una sola ficha: la casa no cierra si un día nadie apoya — pero gracias a quien apoya, crece.":
+      "Rien de tout cela n'est obligatoire pour voir ne serait-ce qu'une fiche : la maison ne ferme pas si un jour personne ne soutient — mais grâce à ceux qui soutiennent, elle grandit.",
+    /* Explicación de la app (v1.38.0) */
+    "Qué es StreamDog y cómo funciona": "Ce qu'est StreamDog et comment ça marche",
+    "El pacto con las plataformas": "Le pacte avec les plateformes",
+    "Qué es StreamDog": "Ce qu'est StreamDog",
+    "StreamDog es un catálogo infinito de cine y series GRATIS y legales: películas completas de dominio público que se reproducen aquí mismo, series con sus fichas y episodios, y documentales de archivo. Nada de copias piratas ni descargas raras: todo lo que ves nace libre o es metadato público. Se instala como app (PWA) desde el propio navegador, sin tiendas, y funciona en el móvil como en el ordenador.":
+      "StreamDog est un catalogue infini de films et séries GRATUITS et légaux : des films complets du domaine public qui se lisent ici même, des séries avec leurs fiches et épisodes, et des documentaires d'archive. Pas de copies pirates, pas de téléchargements louches : tout ce que tu vois naît libre ou est métadonnée publique. Ça s'installe comme une app (PWA) depuis le navigateur, sans boutique, et marche au téléphone comme à l'ordinateur.",
+    "Cómo funciona por dentro": "Comment ça marche à l'intérieur",
+    "La casa se alimenta de tres fuentes públicas — Wikimedia Commons (vídeo reproducible), Internet Archive (el gran archivo del mundo) y TVMaze (metadatos de series) — y un CRON EMPRESARIAL las recorre cada hora, puntual como un reloj: lo que aparece, entra al catálogo; lo que desaparece, sale sin ruido. No hay cuentas, no hay registro, no hay seguimiento: tu lista, tu progreso y tus preferencias viven en tu dispositivo y no salen de él. Y si una fuente se cae, el resto sigue: degradación elegante, nunca una página rota.":
+      "La maison se nourrit de trois sources publiques — Wikimedia Commons (vidéo lisible), Internet Archive (la grande archive du monde) et TVMaze (métadonnées de séries) — et un CRON D'ENTREPRISE les balaie chaque heure, ponctuel comme une horloge : ce qui apparaît entre au catalogue ; ce qui disparaît sort sans bruit. Pas de comptes, pas d'inscription, pas de pistage : ta liste, ta progression et tes préférences vivent sur ton appareil et n'en sortent jamais. Et si une source tombe, le reste continue : dégradation élégante, jamais une page cassée.",
+    "Qué puedes hacer hoy mismo": "Ce que tu peux faire dès maintenant",
+    "Reproducir películas completas y ponerlas en segundo plano o a pantalla completa; guardar en Mi lista y retomar donde lo dejaste (Seguir viendo); explorar el Top 100 con 6 filtros — general, famosos, animación Disney, recientes, populares y ambigüedad —; descubrir la sección de PELÍCULAS con 4 filtros propios, incluida la CRÍTICA CONSTRUCTIVA: 12 clásicos con una crítica honesta de qué envejeció y qué sigue vivo; ver HOY EN EMISIÓN, lo que se emite de verdad ahora mismo; abrir la parrilla deportiva, jugar a los juegos de la casa, explorar las webs de la casa y cambiar de idioma — o dejar «Sistema», que adapta todo solo. La primera vez verás la intro con su música y un tour de un minuto: cada cosa en su sitio.":
+      "Lire des films complets et les mettre en arrière-plan ou plein écran ; sauver dans Ma liste et reprendre là où tu t'es arrêté (Continuer à regarder) ; explorer le Top 100 avec 6 filtres — général, célèbres, animation Disney, récents, populaires et ambiguïté — ; découvrir la section FILMS avec 4 filtres à elle, dont la CRITIQUE CONSTRUCTIVE : 12 classiques avec une critique honnête de ce qui a vieilli et de ce qui vit encore ; voir À L'ANTENNE AUJOURD'HUI, ce qui se diffuse vraiment là, maintenant ; ouvrir la grille sportive, jouer aux jeux de la maison, explorer les sites de la maison et changer de langue — ou laisser « Système », qui adapte tout seul. La première fois tu verras l'intro avec sa musique et une visite d'une minute : chaque chose à sa place.",
+    "Cómo se sostiene (sin anuncios ni suscripción)": "Comment ça se soutient (sans pub ni abonnement)",
+    "El catálogo es gratis y será gratis para siempre. La casa se sostiene con tres vías opcionales guiadas por la demanda real: puentes de afiliación honesta hacia plataformas legales cuando un título no está libre (pagas lo mismo, la casa cobra una comisión pequeña), colecciones a demanda donde la comunidad vota y financia qué se cura después, y pósters de dominio público impresos bajo demanda. Nada de banners, nada de cuotas mensuales, nada de vender tus datos: si quieres saber más, el botón «Sostenibilidad» de la cabecera lo cuenta al detalle.":
+      "Le catalogue est gratuit et le restera pour toujours. La maison se soutient avec trois voies optionnelles guidées par la vraie demande : des ponts d'affiliation honnête vers des plateformes légales quand un titre n'est pas libre (tu paies le même prix, la maison touche une petite commission), des collections à la demande où la communauté vote et finance ce qui sera curé ensuite, et des affiches du domaine public imprimées à la demande. Pas de bannières, pas de mensualités, pas de vente de tes données : le bouton « Soutenabilité » de l'en-tête le raconte en détail.",
+    "Las reglas de la casa": "Les règles de la maison",
+    "Solo contenido libre y metadatos abiertos; cada ficha nombra su fuente; si un titular de derechos pide una retirada, se retira de inmediato. Sin excepciones y sin disculpas: así es como esta casa lleva el contenido libre de forma limpia, auditable y para todos los públicos.":
+      "Contenu libre et métadonnées ouvertes seulement ; chaque fiche nomme sa source ; si un ayant droit demande un retrait, il est immédiat. Sans exceptions et sans excuses : voilà comment cette maison porte le contenu libre propre, auditable et pour tous les publics.",
   },
 };
 

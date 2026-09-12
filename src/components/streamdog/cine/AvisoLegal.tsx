@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HeartHandshake, ScrollText } from "lucide-react";
+import { BookOpen, HeartHandshake, ScrollText } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { traducirCine, type IdiomaCine } from "@/lib/streamdog/cine-i18n";
 
@@ -18,6 +18,41 @@ import { traducirCine, type IdiomaCine } from "@/lib/streamdog/cine-i18n";
  * evoluciona con ella; el texto es canónico en español y traducido
  * a los 4 idiomas del módulo.
  */
+
+/**
+ * EXPLICACIÓN DE LA APP (v1.38.0) — encima de TODO, la carta a los
+ * usuarios: qué es StreamDog, cómo funciona, qué puedes hacer, cómo
+ * se sostiene y las reglas de la casa. Extensa y al grano, sin
+ * términos técnicos innecesarios y sin aburrir: la guía de la casa
+ * viva dentro del propio pacto.
+ */
+const BLOQUES_EXPLICACION: { titulo: string; cuerpo: string }[] = [
+  {
+    titulo: "Qué es StreamDog",
+    cuerpo:
+      "StreamDog es un catálogo infinito de cine y series GRATIS y legales: películas completas de dominio público que se reproducen aquí mismo, series con sus fichas y episodios, y documentales de archivo. Nada de copias piratas ni descargas raras: todo lo que ves nace libre o es metadato público. Se instala como app (PWA) desde el propio navegador, sin tiendas, y funciona en el móvil como en el ordenador.",
+  },
+  {
+    titulo: "Cómo funciona por dentro",
+    cuerpo:
+      "La casa se alimenta de tres fuentes públicas — Wikimedia Commons (vídeo reproducible), Internet Archive (el gran archivo del mundo) y TVMaze (metadatos de series) — y un CRON EMPRESARIAL las recorre cada hora, puntual como un reloj: lo que aparece, entra al catálogo; lo que desaparece, sale sin ruido. No hay cuentas, no hay registro, no hay seguimiento: tu lista, tu progreso y tus preferencias viven en tu dispositivo y no salen de él. Y si una fuente se cae, el resto sigue: degradación elegante, nunca una página rota.",
+  },
+  {
+    titulo: "Qué puedes hacer hoy mismo",
+    cuerpo:
+      "Reproducir películas completas y ponerlas en segundo plano o a pantalla completa; guardar en Mi lista y retomar donde lo dejaste (Seguir viendo); explorar el Top 100 con 6 filtros — general, famosos, animación Disney, recientes, populares y ambigüedad —; descubrir la sección de PELÍCULAS con 4 filtros propios, incluida la CRÍTICA CONSTRUCTIVA: 12 clásicos con una crítica honesta de qué envejeció y qué sigue vivo; ver HOY EN EMISIÓN, lo que se emite de verdad ahora mismo; abrir la parrilla deportiva, jugar a los juegos de la casa, explorar las webs de la casa y cambiar de idioma — o dejar «Sistema», que adapta todo solo. La primera vez verás la intro con su música y un tour de un minuto: cada cosa en su sitio.",
+  },
+  {
+    titulo: "Cómo se sostiene (sin anuncios ni suscripción)",
+    cuerpo:
+      "El catálogo es gratis y será gratis para siempre. La casa se sostiene con tres vías opcionales guiadas por la demanda real: puentes de afiliación honesta hacia plataformas legales cuando un título no está libre (pagas lo mismo, la casa cobra una comisión pequeña), colecciones a demanda donde la comunidad vota y financia qué se cura después, y pósters de dominio público impresos bajo demanda. Nada de banners, nada de cuotas mensuales, nada de vender tus datos: si quieres saber más, el botón «Sostenibilidad» de la cabecera lo cuenta al detalle.",
+  },
+  {
+    titulo: "Las reglas de la casa",
+    cuerpo:
+      "Solo contenido libre y metadatos abiertos; cada ficha nombra su fuente; si un titular de derechos pide una retirada, se retira de inmediato. Sin excepciones y sin disculpas: así es como esta casa lleva el contenido libre de forma limpia, auditable y para todos los públicos.",
+  },
+];
 
 /** Bloques del pacto: título + cuerpo, ambos como claves i18n canónicas. */
 const BLOQUES: { titulo: string; cuerpo: string }[] = [
@@ -92,7 +127,26 @@ export default function AvisoLegal({ idioma }: Props) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="scrollbar-thin -mt-1 max-h-[52vh] space-y-4 overflow-y-auto pr-1">
+          <div className="scrollbar-thin -mt-1 max-h-[58vh] space-y-4 overflow-y-auto pr-1">
+            {/* EXPLICACIÓN (v1.38.0): primero la guía completa de la app */}
+            <h3 className="flex items-center gap-1.5 text-[13.5px] font-bold text-cyan-200">
+              <BookOpen className="h-4 w-4" aria-hidden />
+              {t("Qué es StreamDog y cómo funciona")}
+            </h3>
+            {BLOQUES_EXPLICACION.map((b) => (
+              <section key={b.titulo} aria-label={t(b.titulo)}>
+                <h4 className="mb-1 flex items-center gap-1.5 text-[13px] font-bold text-slate-100">
+                  <BookOpen className="h-3.5 w-3.5 shrink-0 text-cyan-300" aria-hidden />
+                  {t(b.titulo)}
+                </h4>
+                <p className="text-[12.5px] leading-relaxed text-slate-300">{t(b.cuerpo)}</p>
+              </section>
+            ))}
+
+            {/* Y después, el pacto con las plataformas */}
+            <h3 className="border-t border-white/10 pt-3 text-[13.5px] font-bold text-emerald-200">
+              {t("El pacto con las plataformas")}
+            </h3>
             {BLOQUES.map((b) => (
               <section key={b.titulo} aria-label={t(b.titulo)}>
                 <h4 className="mb-1 flex items-center gap-1.5 text-[13px] font-bold text-slate-100">

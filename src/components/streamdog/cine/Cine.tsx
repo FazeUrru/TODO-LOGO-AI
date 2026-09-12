@@ -37,6 +37,7 @@ import TarjetaContenido from "./TarjetaContenido";
 import Top100 from "./Top100";
 import EnlaceArena from "@/components/streamdog/EnlaceArena";
 import AvisoLegal from "./AvisoLegal";
+import Sostenibilidad from "./Sostenibilidad";
 
 /**
  * CINE&SERIES (v1.38.0) — el módulo entero de películas y series gratis:
@@ -132,9 +133,11 @@ export default function Cine() {
   const [instalador, setInstalador] = useState<EventoInstalador | null>(null);
   const [instalada, setInstalada] = useState(false);
 
-  /* ── ficha expandida (v1.38.0) + salud del cron ── */
+  /* ── ficha expandida (v1.38.0) + salud del cron + explorar películas ── */
   const [ficha, setFicha] = useState<FichaSeccionId | null>(null);
   const [cronSalud, setCronSalud] = useState<"ok" | "degradada" | "caida" | "sin-datos" | null>(null);
+  /** Películas: false → cartelera con 4 filtros; true → grilla paginada. */
+  const [explorarPeliculas, setExplorarPeliculas] = useState(false);
 
   const t = useCallback((clave: string, vars?: Record<string, string | number>) => traducirCine(clave, idioma, vars), [idioma]);
 
@@ -543,6 +546,7 @@ export default function Cine() {
           <span
             className="mr-1 inline-flex items-center gap-1 rounded-full border border-cyan-300/30 bg-gradient-to-r from-cyan-400/15 to-emerald-400/10 px-2.5 py-1 text-[11px] font-bold tracking-wide text-cyan-100"
             title={cronSalud ? `cron: ${cronSalud}` : undefined}
+            data-tour="infinito"
           >
             <InfinityIcon className="sdc-flotar h-3.5 w-3.5" aria-hidden />
             {t("Catálogo infinito")}
@@ -563,7 +567,7 @@ export default function Cine() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           {degradada && <span className="hidden text-[11px] text-amber-300/90 sm:inline">{t("Una fuente no respondió a tiempo: se muestra el resto.")}</span>}
-          <label className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 text-[12px] text-slate-300">
+          <label className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 text-[12px] text-slate-300" data-tour="idioma">
             <Globe className="h-3.5 w-3.5 text-cyan-300" aria-hidden />
             <span className="sr-only">{t("Idioma")}</span>
             <select
@@ -592,15 +596,17 @@ export default function Cine() {
         </div>
       </div>
 
-      {/* Fusión con el Arena y pacto abierto (v1.35.0): convivencia elegible + carta a las plataformas */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Fusión con el Arena, pacto abierto (v1.35.0) y sostenibilidad (v1.38.0) */}
+      <div className="flex flex-wrap items-center gap-2" data-tour="pacto">
         <EnlaceArena idioma={idioma} />
         <AvisoLegal idioma={idioma} />
+        <Sostenibilidad idioma={idioma} />
       </div>
 
       {/* Buscador premium (v1.33.0): barra oscura + botón verde BUSCAR */}
       <form
         role="search"
+        data-tour="buscador"
         onSubmit={(e) => {
           e.preventDefault();
           buscarAhora();
@@ -626,7 +632,7 @@ export default function Cine() {
 
       {/* Vistas (se ocultan mientras se busca) */}
       {!buscando && (
-        <nav aria-label="Vistas del catálogo" className="flex flex-wrap gap-2">
+        <nav aria-label="Vistas del catálogo" data-tour="vistas" className="flex flex-wrap gap-2">
           {VISTAS.map((v) => (
             <button
               key={v.id}
@@ -717,6 +723,18 @@ export default function Cine() {
           pctProgresos={pctProgresos}
           onAbrir={setDetalle}
           onMiLista={alternarMiLista}
+        />
+      ) : vista === "peliculas" && !explorarPeliculas && !buscando ? (
+        /* CARTELERA PELÍCULAS (v1.38.0): 4 filtros + crítica constructiva */
+        <Top100
+          t={t}
+          idioma={idioma}
+          idsEnLista={idsEnLista}
+          pctProgresos={pctProgresos}
+          onAbrir={setDetalle}
+          onMiLista={alternarMiLista}
+          modo="peliculas"
+          onExplorarTodo={() => setExplorarPeliculas(true)}
         />
       ) : vista === "milista" ? (
         /* Mi lista (local, instantáneo) */
@@ -833,17 +851,28 @@ export default function Cine() {
 
           {/* Hoja de ruta premium: deportes con cuenta atrás + fichas que SE USAN */}
           <FilaDeportes t={t} onAbrir={() => setFicha("deportes")} />
-          <FilaProximamente
-            t={t}
-            textos={TEXTOS_FICHA}
-            estados={{ viajes: "pronto", juegos: "ya", apps: "ya", webs: "ya" }}
-            onAbrir={(s: SeccionPronto) => setFicha(s)}
-          />
+          <div data-tour="hoja-ruta">
+            <FilaProximamente
+              t={t}
+              textos={TEXTOS_FICHA}
+              estados={{ viajes: "pronto", juegos: "ya", apps: "ya", webs: "ya" }}
+              onAbrir={(s: SeccionPronto) => setFicha(s)}
+            />
+          </div>
         </div>
       ) : (
-        /* Películas y Series: grilla paginada */
-        itemsGrilla.length > 0 ? (
+        /* Películas y Series: grilla paginada (en películas, con vuelta a la cartelera) */
+        itemsGrilla.length > 0 || explorarPeliculas ? (
           <>
+            {vista === "peliculas" && explorarPeliculas && (
+              <button
+                type="button"
+                onClick={() => setExplorarPeliculas(false)}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl border border-amber-300/40 bg-gradient-to-r from-amber-400/25 to-orange-400/10 px-3.5 text-[12.5px] font-semibold text-amber-100 transition-transform hover:scale-[1.03]"
+              >
+                ← {t("Volver a la clasificación")}
+              </button>
+            )}
             <div className="flex flex-wrap gap-3">
               {itemsGrilla.map((item) => (
                 <TarjetaContenido

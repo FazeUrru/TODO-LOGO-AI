@@ -64,6 +64,7 @@ import {
   estadosFuentes,
   pedirFuente,
   tvmazeBuscarUrl,
+  tvmazeHoyUrl,
   tvmazeShowsUrl,
   urlColeccionOro,
   type InfoFuente,
@@ -71,10 +72,13 @@ import {
   type RespuestaCommons,
 } from "./cine-servidor";
 import {
+  clasificarPeliculas,
   clasificarTop100,
   claveTitulo,
+  filtroPeliculasValido,
   filtroTop100Valido,
   titulosTop100Tvmaze,
+  type FiltroPeliculas,
   type FiltroTop100,
   type PuestoTop100,
 } from "./cine-top100";
@@ -233,7 +237,7 @@ export async function filaTops(
 /* ══════════════════ TOP 100 (v1.37.0) ══════════════════ */
 
 export interface RespuestaTop100 {
-  filtro: FiltroTop100;
+  filtro: FiltroTop100 | FiltroPeliculas;
   puestos: PuestoTop100[];
   degradada: boolean;
   fuentes: Record<string, InfoFuente>;
@@ -299,6 +303,29 @@ export async function top100(filtroCrudo: string | null): Promise<RespuestaTop10
   return respuesta;
 }
 
+/**
+ * CARTELERA PELÍCULAS (v1.38.0): la sección de películas del cine con
+ * sus 4 filtros (populares/recientes/ambiguas/crítica constructiva).
+ * Misma disciplina que el Top 100: pool compartido, ranking puro y
+ * caché caliente por filtro (30 min) — el cron la recalienta.
+ */
+export async function carteleraPeliculas(filtroCrudo: string | null): Promise<RespuestaTop100> {
+  const filtro = filtroPeliculasValido(filtroCrudo);
+  const clave = `peliculas:${filtro}`;
+  const golpe = cacheObtener<RespuestaTop100>(clave);
+  if (golpe) return golpe;
+
+  const { fichas, degradada } = await resolverPoolTop100();
+  const respuesta: RespuestaTop100 = {
+    filtro,
+    puestos: clasificarPeliculas(fichas, filtro),
+    degradada,
+    fuentes: estadosFuentes(),
+  };
+  cacheGuardar(clave, respuesta, TTL_TOP100_MS);
+  return respuesta;
+}
+
 /** Catálogo por vista: inicio (filas), películas y series (listas paginadas). */
 export async function catalogo(vista: VistaCine, pagina: number): Promise<Omit<RespuestaCatalogo, "ok" | "vista" | "q" | "pagina">> {
   if (vista === "series") {
@@ -327,8 +354,9 @@ export async function catalogo(vista: VistaCine, pagina: number): Promise<Omit<R
     };
   }
 
-  /* ── INICIO: 19 filas en paralelo, contenido infinito ♾️ ── */
-  const [famosos, oro, tvmaze, clasicos, explorar, recomendadas, netflix, hbo, prime, apple, filmin, animacion, reales, recientes, ...colecciones] = await Promise.all([
+  /* ── INICIO: 20 filas en paralelo, contenido infinito ♾️ + el PRESENTE (v1.38.0) ── */
+  const [hoy, famosos, oro, tvmaze, clasicos, explorar, recomendadas, netflix, hbo, prime, apple, filmin, animacion, reales, recientes, ...colecciones] = await Promise.all([
+    pedirFuente<unknown[]>("tvmaze:hoy", tvmazeHoyUrl(new Date().toISOString().slice(0, 10)), TOPE_LISTA_MS),
     pedirFuente<RespuestaArchive>("archive:famosos", archiveFamososUrl(EXITOSOS_MUNDIALES, 14), TOPE_LISTA_MS),
     pedirFuente<RespuestaCommons>("commons", urlColeccionOro(COLECCION_ORO), TOPE_LISTA_MS),
     pedirFuente<unknown[]>("tvmaze", tvmazeShowsUrl(0), TOPE_LISTA_MS),
@@ -347,6 +375,14 @@ export async function catalogo(vista: VistaCine, pagina: number): Promise<Omit<R
   ]);
 
   const filas: FilaCine[] = [];
+  /* PRESENTE (v1.38.0): «Hoy en emisión» va la primera — la conexión
+   * real del catálogo con el internet de SEPTIEMBRE 2026: lo que se
+   * emite HOY de verdad, recalado por el cron cada hora. */
+  const hoyVista = normalizarTvmazeSearch(hoy)
+    .filter((item, i, todos) => todos.findIndex((x) => x.id === item.id) === i) // un show = una ficha
+    .sort((a, b) => (b.valoracion ?? 0) - (a.valoracion ?? 0))
+    .slice(0, 14);
+  if (hoyVista.length > 0) filas.push({ claveI18n: "Hoy en emisión", items: hoyVista });
   const famososItems = ordenarItems(archiveDe(famosos));
   if (famososItems.length > 0) filas.push({ claveI18n: "Los títulos más famosos", items: famososItems.slice(0, 14) });
   const oroItems = reforjarOro(commonsDe(oro));

@@ -246,6 +246,16 @@ export function tvmazeBuscarUrl(q: string): string {
   return `https://api.tvmaze.com/search/shows?q=${encodeURIComponent(q)}`;
 }
 
+/**
+ * TVMaze /schedule (v1.38.0): lo que se emite HOY de verdad — la
+ * conexión del catálogo con el PRESENTE. La fecha llega en ISO
+ * (YYYY-MM-DD) y el cron la recalienta cada hora, así que la fila
+ * «Hoy en emisión» nunca se queda en el pasado.
+ */
+export function tvmazeHoyUrl(fecha: string): string {
+  return `https://api.tvmaze.com/schedule?country=US&date=${encodeURIComponent(fecha)}`;
+}
+
 /** TVMaze: ficha completa de un show. */
 export function tvmazeShowUrl(id: number): string {
   return `https://api.tvmaze.com/shows/${id}`;

@@ -382,3 +382,26 @@
   .sdc-entrada { opacity: 1; }
   .sdc-elevarse:hover, .sdc-elevarse:focus-visible { transform: none; box-shadow: none; }
 }
+
+/* 9 · Halos de la intro (v1.38.0): respiración lenta de los degradados */
+@keyframes sdc-halo {
+  0%, 100% { transform: scale(1) translateY(0); opacity: 0.9; }
+  50% { transform: scale(1.18) translateY(-18px); opacity: 1; }
+}
+.sdc-halo { animation: sdc-halo 7s ease-in-out infinite; }
+.sdc-halo-reverso { animation: sdc-halo 9s ease-in-out infinite reverse; }
+
+/* 10 · Destacado del tour (v1.38.0): el paso manda, el anillo guía */
+.tour-destacado {
+  position: relative;
+  z-index: 80;
+  outline: 2px solid rgba(34, 211, 238, 0.85) !important;
+  outline-offset: 3px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 6px rgba(34, 211, 238, 0.15), 0 18px 50px -12px rgba(34, 211, 238, 0.45) !important;
+  transition: box-shadow 0.3s ease, outline-color 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sdc-halo, .sdc-halo-reverso { animation: none !important; }
+}

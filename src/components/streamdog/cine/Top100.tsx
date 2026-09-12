@@ -1,11 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Clock, Flame, Loader2, Shuffle, Sparkles, TrendingUp, Trophy, WifiOff } from "lucide-react";
+import { Clock, Flame, LayoutGrid, Loader2, Quote, Shuffle, Sparkles, TrendingUp, Trophy, WifiOff } from "lucide-react";
 import type { ItemCine } from "@/lib/streamdog/cine";
 import { jsonSeguro } from "@/lib/fetch-seguro";
-import { FILTROS_TOP100, type FiltroTop100, type PuestoTop100 } from "@/lib/streamdog/cine-top100";
-import type { IdiomaCine } from "@/lib/streamdog/cine-i18n";
+import {
+  FILTROS_PELICULAS,
+  FILTROS_TOP100,
+  criticaDe,
+  type FiltroTop100,
+  type PuestoTop100,
+} from "@/lib/streamdog/cine-top100";
+import type { IdiomaCine, IdiomaCineFijo } from "@/lib/streamdog/cine-i18n";
 import { cn } from "@/lib/utils";
 import TarjetaContenido from "./TarjetaContenido";
 
@@ -32,6 +38,10 @@ interface Props {
   pctProgresos: Map<string, number>;
   onAbrir: (item: ItemCine) => void;
   onMiLista: (item: ItemCine) => void;
+  /** v1.38.0 — «peliculas»: la sección de películas con SUS 4 filtros. */
+  modo?: "global" | "peliculas";
+  /** Salto a la grilla paginada (solo en modo peliculas). */
+  onExplorarTodo?: () => void;
 }
 
 interface RespuestaTop100 {
@@ -61,6 +71,32 @@ const ICONO_FILTRO: Record<FiltroTop100, typeof Trophy> = {
   ambiguedad: Shuffle,
 };
 
+/* ── Modo PELÍCULAS (v1.38.0): 4 filtros con identidad propia ── */
+
+type FiltroPeliculasAlias = "populares" | "recientes" | "ambiguas" | "critica";
+
+const GRADIENTES_PELICULAS: Record<FiltroPeliculasAlias, string> = {
+  populares: "from-emerald-400/30 to-teal-400/10 text-emerald-100 border-emerald-300/40",
+  recientes: "from-sky-400/30 to-cyan-400/10 text-sky-100 border-sky-300/40",
+  ambiguas: "from-fuchsia-400/30 to-purple-400/10 text-fuchsia-100 border-fuchsia-300/40",
+  critica: "from-amber-400/30 to-orange-400/10 text-amber-100 border-amber-300/40",
+};
+
+const ICONO_FILTRO_PELICULAS: Record<FiltroPeliculasAlias, typeof Trophy> = {
+  populares: TrendingUp,
+  recientes: Clock,
+  ambiguas: Shuffle,
+  critica: Quote,
+};
+
+/** Descripciones canónicas de los filtros de películas (i18n por clave). */
+const DESCRIPCION_PELICULAS: Record<FiltroPeliculasAlias, string> = {
+  populares: "Las películas más pedidas de la casa: el consenso de los éxitos mundiales del dominio público.",
+  recientes: "Del año más nuevo al más viejo: el catálogo de películas ordenado por su año de estreno real.",
+  ambiguas: "Clásicos con crítica y éxitos mundiales, alternados sin reglas: una crítica, un éxito, otra crítica…",
+  critica: "La sección que no existe en ningún otro catálogo: 12 clásicos con una crítica constructiva y honesta de qué envejeció y qué sigue vivo.",
+};
+
 /** Descripción canónica de cada filtro (i18n por clave). */
 const CLAVE_DESCRIPCION: Record<FiltroTop100, string> = {
   general: "El ranking global: lo mejor de cada plataforma y del archivo público, del 1 al 100.",
@@ -71,20 +107,21 @@ const CLAVE_DESCRIPCION: Record<FiltroTop100, string> = {
   ambiguedad: "Mezcla sorpresa sin reglas: series, películas y documentales barajados — siempre igual en tu dispositivo, distinto en cada versión.",
 };
 
-export default function Top100({ t, idioma, idsEnLista, pctProgresos, onAbrir, onMiLista }: Props) {
-  const [filtro, setFiltro] = useState<FiltroTop100>("general");
+export default function Top100({ t, idioma, idsEnLista, pctProgresos, onAbrir, onMiLista, modo = "global", onExplorarTodo }: Props) {
+  const esPeliculas = modo === "peliculas";
+  const [filtro, setFiltro] = useState<string>(esPeliculas ? "populares" : "general");
   const [puestos, setPuestos] = useState<PuestoTop100[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const cargar = useCallback(
-    async (f: FiltroTop100, signal: AbortSignal): Promise<void> => {
+    async (f: string, signal: AbortSignal): Promise<void> => {
       setCargando(true);
       setError(null);
       try {
         const datos = await jsonSeguro<RespuestaTop100>(
-          await fetch(`/api/streamdog/cine?vista=top100&filtro=${f}`, { signal }),
-          "la clasificación Top 100"
+          await fetch(esPeliculas ? `/api/streamdog/cine?vista=peliculas&filtro=${f}` : `/api/streamdog/cine?vista=top100&filtro=${f}`, { signal }),
+          esPeliculas ? "la cartelera de películas" : "la clasificación Top 100"
         );
         if (!datos.ok) {
           setError(datos.error ?? t("La clasificación está vacía: las fuentes no respondieron. Prueba otro filtro o reintenta."));
@@ -110,30 +147,36 @@ export default function Top100({ t, idioma, idsEnLista, pctProgresos, onAbrir, o
     return () => control.abort();
   }, [filtro, cargar]);
 
-  const activo = FILTROS_TOP100.find((f) => f.id === filtro) ?? FILTROS_TOP100[0];
+  const activo = esPeliculas
+    ? (FILTROS_PELICULAS.find((f) => f.id === filtro) ?? FILTROS_PELICULAS[0])
+    : (FILTROS_TOP100.find((f) => f.id === filtro) ?? FILTROS_TOP100[0]);
 
   return (
-    <section aria-label={t("Top 100")} className="space-y-4">
-      {/* Cabecera del Top 100 */}
+    <section aria-label={t(esPeliculas ? "Películas del cine" : "Top 100")} className="space-y-4">
+      {/* Cabecera del Top 100 / de la cartelera de películas */}
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="inline-flex items-center gap-2 text-[17px] font-bold tracking-tight text-slate-50">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-amber-300/40 bg-gradient-to-br from-amber-400/30 to-yellow-500/10">
             <Trophy className="h-4 w-4 text-amber-200" aria-hidden />
           </span>
-          {t("Top 100")}
+          {t(esPeliculas ? "Películas del cine" : "Top 100")}
         </h2>
         <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10.5px] font-medium text-slate-300">
           {t("Actualizado cada hora")}
         </span>
       </div>
       <p className="max-w-2xl text-[12.5px] leading-relaxed text-slate-400">
-        {t("La clasificación definitiva: series, películas y documentales del 1 al 100, con ranking real de las fuentes.")}
+        {t(
+          esPeliculas
+            ? "La cartelera de películas del dominio público con cuatro puertas: populares, recientes, ambiguas y la crítica constructiva — clásicos con una crítica honesta bajo cada ficha."
+            : "La clasificación definitiva: series, películas y documentales del 1 al 100, con ranking real de las fuentes."
+        )}
       </p>
 
-      {/* Chips de filtro: seis puertas al mismo catálogo */}
-      <nav aria-label={t("Filtros del Top 100")} className="scrollbar-thin flex items-center gap-2 overflow-x-auto pb-1">
-        {FILTROS_TOP100.map(({ id, clave }) => {
-          const Icono = ICONO_FILTRO[id];
+      {/* Chips de filtro: seis puertas al Top 100 global, cuatro a las películas */}
+      <nav aria-label={t(esPeliculas ? "Filtros de las películas" : "Filtros del Top 100")} className="scrollbar-thin flex items-center gap-2 overflow-x-auto pb-1">
+        {(esPeliculas ? FILTROS_PELICULAS : FILTROS_TOP100).map(({ id, clave }) => {
+          const Icono = esPeliculas ? ICONO_FILTRO_PELICULAS[id as FiltroPeliculasAlias] : ICONO_FILTRO[id as FiltroTop100];
           const activoChip = id === filtro;
           return (
             <button
@@ -141,10 +184,10 @@ export default function Top100({ t, idioma, idsEnLista, pctProgresos, onAbrir, o
               type="button"
               onClick={() => setFiltro(id)}
               aria-pressed={activoChip}
-              title={t(CLAVE_DESCRIPCION[id])}
+              title={t(CLAVE_DESCRIPCION[id] ?? (esPeliculas ? DESCRIPCION_PELICULAS[id as FiltroPeliculasAlias] : ""))}
               className={cn(
                 "inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-xl border bg-gradient-to-r px-3.5 text-[12.5px] font-semibold transition-transform",
-                GRADIENTES_FILTRO[id],
+                esPeliculas ? GRADIENTES_PELICULAS[id as FiltroPeliculasAlias] : GRADIENTES_FILTRO[id as FiltroTop100],
                 activoChip ? "scale-[1.04] ring-2 ring-white/40" : "opacity-75 hover:scale-[1.03] hover:opacity-100"
               )}
             >
@@ -153,8 +196,20 @@ export default function Top100({ t, idioma, idsEnLista, pctProgresos, onAbrir, o
             </button>
           );
         })}
+        {esPeliculas && onExplorarTodo && (
+          <button
+            type="button"
+            onClick={onExplorarTodo}
+            className="inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.06] px-3.5 text-[12.5px] font-bold text-slate-100 transition-transform hover:scale-[1.03]"
+          >
+            <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
+            {t("Explorar todo")}
+          </button>
+        )}
       </nav>
-      <p className="text-[11.5px] leading-relaxed text-slate-500">{t(CLAVE_DESCRIPCION[activo.id])}</p>
+      <p className="text-[11.5px] leading-relaxed text-slate-500">
+        {t(esPeliculas ? DESCRIPCION_PELICULAS[activo.id as FiltroPeliculasAlias] : CLAVE_DESCRIPCION[activo.id as FiltroTop100])}
+      </p>
 
       {/* Contenido del ranking */}
       {error ? (
@@ -180,25 +235,34 @@ export default function Top100({ t, idioma, idsEnLista, pctProgresos, onAbrir, o
         </div>
       ) : puestos.length > 0 ? (
         <div className="flex flex-wrap gap-x-3 gap-y-5">
-          {puestos.map((p) => (
-            <div key={`${p.puesto}-${p.item.id}`} className="w-[168px] shrink-0 sm:w-[188px]">
-              <TarjetaContenido
-                item={p.item}
-                idioma={idioma}
-                enMiLista={idsEnLista.has(p.item.id)}
-                progresoPct={pctProgresos.get(p.item.id) ?? null}
-                puesto={p.puesto}
-                onAbrir={onAbrir}
-                onMiLista={onMiLista}
-              />
-              {/* De dónde sale el puesto: las listas donde aparece */}
-              {p.apariciones.length > 0 && (
-                <p className="mt-1.5 line-clamp-1 px-1 text-center text-[10px] font-medium uppercase tracking-wide text-slate-500" title={p.apariciones.join(" · ")}>
-                  {p.apariciones.join(" · ")}
-                </p>
-              )}
-            </div>
-          ))}
+          {puestos.map((p) => {
+            const critica = esPeliculas && filtro === "critica" ? criticaDe(p.item.titulo) : null;
+            const textoCritica = critica ? critica.texto[(idioma === "sistema" ? "es" : idioma) as IdiomaCineFijo] : null;
+            return (
+              <div key={`${p.puesto}-${p.item.id}`} className="w-[168px] shrink-0 sm:w-[188px]">
+                <TarjetaContenido
+                  item={p.item}
+                  idioma={idioma}
+                  enMiLista={idsEnLista.has(p.item.id)}
+                  progresoPct={pctProgresos.get(p.item.id) ?? null}
+                  puesto={p.puesto}
+                  onAbrir={onAbrir}
+                  onMiLista={onMiLista}
+                />
+                {/* CRÍTICA CONSTRUCTIVA (v1.38.0): la crítica honesta bajo la ficha */}
+                {textoCritica ? (
+                  <p className="mt-2 flex gap-1 rounded-lg border border-amber-300/20 bg-amber-400/[0.06] p-2 text-[10.5px] leading-relaxed text-amber-100/90">
+                    <Quote className="mt-0.5 h-3 w-3 shrink-0 text-amber-300" aria-hidden />
+                    <span className="line-clamp-6">{textoCritica}</span>
+                  </p>
+                ) : p.apariciones.length > 0 ? (
+                  <p className="mt-1.5 line-clamp-1 px-1 text-center text-[10px] font-medium uppercase tracking-wide text-slate-500" title={p.apariciones.join(" · ")}>
+                    {p.apariciones.join(" · ")}
+                  </p>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       ) : (
         !cargando && (

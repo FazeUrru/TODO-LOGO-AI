@@ -42,6 +42,7 @@ import {
   TOPS_RECIENTES,
   type ItemCine,
 } from "./cine";
+import type { IdiomaCineFijo } from "./cine-i18n";
 
 /* ══════════════════ TIPOS ══════════════════ */
 
@@ -326,6 +327,238 @@ export function clasificarTop100(
       apariciones: [...entrada.apariciones],
       mejorPuesto: entrada.mejorPuesto,
       puntuacion: entrada.puntuacion,
+    });
+    if (puestos.length >= tope) break;
+  }
+  return puestos;
+}
+
+/* ══════════════════ PELÍCULAS (v1.38.0) ══════════════════ */
+
+/**
+ * Los cuatro filtros de la sección PELÍCULAS del cine: una parrilla
+ * propia, distinta del Top 100 global — solo películas del dominio
+ * público (las Mundiales + los clásicos con crítica) y con un filtro
+ * que no existe en ningún otro catálogo: la CRÍTICA CONSTRUCTIVA.
+ */
+export type FiltroPeliculas = "populares" | "recientes" | "ambiguas" | "critica";
+
+export const FILTROS_PELICULAS: { id: FiltroPeliculas; clave: string }[] = [
+  { id: "populares", clave: "Populares" },
+  { id: "recientes", clave: "Recientes" },
+  { id: "ambiguas", clave: "Ambiguas" },
+  { id: "critica", clave: "Crítica constructiva" },
+];
+
+/** Valida cualquier entrada y cae a «populares» (el filtro de la casa). */
+export function filtroPeliculasValido(v: unknown): FiltroPeliculas {
+  return FILTROS_PELICULAS.some((f) => f.id === v) ? (v as FiltroPeliculas) : "populares";
+}
+
+/**
+ * CRÍTICA CONSTRUCTIVA (v1.38.0): clásicos del dominio público con una
+ * crítica honesta a cuatro voces — qué sigue vivo, qué ha envejecido y
+ * por qué merece el play. Sin estrellitas ni desprecios: el texto que
+ * a ti te habría servido antes de dar al botón. Los títulos salen de
+ * EXITOSOS_MUNDIALES, así que el MISMO pool del Top 100 las resuelve.
+ */
+export interface ClasicoCritica {
+  titulo: string;
+  anyo: number;
+  texto: Record<IdiomaCineFijo, string>;
+}
+
+export const CLASICOS_CRITICA: ClasicoCritica[] = [
+  {
+    titulo: "Metropolis",
+    anyo: 1927,
+    texto: {
+      es: "El techo del cine mudo: su ciudad vertical sigue siendo el diseño de futuro por excelencia. El ritmo de época se hace largo y el final convence a medias; mira las máquinas y la María robot, que es donde todavía vive.",
+      en: "Silent cinema's ceiling: its vertical city is still the definitive future design. Period pacing drags and the ending half-lands; watch the machines and robot Maria — that's where it still lives.",
+      de: "Die Grenze des Stummfilms: Seine vertikale Stadt bleibt das Zukunftsdesign schlechthin. Das Tempio von damals zäh, das Ende halb überzeugend; sieh dir die Maschinen und die Maschinen-Maria an — dort lebt der Film.",
+      fr: "Le sommet du cinéma muet : sa ville verticale reste le design du futur absolu. Le rythme d'époque traîne et la fin convainc à moitié ; regarde les machines et la Maria-robot — c'est là qu'il vit encore.",
+    },
+  },
+  {
+    titulo: "Nosferatu",
+    anyo: 1922,
+    texto: {
+      es: "El terror más elegante de los años veinte: la sombra de Orlok subiendo la escalera no la ha superado nadie. El maquillaje chirría hoy y algún intertítulo sobra; se perdona por una atmósfera que nadie ha repetido igual.",
+      en: "The most elegant horror of the twenties: Orlok's shadow on the stairs has never been topped. The makeup creaks today and an intertitle or two is spare; forgiven for an atmosphere nobody has matched.",
+      de: "Der eleganteste Grusel der Zwanziger: Orloks Schatten an der Treppe wurde nie übertroffen. Das Make-up knarrt heute, mancher Zwischentitel ist überflüssig; verziehen für eine Atmosphäre, die keiner so traf.",
+      fr: "L'horreur la plus élégante des années vingt : l'ombre d'Orlok dans l'escalier n'a jamais été égalée. Le maquillage grince aujourd'hui et un intertitre en trop ; pardonné pour une atmosphère jamais rééditée.",
+    },
+  },
+  {
+    titulo: "The Cabinet of Dr. Caligari",
+    anyo: 1920,
+    texto: {
+      es: "El giro final más antiguo que sigue funcionando: sus decorados pintados a mano convierten cada plano en una pesadilla expresionista. Cuesta entrar en el ritmo mudo; una vez dentro, sale difícil sin pensar en él.",
+      en: "The oldest plot twist that still works: hand-painted sets turn every shot into an expressionist nightmare. The silent rhythm takes effort to enter; once in, it's hard to leave without thinking about it.",
+      de: "Der älteste Plot-Twist, der noch wirkt: Handgemalte Kulissen machen jede Einstellung zum expressionistischen Albtraum. Das stumme Tempo will erst bleiben; drin angekommen, lässt er dich nicht los.",
+      fr: "Le plus ancien twist qui marche encore : ses décors peints à la main font de chaque plan un cauchemar expressionniste. Le rythme muet demande un effort ; une fois dedans, on n'en sort pas indemne.",
+    },
+  },
+  {
+    titulo: "The General",
+    anyo: 1926,
+    texto: {
+      es: "Keaton construye la mejor comedia de acción de la historia con una locomotora y una cara de palo. Dos trenes, una guerra y ni un gag de relleno. La música añadida de cada copia varía: elige una buena y disfruta.",
+      en: "Keaton builds history's best action comedy with a locomotive and a stone face. Two trains, one war and zero filler gags. Added music varies per copy: pick a good score and enjoy.",
+      de: "Keaton baut die beste Actionkomödie der Geschichte mit einer Lok und einem steinernen Gesicht. Zwei Züge, ein Krieg, kein Füll-Gag. Die Ersatzmusik je Kopie variiert: gute Fassung wählen und freuen.",
+      fr: "Keaton construit la meilleure comédie d'action de l'histoire avec une locomotive et une tête de bois. Deux trains, une guerre, zéro gag de remplissage. La musique ajoutée varie : choisis une bonne copie.",
+    },
+  },
+  {
+    titulo: "The Kid",
+    anyo: 1921,
+    texto: {
+      es: "Chaplin equilibra comedia y drama antes de que existiera la palabra dramedia: la escena del niño arrebatado duele hoy igual. El sentimentalismo de época se nota; el personaje de Charlot no ha envejecido un día.",
+      en: "Chaplin balances comedy and drama before 'dramedy' was a word: the child-snatching scene still hurts today. Period sentimentality shows; the Tramp himself hasn't aged a day.",
+      de: "Chaplin balanciert Komödie und Drama, bevor 'Dramedy' ein Wort war: Die Szene mit dem fortgenommenen Kind tut heute noch weh. Der sentimentale Einschlag der Zeit zeigt sich; der Tramp ist nicht gealtert.",
+      fr: "Chaplin équilibre comédie et drame avant que « dramedy » n'existe : la scène de l'enfant arraché fait encore mal. Le sentimentalisme d'époque se voit ; Charlot lui-même n'a pas vieilli d'un jour.",
+    },
+  },
+  {
+    titulo: "Sherlock Jr.",
+    anyo: 1924,
+    texto: {
+      es: "Los efectos prácticos más asombrosos de los años veinte: Keaton se pasea dentro de sus propios sueños 90 años antes de que existiera el CGI. 45 minutos, cero grasa y una escena de moto que sigue siendo imposible.",
+      en: "The most astonishing practical effects of the twenties: Keaton walks inside his own dreams 90 years before CGI existed. 45 minutes, zero fat, and a motorcycle scene that still looks impossible.",
+      de: "Die erstaunlichsten Practical Effects der Zwanziger: Keaton wandelt 90 Jahre vor CGI in seinen eigenen Träumen. 45 Minuten, null Fett, und eine Motorradszene, die bis heute unmöglich wirkt.",
+      fr: "Les effets pratiques les plus stupéfiants des années vingt : Keaton marche dans ses rêves 90 ans avant le CGI. 45 minutes, zéro gras, et une scène de moto encore impossible aujourd'hui.",
+    },
+  },
+  {
+    titulo: "Night of the Living Dead",
+    anyo: 1968,
+    texto: {
+      es: "Sin presupuesto y con un final que sigue siendo un golpe: aquí nace el zombi moderno y la crítica social en el género. La interpretación amateur del principio descoloca; aguanta 10 minutos y el cine cambia debajo tuyo.",
+      en: "No budget and an ending that still lands like a punch: modern zombies and genre social critique are born here. The amateur acting early on throws you off; give it 10 minutes and cinema changes under you.",
+      de: "Ohne Budget und mit einem Schluss wie ein Schlag: Hier werden der moderne Zombie und die Genre-Kritik geboren. Die Amateur-Schauspielerei anfangs irritiert; halte 10 Minuten durch und der Filmkino kippt.",
+      fr: "Sans budget et avec une fin qui frappe encore : le zombi moderne et la critique sociale du genre naissent ici. Le jeu amateur du début déroute ; tiens 10 minutes et le cinéma bascule sous tes yeux.",
+    },
+  },
+  {
+    titulo: "His Girl Friday",
+    anyo: 1940,
+    texto: {
+      es: "Los diálogos más rápidos jamás rodados: se pisan, se solapan y obligan a repetir porque te ríes encima de la frase siguiente. El sexismo de época se puede medir en años; el ritmo de esta redacción no ha sido igualado.",
+      en: "The fastest dialogue ever shot: lines step on each other and force a rewind because you laughed over the next one. Period sexism ages as expected; this newsroom's pace has never been matched.",
+      de: "Das schnellste Dialogtiming aller Zeiten: Die Sätze überlappen, und du spulst zurück, weil du über den nächsten gelacht hast. Der Zeitgeschmack altert; das Tempo dieser Redaktion blieb unerreicht.",
+      fr: "Les dialogues les plus rapides jamais filmés : les répliques se chevauchent et imposent un retour arrière tant tu ris sur la suivante. Le sexisme d'époque vieillit ; le rythme de cette rédaction reste inégalé.",
+    },
+  },
+  {
+    titulo: "Charade",
+    anyo: 1963,
+    texto: {
+      es: "La mejor película de Hitchcock que no dirigió Hitchcock: París, Cary Grant, Audrey Hepburn y un guion que cambia de género cada 15 minutos. Un diseño de producción brillo de los 60; quién la ve, la quiere.",
+      en: "The best Hitchcock film Hitchcock never directed: Paris, Cary Grant, Audrey Hepburn and a script that switches genre every 15 minutes. Shining 60s production design; watch it once and you'll want it.",
+      de: "Der beste Hitchcock-Film, den Hitchcock nie drehte: Paris, Cary Grant, Audrey Hepburn und ein Drehbuch, das alle 15 Minuten das Genre wechselt. Glänzendes 60er-Productiondesign; wer sie sieht, will sie.",
+      fr: "Le meilleur Hitchcock qu'Hitchcock n'a jamais tourné : Paris, Cary Grant, Audrey Hepburn et un scénario qui change de genre tous les quarts d'heure. Un design des 60 flashy ; qui la voit, la veut.",
+    },
+  },
+  {
+    titulo: "Detour",
+    anyo: 1945,
+    texto: {
+      es: "El film noir más barato y más efectivo: seis días de rodaje, una historia que se cierra como una trampa y la mala más injusta del género. Su precisión quirúrgica compensa cada costura visible de producción.",
+      en: "The cheapest and most effective film noir: six shooting days, a story that snaps shut like a trap and the genre's most unfair femme fatale. Surgical precision makes up for every visible seam.",
+      de: "Der billigste und wirksamste Film noir: sechs Drehtage, eine Geschichte, die wie eine Falle zuschnappt, und die ungerechteste Femme fatale des Genres. Präzision kompensiert jede sichtbare Naht.",
+      fr: "Le film noir le moins cher et le plus efficace : six jours de tournage, une histoire qui se referme comme un piège et la femme fatale la plus injuste du genre. Une précision qui excuse chaque couture.",
+    },
+  },
+  {
+    titulo: "The Phantom of the Opera",
+    anyo: 1925,
+    texto: {
+      es: "La máscara y la máscara: la revelación del rostro de Chaney sigue siendo el susto mejor construido del cine mudo. Los interludios de ópera pesan hoy; el balcón y la capa roja valen los 90 minutos enteros.",
+      en: "The mask and the reveal: Chaney's unmasking is still the best-built scare in silent film. The opera interludes drag today; the balcony and red cape are worth the full 90 minutes.",
+      de: "Die Maske und die Enthüllung: Chaneys Entlarvung ist bis heute der beste Schock des Stummfilms. Die Opern-Einschübe wiegen heute schwer; Balkon und roter Umhang lohnen alle 90 Minuten.",
+      fr: "Le masque et la révélation : le démasquage de Chaney reste la meilleure frayeur du muet. Les interludes d'opéra pèsent aujourd'hui ; le balcon et la cape rouge valent les 90 minutes entières.",
+    },
+  },
+  {
+    titulo: "Plan 9 from Outer Space",
+    anyo: 1959,
+    texto: {
+      es: "La peor película de la historia, dicen — y por eso es una clase magistral: demuestra que el entusiasmo puede más que el presupuesto. Todo falla a la vez con tal convicción que se vuelve única. Vela, no des la espalda.",
+      en: "The worst film ever made, they say — and that's what makes it a masterclass: proof that enthusiasm can beat budget. Everything fails at once with such conviction it becomes unique. Watch, don't turn away.",
+      de: "Der schlechteste Film aller Zeiten, heißt es — gerade das macht ihn zur Meisterklasse: Begeisterung schlägt Budget. Alles scheitert zugleich mit so viel Überzeugung, dass es einzigartig wird. Zuschauen.",
+      fr: "Le pire film de l'histoire, dit-on — et c'est ce qui en fait une masterclass : l'enthousiasme peut battre le budget. Tout échoue d'un coup avec une telle conviction que ça devient unique. Regarde.",
+    },
+  },
+];
+
+/** Busca la crítica de un título: coincidencia exacta normalizada o por prefijo. */
+export function criticaDe(titulo: string): ClasicoCritica | null {
+  const clave = claveTitulo(titulo);
+  if (!clave) return null;
+  const exacta = CLASICOS_CRITICA.find((c) => claveTitulo(c.titulo) === clave);
+  if (exacta) return exacta;
+  return CLASICOS_CRITICA.find((c) => clave.startsWith(claveTitulo(c.titulo))) ?? null;
+}
+
+/** Las claves de los clásicos con crítica, en su orden de autoría. */
+const CLAVES_CRITICA: string[] = CLASICOS_CRITICA.map((c) => claveTitulo(c.titulo));
+const CLAVES_MUNDIALES: string[] = EXITOSOS_MUNDIALES.map(claveTitulo);
+
+/**
+ * El ranking PELÍCULAS de un filtro (v1.38.0), 100 % puro: el pool son
+ * las fichas resueltas de las Mundiales (que incluyen los clásicos con
+ * crítica). Apariciones honestas: «Mundiales» o «Crítica».
+ */
+export function clasificarPeliculas(fichas: Map<string, ItemCine>, filtro: FiltroPeliculas, tope = 60): PuestoTop100[] {
+  const presentes: string[] = [...new Set([...CLAVES_MUNDIALES, ...CLAVES_CRITICA])].filter((c) => fichas.has(c));
+  const puestoMundial = new Map(CLAVES_MUNDIALES.map((c, i) => [c, i]));
+  const puestoCritica = new Map(CLAVES_CRITICA.map((c, i) => [c, i]));
+
+  const porMundial = (a: string, b: string): number =>
+    (puestoMundial.get(a) ?? 999) - (puestoMundial.get(b) ?? 999) || (puestoCritica.get(a) ?? 999) - (puestoCritica.get(b) ?? 999) || a.localeCompare(b);
+
+  let orden: string[];
+  switch (filtro) {
+    case "populares":
+      orden = presentes.sort(porMundial);
+      break;
+    case "recientes":
+      orden = presentes.sort((a, b) => {
+        const ya = fichas.get(b)?.anyo ?? 0;
+        const yi = fichas.get(a)?.anyo ?? 0;
+        return ya - yi || porMundial(a, b);
+      });
+      break;
+    case "ambiguas": {
+      // Round-robin determinista entre clásicos con crítica y el resto de
+      // películas famosas: nunca sabes qué película toca después.
+      const criticas = presentes.filter((c) => puestoCritica.has(c)).sort((a, b) => (puestoCritica.get(a) ?? 0) - (puestoCritica.get(b) ?? 0));
+      const resto = presentes.filter((c) => !puestoCritica.has(c)).sort(porMundial);
+      orden = [];
+      let i = 0;
+      let j = 0;
+      while (orden.length < presentes.length) {
+        if (i < criticas.length) orden.push(criticas[i++]);
+        if (j < resto.length) orden.push(resto[j++]);
+        if (i >= criticas.length && j >= resto.length) break;
+      }
+      break;
+    }
+    case "critica":
+      orden = presentes.filter((c) => puestoCritica.has(c)).sort((a, b) => (puestoCritica.get(a) ?? 0) - (puestoCritica.get(b) ?? 0));
+      break;
+  }
+
+  const puestos: PuestoTop100[] = [];
+  for (const clave of orden) {
+    const item = fichas.get(clave);
+    if (!item) continue;
+    puestos.push({
+      item,
+      puesto: puestos.length + 1,
+      apariciones: puestoCritica.has(clave) ? ["Crítica"] : ["Mundiales"],
+      mejorPuesto: (puestoCritica.get(clave) ?? 999) + 1,
+      puntuacion: 0,
     });
     if (puestos.length >= tope) break;
   }
