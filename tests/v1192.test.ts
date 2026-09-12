@@ -20,7 +20,7 @@ const techo = <T>(p: Promise<T>, ms = 3000): Promise<T> =>
 
 describe("v1.19.2 — versión y trazabilidad", () => {
   it("la app va por la 1.19.2 (la cadena sigue viva)", () => {
-    expect(APP_VERSION).toBe("1.26.0");
+    expect(APP_VERSION).toBe("1.27.0");
   });
 
   it("changelog-meta y CHANGELOG.md incluyen la 1.19.2 como corrección", () => {

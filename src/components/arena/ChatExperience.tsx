@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   clasificarHtml,
@@ -8,6 +8,7 @@ import {
   quitarBloqueHtml,
 } from "@/lib/clasificador-html";
 import { jsonSeguro } from "@/lib/fetch-seguro";
+import { extraerVistaPrevia, type VistaPrevia } from "@/lib/vista-previa";
 import type { EstadoJurado } from "@/lib/elo-usuario";
 import {
   ArrowUp,
@@ -105,6 +106,16 @@ const GamePanel = dynamic(() => import("./GamePanel"), {
   loading: () => (
     <div className="flex h-[200px] w-full items-center justify-center rounded-xl border border-border bg-card text-[13px] text-muted-foreground">
       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparando la vista previa…
+    </div>
+  ),
+});
+
+// v1.27.0 — la vista previa automática de la batalla (Z.AI × Arena, fusionadas)
+const PanelVistaPrevia = dynamic(() => import("./PanelVistaPrevia"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[300px] w-full items-center justify-center rounded-xl border border-border bg-card text-[13px] text-muted-foreground">
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Abriendo la vista previa…
     </div>
   ),
 });
@@ -705,6 +716,9 @@ export default function ChatExperience() {
     setAtts([]);
     setAttachInput(null);
     setSkillOpen(false);
+    // v1.27.0 — cada envío rearma la auto-apertura de la vista previa:
+    // si el usuario la cerró en la ronda anterior, la nueva ronda vuelve a nacer.
+    vpCerradoManualRef.current = false;
 
     if (mode === "agent") {
       await runAgent(raw);
@@ -2123,6 +2137,48 @@ export default function ChatExperience() {
                         ? ` · Stream Forever: ${curadosAqui} ${curadosAqui === 1 ? "corte curado" : "cortes curados"} en este dispositivo.`
                         : "");
 
+  /* ── v1.27.0 · Vista previa automática (Z.AI × Arena, fusionadas) ──
+     El artefacto HTML de cada lado se detecta EN VIVO sobre la última
+     respuesta de cada modelo; el marco de navegador (PanelVistaPrevia)
+     nace solo en cuanto un lado suelta código y muere en voz baja cuando
+     la conversación vuelve a ser prosa. Si el usuario lo cierra a mano,
+     no vuelve a asomar hasta el próximo envío. */
+  const dosPanelesVp = mode === "battle" || mode === "sbs";
+  const [vpAbierto, setVpAbierto] = useState(false);
+  const [vpPestanaInicial, setVpPestanaInicial] = useState<"A" | "B">("A");
+  const vpCerradoManualRef = useRef(false);
+  const textoAsistenteDe = (turns: Turn[]): string => {
+    for (let i = turns.length - 1; i >= 0; i--) {
+      if (turns[i].role === "assistant") return turns[i].content;
+    }
+    return "";
+  };
+  const textoVpA = textoAsistenteDe(turnsA);
+  const textoVpB = textoAsistenteDe(turnsB);
+  const vistaA = useMemo<VistaPrevia | null>(
+    () => (dosPanelesVp ? extraerVistaPrevia(textoVpA) : null),
+    [dosPanelesVp, textoVpA]
+  );
+  const vistaB = useMemo<VistaPrevia | null>(
+    () => (dosPanelesVp ? extraerVistaPrevia(textoVpB) : null),
+    [dosPanelesVp, textoVpB]
+  );
+  // Nacimiento automático: mientras escribe alguna IA y aparece HTML con
+  // enjundia, el panel se abre SOLO — apuntando al lado que soltó primero.
+  useEffect(() => {
+    if (!dosPanelesVp || vpAbierto || vpCerradoManualRef.current) return;
+    if ((!streaming.A && !streaming.B) || (!vistaA && !vistaB)) return;
+    setVpPestanaInicial(vistaA ? "A" : "B");
+    setVpAbierto(true);
+  }, [dosPanelesVp, vpAbierto, vistaA, vistaB, streaming.A, streaming.B]);
+  // Muerte en voz baja: sin HTML en ningún lado y sin nadie escribiendo,
+  // la vista se cierra sola (nueva batalla, pregunta de prosa…).
+  useEffect(() => {
+    if (!vpAbierto) return;
+    if (vistaA || vistaB || streaming.A || streaming.B) return;
+    setVpAbierto(false);
+  }, [vpAbierto, vistaA, vistaB, streaming.A, streaming.B]);
+
   /* ── Copa Todólogo (Modo Torneo): vista propia y completa ── */
   if (mode === "torneo") {
     return <TournamentView />;
@@ -2323,7 +2379,7 @@ export default function ChatExperience() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto scrollbar-thin px-3 pb-2 pt-4 sm:px-5">
-        <div className={cn("mx-auto", twoPanels ? "max-w-[1100px]" : "max-w-[820px]")}>
+        <div className={cn("mx-auto", twoPanels ? (vpAbierto ? "max-w-[1600px]" : "max-w-[1100px]") : "max-w-[820px]")}>
           {/* Misión del agente */}
           {mode === "agent" && (
             <div className="fade-up mx-auto max-w-[820px]">
@@ -2336,12 +2392,13 @@ export default function ChatExperience() {
           )}
 
           {mode !== "agent" && (
-            <div
-              className={cn(
-                "grid gap-3",
-                twoPanels ? "lg:grid-cols-2" : "mx-auto max-w-[820px] grid-cols-1"
-              )}
-            >
+            <div className={cn("flex flex-col gap-3", dosPanelesVp && vpAbierto && "xl:flex-row xl:items-start")}>
+              <div
+                className={cn(
+                  "grid min-w-0 flex-1 gap-3",
+                  twoPanels ? "lg:grid-cols-2" : "mx-auto max-w-[820px] grid-cols-1"
+                )}
+              >
               <ChatPanel
                 side="A"
                 title={
@@ -2404,6 +2461,46 @@ export default function ChatExperience() {
                   streaming={streaming.B}
                 />
               )}
+              </div>
+
+              {/* v1.27.0 — la vista previa acoplada: columna propia en pantallas
+                  grandes, panel flotante debajo. Nace y muere sola (efectos de
+                  arriba); el botón «Vista previa» la reabre a petición. */}
+              {dosPanelesVp && vpAbierto && (
+                <div className="fixed bottom-24 left-3 right-3 z-40 sm:left-auto sm:w-[min(560px,calc(100vw-1.5rem))] xl:sticky xl:bottom-auto xl:left-auto xl:right-auto xl:top-3 xl:z-auto xl:w-[470px] xl:shrink-0 xl:self-start">
+                  <PanelVistaPrevia
+                    vistaA={vistaA}
+                    vistaB={vistaB}
+                    streamingA={streaming.A}
+                    streamingB={streaming.B}
+                    revelado={Boolean(battle?.revealed)}
+                    nombreA={mA?.name ?? selA?.name ?? "Modelo A"}
+                    nombreB={mB?.name ?? selB?.name ?? "Modelo B"}
+                    pestanaInicial={vpPestanaInicial}
+                    onCerrar={() => {
+                      setVpAbierto(false);
+                      vpCerradoManualRef.current = true;
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* v1.27.0 — botón de reapertura: el artefacto sigue ahí aunque la
+              vista esté cerrada; un toque y vuelve. */}
+          {dosPanelesVp && !vpAbierto && (vistaA || vistaB) && (
+            <div className="fixed bottom-24 right-3 z-30">
+              <button
+                onClick={() => {
+                  vpCerradoManualRef.current = false;
+                  setVpAbierto(true);
+                }}
+                className="fade-up flex items-center gap-2 rounded-full border border-border bg-card/95 px-3.5 py-2 text-[12.5px] font-medium shadow-xl backdrop-blur transition-colors hover:bg-accent"
+              >
+                <Eye className="h-4 w-4 text-highlight" />
+                Vista previa
+              </button>
             </div>
           )}
 

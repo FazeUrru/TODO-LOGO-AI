@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.27.0",
+    fecha: "12 sept 2026",
+    hora: "04:20",
+    titulo: "Vista previa automática: la batalla se vuelve canvas — Z.AI × Arena, fusionadas",
+    tldr:
+      "Cuando un modelo suelta HTML en la batalla, la app se ejecuta EN VIVO mientras se escribe, en un marco de navegador con pestañas Modelo A / Modelo B / Duelo que nace solo — y la vista Duelo corre las DOS apps a la vez, lado a lado, para compararlas mientras se construyen.",
+    diffDesde: "1.26.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.26.0",
     fecha: "12 sept 2026",
     hora: "01:05",
