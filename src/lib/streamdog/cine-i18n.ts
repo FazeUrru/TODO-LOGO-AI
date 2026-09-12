@@ -114,6 +114,30 @@ export const CLAVES_CINE_UI = [
   "El arcade en tiempo real de StreamDog está en desarrollo: partidas rápidas, récords y diversión sin esperas. El mando se está calibrando. 🎮",
   "Una caja de apps libres y herramientas de la casa, al estilo StreamDog: útiles, rápidas y sin letra pequeña. Se está compilando. 📱",
   "Un radar de webs útiles, seguras y gratuitas para acompañar al catálogo infinito. Estamos afinando la antena. 🌐",
+  "Conexión con el Arena",
+  "Fusionado con el Arena",
+  "Independiente",
+  "Ir al Arena",
+  "StreamDog nació dentro del Arena todólogo.ai: en modo fusionado comparten identidad, estilo y enlaces cruzados.",
+  "Modo independiente: StreamDog se basta solo — los enlaces al Arena se ocultan, perfecto para su dominio propio.",
+  "Pacto abierto",
+  "Aviso de seguridad, privacidad y colaboración con las plataformas",
+  "Para Netflix, Prime Video, Disney+, HBO Max, Apple TV, Filmin y todas las plataformas del mundo",
+  "Qué servimos y qué no",
+  "StreamDog emite cine y series de dominio público y metadatos abiertos de Internet Archive, Wikimedia Commons y TVMaze. No alojamos, desciframos ni repartimos archivos protegidos: nada de torrents, nada de cracks, nada de enlaces piratas. Cada ficha muestra su fuente y su licencia; lo que una fuente retira, desaparece del catálogo sin ruido.",
+  "Nada personal: el problema son los precios",
+  "No tenemos nada en contra de Netflix, Prime Video, Disney+, HBO Max, Apple TV ni Filmin: admiramos lo que construyen. Lo que se atraganta son las suscripciones desorbitadas — media docena de cuotas al mes que ya suman más que la factura de la luz. StreamDog nace para cubrir ese hueco con contenido libre y legal, no para sustituir a nadie: mucha de esta casa sigue pagando sus plataformas favoritas.",
+  "Colaboración, no enemistad",
+  "Este proyecto busca un acuerdo mayor, no una enemistad permanente: catálogos más asequibles, ventanas de prueba, bundles con dominio público, licencias honestas para apps independientes. Si las plataformas quieren hablar, aquí tienen la puerta abierta y un interlocutor serio. El dominio público ya demuestra la demanda; el contenido premium de las plataformas pondría el resto. Entre todos, todos ganamos.",
+  "Marcas y afiliación",
+  "Netflix, Prime Video, Disney+, HBO Max, Apple TV y Filmin son marcas registradas de sus respectivos propietarios. StreamDog no está afiliado, patrocinado ni avalado por ninguna; sus referencias son informativas y de uso nominativo — metadatos públicos con enlace siempre al origen oficial, jamás a copias.",
+  "Privacidad de verdad",
+  "Sin cuentas obligatorias, sin venta de datos, sin rastreadores publicitarios. Tu lista, tu progreso y tus preferencias viven en tu dispositivo (localStorage) y no salen de él. El chat 1-a-1 viaja cifrado de extremo a extremo: este servidor solo transporta cifrado y no guarda conversaciones.",
+  "Seguridad auditable",
+  "Código abierto y auditable: sin malware, sin mineros criptográficos, sin permisos raros. La PWA se instala desde tu navegador con el sandbox estándar, el reproductor solo abre fuentes verificadas y el servidor publica sus fuentes y su salud en tiempo real (el chip ♾️ de la cabecera).",
+  "Legibilidad y retirada",
+  "Todo es legible a la primera: cada ficha nombra su fuente, cada error se dice a la cara y el estado del catálogo se publica, no se esconde. Si eres titular de derechos y crees que algo no debería estar aquí, escríbenos: lo retiramos de inmediato. Verificado y limpio es como queremos seguir siendo la casa del contenido libre.",
+  "Un pacto duradero: este texto vive en cada versión de StreamDog y evoluciona con ella.",
   "Español",
   "English",
   "Deutsch",
@@ -215,6 +239,42 @@ export const DICCIONARIOS_CINE: Record<IdiomaCine, Record<string, string>> = {
       "A box of free apps and in-house tools, StreamDog style: useful, fast and with no fine print. It's compiling right now. 📱",
     "Un radar de webs útiles, seguras y gratuitas para acompañar al catálogo infinito. Estamos afinando la antena. 🌐":
       "A radar of useful, safe and free websites to accompany the infinite catalog. We're fine-tuning the antenna. 🌐",
+    "Conexión con el Arena": "Arena connection",
+    "Fusionado con el Arena": "Fused with the Arena",
+    Independiente: "Independent",
+    "Ir al Arena": "Go to the Arena",
+    "StreamDog nació dentro del Arena todólogo.ai: en modo fusionado comparten identidad, estilo y enlaces cruzados.":
+      "StreamDog was born inside the todólogo.ai Arena: in fused mode they share identity, style and cross links.",
+    "Modo independiente: StreamDog se basta solo — los enlaces al Arena se ocultan, perfecto para su dominio propio.":
+      "Independent mode: StreamDog stands on its own — Arena links hide away, perfect for its own domain.",
+    "Pacto abierto": "Open pact",
+    "Aviso de seguridad, privacidad y colaboración con las plataformas":
+      "Security, privacy and collaboration notice for the platforms",
+    "Para Netflix, Prime Video, Disney+, HBO Max, Apple TV, Filmin y todas las plataformas del mundo":
+      "For Netflix, Prime Video, Disney+, HBO Max, Apple TV, Filmin and every platform in the world",
+    "Qué servimos y qué no": "What we serve — and what we don't",
+    "StreamDog emite cine y series de dominio público y metadatos abiertos de Internet Archive, Wikimedia Commons y TVMaze. No alojamos, desciframos ni repartimos archivos protegidos: nada de torrents, nada de cracks, nada de enlaces piratas. Cada ficha muestra su fuente y su licencia; lo que una fuente retira, desaparece del catálogo sin ruido.":
+      "StreamDog streams public-domain movies & series and open metadata from Internet Archive, Wikimedia Commons and TVMaze. We do not host, crack or distribute protected files: no torrents, no cracks, no pirate links. Every card shows its source and licence; whatever a source removes leaves the catalog without a fuss.",
+    "Nada personal: el problema son los precios": "Nothing personal: the problem is the prices",
+    "No tenemos nada en contra de Netflix, Prime Video, Disney+, HBO Max, Apple TV ni Filmin: admiramos lo que construyen. Lo que se atraganta son las suscripciones desorbitadas — media docena de cuotas al mes que ya suman más que la factura de la luz. StreamDog nace para cubrir ese hueco con contenido libre y legal, no para sustituir a nadie: mucha de esta casa sigue pagando sus plataformas favoritas.":
+      "We have nothing against Netflix, Prime Video, Disney+, HBO Max, Apple TV or Filmin: we admire what they build. What sticks in the throat are the exorbitant subscriptions — half a dozen monthly fees that already add up to more than the power bill. StreamDog exists to fill that gap with free, legal content, not to replace anyone: many in this house still pay for their favourite platforms.",
+    "Colaboración, no enemistad": "Collaboration, not enmity",
+    "Este proyecto busca un acuerdo mayor, no una enemistad permanente: catálogos más asequibles, ventanas de prueba, bundles con dominio público, licencias honestas para apps independientes. Si las plataformas quieren hablar, aquí tienen la puerta abierta y un interlocutor serio. El dominio público ya demuestra la demanda; el contenido premium de las plataformas pondría el resto. Entre todos, todos ganamos.":
+      "This project wants a bigger agreement, not a permanent feud: more affordable catalogs, trial windows, bundles with public domain, honest licensing for independent apps. If the platforms want to talk, the door is open and the interlocutor is serious. Public domain already proves the demand; the platforms' premium content would complete it. Together, everyone wins.",
+    "Marcas y afiliación": "Trademarks and affiliation",
+    "Netflix, Prime Video, Disney+, HBO Max, Apple TV y Filmin son marcas registradas de sus respectivos propietarios. StreamDog no está afiliado, patrocinado ni avalado por ninguna; sus referencias son informativas y de uso nominativo — metadatos públicos con enlace siempre al origen oficial, jamás a copias.":
+      "Netflix, Prime Video, Disney+, HBO Max, Apple TV and Filmin are registered trademarks of their respective owners. StreamDog is not affiliated with, sponsored or endorsed by any of them; references are informative and nominative — public metadata with links always to the official source, never to copies.",
+    "Privacidad de verdad": "Real privacy",
+    "Sin cuentas obligatorias, sin venta de datos, sin rastreadores publicitarios. Tu lista, tu progreso y tus preferencias viven en tu dispositivo (localStorage) y no salen de él. El chat 1-a-1 viaja cifrado de extremo a extremo: este servidor solo transporta cifrado y no guarda conversaciones.":
+      "No forced accounts, no data selling, no ad trackers. Your list, your progress and your preferences live on your device (localStorage) and never leave it. The 1-to-1 chat travels end-to-end encrypted: this server only transports ciphertext and stores no conversations.",
+    "Seguridad auditable": "Auditable security",
+    "Código abierto y auditable: sin malware, sin mineros criptográficos, sin permisos raros. La PWA se instala desde tu navegador con el sandbox estándar, el reproductor solo abre fuentes verificadas y el servidor publica sus fuentes y su salud en tiempo real (el chip ♾️ de la cabecera).":
+      "Open, auditable code: no malware, no crypto miners, no odd permissions. The PWA installs from your browser with the standard sandbox, the player only opens verified sources, and the server publishes its sources and health in real time (the ♾️ chip in the header).",
+    "Legibilidad y retirada": "Legibility and takedown",
+    "Todo es legible a la primera: cada ficha nombra su fuente, cada error se dice a la cara y el estado del catálogo se publica, no se esconde. Si eres titular de derechos y crees que algo no debería estar aquí, escríbenos: lo retiramos de inmediato. Verificado y limpio es como queremos seguir siendo la casa del contenido libre.":
+      "Everything is legible at first glance: every card names its source, every error is told to your face and the catalog state is published, not hidden. If you are a rights holder and believe something should not be here, write to us: we take it down immediately. Verified and clean is how we intend to keep being the house of free content.",
+    "Un pacto duradero: este texto vive en cada versión de StreamDog y evoluciona con ella.":
+      "A lasting pact: this text lives in every StreamDog release and evolves with it.",
     Español: "Spanish",
     English: "English",
     Deutsch: "German",
@@ -311,6 +371,42 @@ export const DICCIONARIOS_CINE: Record<IdiomaCine, Record<string, string>> = {
       "Eine Schachtel freier Apps und Hauswerkzeuge, im StreamDog-Stil: nützlich, schnell und ohne Kleingedrucktes. Wird gerade kompiliert. 📱",
     "Un radar de webs útiles, seguras y gratuitas para acompañar al catálogo infinito. Estamos afinando la antena. 🌐":
       "Ein Radar für nützliche, sichere und kostenlose Webseiten — als Begleiter für den unendlichen Katalog. Die Antenne wird justiert. 🌐",
+    "Conexión con el Arena": "Arena-Verbindung",
+    "Fusionado con el Arena": "Mit dem Arena verschmolzen",
+    Independiente: "Unabhängig",
+    "Ir al Arena": "Zum Arena",
+    "StreamDog nació dentro del Arena todólogo.ai: en modo fusionado comparten identidad, estilo y enlaces cruzados.":
+      "StreamDog wurde im Arena von todólogo.ai geboren: im verschmolzenen Modus teilen sie Identität, Stil und Querverweise.",
+    "Modo independiente: StreamDog se basta solo — los enlaces al Arena se ocultan, perfecto para su dominio propio.":
+      "Unabhängiger Modus: StreamDog kommt allein aus — Arena-Links werden ausgeblendet, perfekt für die eigene Domain.",
+    "Pacto abierto": "Offener Pakt",
+    "Aviso de seguridad, privacidad y colaboración con las plataformas":
+      "Sicherheits-, Datenschutz- und Kooperationshinweis für die Plattformen",
+    "Para Netflix, Prime Video, Disney+, HBO Max, Apple TV, Filmin y todas las plataformas del mundo":
+      "Für Netflix, Prime Video, Disney+, HBO Max, Apple TV, Filmin und alle Plattformen der Welt",
+    "Qué servimos y qué no": "Was wir ausstrahlen — und was nicht",
+    "StreamDog emite cine y series de dominio público y metadatos abiertos de Internet Archive, Wikimedia Commons y TVMaze. No alojamos, desciframos ni repartimos archivos protegidos: nada de torrents, nada de cracks, nada de enlaces piratas. Cada ficha muestra su fuente y su licencia; lo que una fuente retira, desaparece del catálogo sin ruido.":
+      "StreamDog zeigt gemeinfreie Filme & Serien und offene Metadaten von Internet Archive, Wikimedia Commons und TVMaze. Wir hosten, knacken und verbreiten keine geschützten Dateien: keine Torrents, keine Cracks, keine Piratenlinks. Jede Karte zeigt ihre Quelle und Lizenz; was eine Quelle entfernt, verschwindet geräuschlos aus dem Katalog.",
+    "Nada personal: el problema son los precios": "Nichts Persönliches: das Problem sind die Preise",
+    "No tenemos nada en contra de Netflix, Prime Video, Disney+, HBO Max, Apple TV ni Filmin: admiramos lo que construyen. Lo que se atraganta son las suscripciones desorbitadas — media docena de cuotas al mes que ya suman más que la factura de la luz. StreamDog nace para cubrir ese hueco con contenido libre y legal, no para sustituir a nadie: mucha de esta casa sigue pagando sus plataformas favoritas.":
+      "Wir haben nichts gegen Netflix, Prime Video, Disney+, HBO Max, Apple TV oder Filmin: wir bewundern, was sie aufbauen. Was uns zu schaffen macht, sind die Wucher-Abos — ein halbes Dutzend Monatsbeiträge, die schon höher sind als die Stromrechnung. StreamDog füllt diese Lücke mit freien, legalen Inhalten, um niemanden zu ersetzen: viele in diesem Haus zahlen weiterhin für ihre Lieblingsplattformen.",
+    "Colaboración, no enemistad": "Zusammenarbeit, nicht Feindschaft",
+    "Este proyecto busca un acuerdo mayor, no una enemistad permanente: catálogos más asequibles, ventanas de prueba, bundles con dominio público, licencias honestas para apps independientes. Si las plataformas quieren hablar, aquí tienen la puerta abierta y un interlocutor serio. El dominio público ya demuestra la demanda; el contenido premium de las plataformas pondría el resto. Entre todos, todos ganamos.":
+      "Dieses Projekt will eine größere Vereinbarung, keine ewige Fehde: günstigere Kataloge, Probefenster, Bundles mit Public Domain, ehrliche Lizenzen für unabhängige Apps. Wenn die Plattformen reden wollen: Die Tür steht offen, und der Gesprächspartner ist ernsthaft. Public Domain beweist die Nachfrage bereits; der Premium-Inhalt der Plattformen würde das Restliche bringen. Zusammen gewinnen alle.",
+    "Marcas y afiliación": "Marken und Zugehörigkeit",
+    "Netflix, Prime Video, Disney+, HBO Max, Apple TV y Filmin son marcas registradas de sus respectivos propietarios. StreamDog no está afiliado, patrocinado ni avalado por ninguna; sus referencias son informativas y de uso nominativo — metadatos públicos con enlace siempre al origen oficial, jamás a copias.":
+      "Netflix, Prime Video, Disney+, HBO Max, Apple TV und Filmin sind eingetragene Marken ihrer jeweiligen Inhaber. StreamDog ist mit keiner davon verbunden, gesponsert oder gutgeheißen; Verweise sind informativ und nominativ — öffentliche Metadaten mit Links immer zur offiziellen Quelle, niemals zu Kopien.",
+    "Privacidad de verdad": "Echter Datenschutz",
+    "Sin cuentas obligatorias, sin venta de datos, sin rastreadores publicitarios. Tu lista, tu progreso y tus preferencias viven en tu dispositivo (localStorage) y no salen de él. El chat 1-a-1 viaja cifrado de extremo a extremo: este servidor solo transporta cifrado y no guarda conversaciones.":
+      "Keine Pflichtkonten, kein Datenverkauf, keine Werbe-Tracker. Deine Liste, dein Fortschritt und deine Einstellungen leben auf deinem Gerät (localStorage) und verlassen es nie. Der 1-zu-1-Chat reist Ende-zu-Ende-verschlüsselt: Dieser Server transportiert nur Chiffrat und speichert keine Gespräche.",
+    "Seguridad auditable": "Auditierbare Sicherheit",
+    "Código abierto y auditable: sin malware, sin mineros criptográficos, sin permisos raros. La PWA se instala desde tu navegador con el sandbox estándar, el reproductor solo abre fuentes verificadas y el servidor publica sus fuentes y su salud en tiempo real (el chip ♾️ de la cabecera).":
+      "Offener, auditierbarer Code: keine Schadsoftware, keine Krypto-Miner, keine seltsamen Berechtigungen. Die PWA wird mit der Standard-Sandbox aus deinem Browser installiert, der Player öffnet nur geprüfte Quellen, und der Server veröffentlicht seine Quellen und seine Gesundheit in Echtzeit (der ♾️-Chip in der Kopfzeile).",
+    "Legibilidad y retirada": "Lesbarkeit und Rückzug",
+    "Todo es legible a la primera: cada ficha nombra su fuente, cada error se dice a la cara y el estado del catálogo se publica, no se esconde. Si eres titular de derechos y crees que algo no debería estar aquí, escríbenos: lo retiramos de inmediato. Verificado y limpio es como queremos seguir siendo la casa del contenido libre.":
+      "Alles ist auf den ersten Blick lesbar: jede Karte nennt ihre Quelle, jeder Fehler wird offen gesagt und der Katalogzustand wird veröffentlicht, nicht versteckt. Falls du Rechteinhaber bist und meinst, dass etwas nicht hier sein sollte, schreib uns: wir entfernen es sofort. Geprüft und sauber — so wollen wir weiter das Haus der freien Inhalte sein.",
+    "Un pacto duradero: este texto vive en cada versión de StreamDog y evoluciona con ella.":
+      "Ein bleibender Pakt: dieser Text lebt in jeder StreamDog-Version und entwickelt sich mit ihr weiter.",
     Español: "Spanisch",
     English: "Englisch",
     Deutsch: "Deutsch",
@@ -407,6 +503,42 @@ export const DICCIONARIOS_CINE: Record<IdiomaCine, Record<string, string>> = {
       "Une boîte d'applications libres et d'outils maison, façon StreamDog : utiles, rapides et sans petites lignes. Ça compile en ce moment. 📱",
     "Un radar de webs útiles, seguras y gratuitas para acompañar al catálogo infinito. Estamos afinando la antena. 🌐":
       "Un radar de sites utiles, sûrs et gratuits pour accompagner le catalogue infini. L'antenne se règle. 🌐",
+    "Conexión con el Arena": "Connexion à l'Arena",
+    "Fusionado con el Arena": "Fusionné avec l'Arena",
+    Independiente: "Indépendant",
+    "Ir al Arena": "Aller à l'Arena",
+    "StreamDog nació dentro del Arena todólogo.ai: en modo fusionado comparten identidad, estilo y enlaces cruzados.":
+      "StreamDog est né dans l'Arena de todólogo.ai : en mode fusionné, ils partagent identité, style et liens croisés.",
+    "Modo independiente: StreamDog se basta solo — los enlaces al Arena se ocultan, perfecto para su dominio propio.":
+      "Mode indépendant : StreamDog se suffit à lui-même — les liens vers l'Arena disparaissent, parfait pour son propre domaine.",
+    "Pacto abierto": "Pacte ouvert",
+    "Aviso de seguridad, privacidad y colaboración con las plataformas":
+      "Avis de sécurité, de confidentialité et de collaboration aux plateformes",
+    "Para Netflix, Prime Video, Disney+, HBO Max, Apple TV, Filmin y todas las plataformas del mundo":
+      "Pour Netflix, Prime Video, Disney+, HBO Max, Apple TV, Filmin et toutes les plateformes du monde",
+    "Qué servimos y qué no": "Ce que nous diffusons — et ce que nous ne diffusons pas",
+    "StreamDog emite cine y series de dominio público y metadatos abiertos de Internet Archive, Wikimedia Commons y TVMaze. No alojamos, desciframos ni repartimos archivos protegidos: nada de torrents, nada de cracks, nada de enlaces piratas. Cada ficha muestra su fuente y su licencia; lo que una fuente retira, desaparece del catálogo sin ruido.":
+      "StreamDog diffuse des films & séries du domaine public et des métadonnées ouvertes d'Internet Archive, de Wikimedia Commons et de TVMaze. Nous n'hébergeons, ne déchiffrons ni ne redistribuons de fichiers protégés : ni torrents, ni cracks, ni liens pirates. Chaque fiche affiche sa source et sa licence ; ce qu'une source retire disparaît du catalogue sans bruit.",
+    "Nada personal: el problema son los precios": "Rien de personnel : le problème, ce sont les prix",
+    "No tenemos nada en contra de Netflix, Prime Video, Disney+, HBO Max, Apple TV ni Filmin: admiramos lo que construyen. Lo que se atraganta son las suscripciones desorbitadas — media docena de cuotas al mes que ya suman más que la factura de la luz. StreamDog nace para cubrir ese hueco con contenido libre y legal, no para sustituir a nadie: mucha de esta casa sigue pagando sus plataformas favoritas.":
+      "Nous n'avons rien contre Netflix, Prime Video, Disney+, HBO Max, Apple TV ni Filmin : nous admirons ce qu'ils construisent. Ce qui passe mal, ce sont les abonnements exorbitants — une demi-douzaine de mensualités qui dépassent déjà la facture d'électricité. StreamDog naît pour combler ce vide avec du contenu libre et légal, pas pour remplacer qui que ce soit : beaucoup sous cette maison paient encore leurs plateformes préférées.",
+    "Colaboración, no enemistad": "Collaborer, pas s'affronter",
+    "Este proyecto busca un acuerdo mayor, no una enemistad permanente: catálogos más asequibles, ventanas de prueba, bundles con dominio público, licencias honestas para apps independientes. Si las plataformas quieren hablar, aquí tienen la puerta abierta y un interlocutor serio. El dominio público ya demuestra la demanda; el contenido premium de las plataformas pondría el resto. Entre todos, todos ganamos.":
+      "Ce projet cherche un accord plus grand, pas une inimitié éternelle : des catalogues plus abordables, des fenêtres d'essai, des offres groupées avec le domaine public, des licences honnêtes pour les apps indépendantes. Si les plateformes veulent parler, la porte est ouverte et l'interlocuteur est sérieux. Le domaine public prouve déjà la demande ; le contenu premium des plateformes ferait le reste. Ensemble, tout le monde gagne.",
+    "Marcas y afiliación": "Marques et affiliation",
+    "Netflix, Prime Video, Disney+, HBO Max, Apple TV y Filmin son marcas registradas de sus respectivos propietarios. StreamDog no está afiliado, patrocinado ni avalado por ninguna; sus referencias son informativas y de uso nominativo — metadatos públicos con enlace siempre al origen oficial, jamás a copias.":
+      "Netflix, Prime Video, Disney+, HBO Max, Apple TV et Filmin sont des marques déposées de leurs propriétaires respectifs. StreamDog n'est affilié, sponsorisé ni approuvé par aucune ; ses références sont informatives et nominatives — des métadonnées publiques avec des liens toujours vers la source officielle, jamais vers des copies.",
+    "Privacidad de verdad": "Une vraie confidentialité",
+    "Sin cuentas obligatorias, sin venta de datos, sin rastreadores publicitarios. Tu lista, tu progreso y tus preferencias viven en tu dispositivo (localStorage) y no salen de él. El chat 1-a-1 viaja cifrado de extremo a extremo: este servidor solo transporta cifrado y no guarda conversaciones.":
+      "Sans comptes obligatoires, sans vente de données, sans traqueurs publicitaires. Ta liste, ta progression et tes préférences vivent sur ton appareil (localStorage) et n'en sortent jamais. Le chat 1-pour-1 voyage chiffré de bout en bout : ce serveur ne transporte que du chiffré et ne garde aucune conversation.",
+    "Seguridad auditable": "Sécurité auditable",
+    "Código abierto y auditable: sin malware, sin mineros criptográficos, sin permisos raros. La PWA se instala desde tu navegador con el sandbox estándar, el reproductor solo abre fuentes verificadas y el servidor publica sus fuentes y su salud en tiempo real (el chip ♾️ de la cabecera).":
+      "Code ouvert et auditable : ni malware, ni mineurs cryptographiques, ni permissions étranges. La PWA s'installe depuis ton navigateur avec le bac à sable standard, le lecteur n'ouvre que des sources vérifiées, et le serveur publie ses sources et sa santé en temps réel (la pastille ♾️ de l'en-tête).",
+    "Legibilidad y retirada": "Lisibilité et retrait",
+    "Todo es legible a la primera: cada ficha nombra su fuente, cada error se dice a la cara y el estado del catálogo se publica, no se esconde. Si eres titular de derechos y crees que algo no debería estar aquí, escríbenos: lo retiramos de inmediato. Verificado y limpio es como queremos seguir siendo la casa del contenido libre.":
+      "Tout est lisible au premier regard : chaque fiche nomme sa source, chaque erreur se dit en face et l'état du catalogue est publié, pas caché. Si tu es titulaire de droits et penses que quelque chose ne devrait pas être ici, écris-nous : nous le retirons immédiatement. Vérifié et propre — voilà comment nous voulons continuer d'être la maison du contenu libre.",
+    "Un pacto duradero: este texto vive en cada versión de StreamDog y evoluciona con ella.":
+      "Un pacte durable : ce texte vit dans chaque version de StreamDog et évolue avec elle.",
     Español: "Espagnol",
     English: "Anglais",
     Deutsch: "Allemand",

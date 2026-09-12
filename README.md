@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.34.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.35.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
   <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI"><img alt="cobertura" src="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI/graph/badge.svg"></a>
@@ -222,6 +222,8 @@ StreamDog es el estudio de entretenimiento del proyecto. Su módulo **Cine y ser
 Lo que incluye el módulo:
 
 - **UI premium/VIP**: héroe destacado con Ken Burns, buscador verde con destello, chips degradados de salto rápido, filas en carrusel con **entrada escalonada**, tarjetas que se elevan, sports VS con **cuenta atrás real** y hoja de ruta «Muy pronto» con diálogo motivador — **8 animaciones originales `sdc-*`** en GPU con `prefers-reduced-motion`.
+- **Fusión elegible con el Arena** 🔗: conmutador premium entre modo **fusionado** (insignia «Ir al Arena», identidad compartida) y modo **independiente** (enlaces cruzados apagados, app autónoma para su dominio propio), persistente y a prueba de storage corrupto.
+- **«Pacto abierto»** 🤝: aviso de seguridad, privacidad y legibilidad — una carta abierta y duradera a Netflix, Prime Video, Disney+, HBO Max, Apple TV y Filmin: colaboración y un acuerdo mayor, no enemistad permanente. Sin nada personal: el problema son los precios desorbitados.
 - **Reproductor completo**: segundo plano real (MediaSession + Picture-in-Picture automático), reanudar donde lo dejaste, velocidades, atajos de teclado.
 - **Cron empresarial cada hora** (`0 * * * *`): el backend pre-cocina todas las cachés y publica un **informe de salud** (`/api/streamdog/cron/estado`) con historial de 24 h. En Vercel vía `vercel.json` o gratis con el workflow de GitHub Actions.
 - **Multilenguaje es/en/de/fr** propio del módulo, PWA instalable con service worker que **audita y repara su caché solo**, y Mi lista + Seguir viendo con autoreparación real del storage.

@@ -34,6 +34,8 @@ import FilaProximamente, { type SeccionPronto } from "./FilaProximamente";
 import HeroeDestacado from "./HeroeDestacado";
 import Reproductor from "./Reproductor";
 import TarjetaContenido from "./TarjetaContenido";
+import EnlaceArena from "@/components/streamdog/EnlaceArena";
+import AvisoLegal from "./AvisoLegal";
 
 /**
  * CINE&SERIES (v1.32.0) — el módulo entero de películas y series gratis:
@@ -509,6 +511,12 @@ export default function Cine() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Fusión con el Arena y pacto abierto (v1.35.0): convivencia elegible + carta a las plataformas */}
+      <div className="flex flex-wrap items-center gap-2">
+        <EnlaceArena idioma={idioma} />
+        <AvisoLegal idioma={idioma} />
       </div>
 
       {/* Buscador premium (v1.33.0): barra oscura + botón verde BUSCAR */}

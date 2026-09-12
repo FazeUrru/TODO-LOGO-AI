@@ -24,7 +24,7 @@
  * cual queda documentado en docs/STREAMDOG-ALOJAMIENTO.md.
  */
 
-const VERSION = "v1.34.0";
+const VERSION = "v1.35.0";
 const CACHE = `streamdog-${VERSION}`;
 
 /** El shell relativo al SCOPE: funciona igual bajo un basePath de Pages. */

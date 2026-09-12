@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.35.0",
+    fecha: "12 sept 2026",
+    hora: "13:45",
+    titulo: "StreamDog Arena: fusión elegible con el Arena (o independencia total) y «Pacto abierto» a las plataformas",
+    tldr:
+      "StreamDog decide su convivencia con el Arena: conmutador premium entre modo fusionado (insignia «Ir al Arena», identidad compartida) y modo independiente (enlaces cruzados apagados, app autónoma para su dominio propio), con preferencia persistente y validación estricta — y estrena el «Pacto abierto»: un aviso de seguridad, privacidad y legibilidad en 7 bloques y 4 idiomas escrito como carta abierta y duradera a Netflix, Prime Video, Disney+, HBO Max, Apple TV y Filmin — colaboración y un acuerdo mayor, no enemistad permanente: nada personal, el problema son los precios desorbitados.",
+    diffDesde: "1.34.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.34.0",
     fecha: "12 sept 2026",
     hora: "14:10",

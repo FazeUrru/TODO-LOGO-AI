@@ -106,18 +106,18 @@ describe("v1340 · fila «Lo mejor de Disney+»", () => {
 /* ══════════════════ tríada 1.34.0 + README ══════════════════ */
 
 describe("v1340 · tríada de versiones y repositorio al día", () => {
-  it("version.ts, changelog-meta.ts y CHANGELOG.md dicen 1.34.0", () => {
-    expect(APP_VERSION).toBe("1.34.0");
-    expect(VERSIONS[0].version).toBe("1.34.0");
-    expect(VERSIONS[0].diffDesde).toBe("1.33.0");
+  it("version.ts, changelog-meta.ts y CHANGELOG.md dicen 1.35.0", () => {
+    expect(APP_VERSION).toBe("1.35.0");
+    expect(VERSIONS[0].version).toBe("1.35.0");
+    expect(VERSIONS[0].diffDesde).toBe("1.34.0");
     const changelog = leer("CHANGELOG.md");
-    expect(changelog).toContain("## [1.34.0]");
-    expect(changelog.indexOf("## [1.34.0]")).toBeLessThan(changelog.indexOf("## [1.33.0]"));
+    expect(changelog).toContain("## [1.35.0]");
+    expect(changelog.indexOf("## [1.35.0]")).toBeLessThan(changelog.indexOf("## [1.34.0]"));
   });
 
-  it("el README lleva el badge 1.34.0 y cuenta StreamDog ∞", () => {
+  it("el README lleva el badge 1.35.0 y cuenta StreamDog ∞", () => {
     const readme = leer("README.md");
-    expect(readme).toContain("versi%C3%B3n-1.34.0-");
+    expect(readme).toContain("versi%C3%B3n-1.35.0-");
     expect(readme).toContain("StreamDog: cine y series gratis");
   });
 
