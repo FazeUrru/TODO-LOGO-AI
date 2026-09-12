@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.35.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
+  <a href="#-resumen-en-30-segundos"><img alt="versión" src="https://img.shields.io/badge/versi%C3%B3n-1.36.0-F4C406?style=flat-square&labelColor=2E2B29"></a>
   <a href="LICENSE"><img alt="licencia" src="https://img.shields.io/badge/licencia-MIT-green?style=flat-square"></a>
   <a href="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FazeUrru/TODO-LOGO-AI/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI"><img alt="cobertura" src="https://codecov.io/gh/FazeUrru/TODO-LOGO-AI/graph/badge.svg"></a>
@@ -217,7 +217,7 @@ StreamDog es el estudio de entretenimiento del proyecto. Su módulo **Cine y ser
 |---|---|
 | **Wikimedia Commons** | Películas de dominio público **reproducibles** (.webm/.mp4 directos): Nosferatu, Night of the Living Dead, Charade, The General… |
 | **Internet Archive** | Contenido infinito ♾️: éxitos eternos («Los títulos más famosos», 30 clásicos por nombre exacto) + colecciones de **film noir**, **ciencia ficción y terror**, **dibujos animados clásicos**, **televisión clásica** y **documentales** |
-| **TVMaze** | Series del momento y la fila **«Lo mejor de Disney+»** (El Encargado/The Bear, Solo asesinatos en el edificio, Loki, El Mandaloriano, Andor, WandaVision, Los Simpson, Gravity Falls, Phineas y Ferb, Bluey, X-Men '97, Ahsoka) como **fichas legales** con temporadas, episodios y «Ver en el origen» |
+| **TVMaze** | Series del momento, la fila **«Lo mejor de Disney+»** y los **TOPS de plataformas** (v1.36.0): Netflix famosas, **HBO Max top 50**, Prime Video, Apple TV+, Filmin y tops temáticos (animación, basadas en hechos reales, lo más reciente) — todo como **fichas legales** con temporadas, episodios y «Ver en el origen», con el orden de la lista como ranking |
 
 Lo que incluye el módulo:
 

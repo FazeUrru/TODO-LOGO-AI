@@ -12,10 +12,14 @@
  *   1. Los títulos más famosos   → Archive, consulta de 30 éxitos eternos
  *   2. Colección de oro          → Commons, comprobada a mano
  *   3. Series del momento        → TVMaze por peso real
- *   4-8. Colecciones Archive     → film_noir, sci-fi_horror, classic_cartoons,
+ *   4. Lo mejor de Disney+       → TVMaze, fichas legales
+ *   5-12. TOPS de plataformas    → Netflix, HBO Max (top 50), Prime Video,
+ *                                  Apple TV+, Filmin + temáticos (animación,
+ *                                  hechos reales, lo más reciente)
+ *  13-17. Colecciones Archive    → film_noir, sci-fi_horror, classic_cartoons,
  *                                  classic_tv (series) y documentaryfilms
- *   9. Cine clásico libre        → Archive feature_films
- *  10. Explorar el archivo libre → Commons búsqueda abierta
+ *  18. Cine clásico libre        → Archive feature_films
+ *  19. Explorar el archivo libre → Commons búsqueda abierta
  *
  * La fila que falle no tira el resto: degradación elegante de la casa.
  */
@@ -24,7 +28,15 @@ import {
   COLECCIONES_ARCHIVE,
   COLECCION_ORO,
   EXITOSOS_MUNDIALES,
+  RECOMENDADAS_APPLE,
   RECOMENDADAS_DISNEY,
+  RECOMENDADAS_NETFLIX,
+  RECOMENDADAS_PRIME,
+  TOPS_ANIMACION,
+  TOPS_FILMIN,
+  TOPS_HBO_MAX,
+  TOPS_HECHOS_REALES,
+  TOPS_RECIENTES,
   dedupeItems,
   normalizarArchiveDoc,
   normalizarCommonsPage,
@@ -163,6 +175,46 @@ async function filaRecomendadas(): Promise<FilaCine | null> {
   return { claveI18n: "Lo mejor de Disney+", items: items.slice(0, 14) };
 }
 
+export interface OpcionesTops {
+  /** Máximo de fichas en la fila (por defecto 14). */
+  tope?: number;
+  /**
+   * Conservar el ORDEN de la lista como ranking (el nº 1 de la lista
+   * es el nº 1 de la fila) en vez de reordenar por valoración real.
+   */
+  conservarOrden?: boolean;
+}
+
+/**
+ * MOTOR DE TOPS (v1.36.0): construye una fila «Lo mejor de X» a partir
+ * de una lista rankeada de títulos. Misma disciplina que la fila
+ * Disney+: una búsqueda TVMaze por título (paralelo), primera
+ * coincidencia, SOLO fichas legales con «Ver en el origen». Con
+ * `conservarOrden` el orden de la lista ES el ranking — el top 50 de
+ * HBO se muestra del Soprano al Somebody Somewhere, sin que la
+ * valoración lo reordene. La etiqueta de fuente (`tvmaze:etiqueta`)
+ * permite a los informes del cron distinguir cada plataforma.
+ */
+export async function filaTops(
+  claveI18n: string,
+  lista: readonly string[],
+  etiqueta: string,
+  opciones: OpcionesTops = {}
+): Promise<FilaCine | null> {
+  const { tope = 14, conservarOrden = false } = opciones;
+  const resultados = await Promise.all(
+    lista.map((q) =>
+      pedirFuente<unknown[]>(`tvmaze:${etiqueta}`, tvmazeBuscarUrl(q), TOPE_LISTA_MS).then((r) =>
+        Array.isArray(r) && r.length > 0 ? normalizarTvmazeSearch(r).slice(0, 1) : []
+      )
+    )
+  );
+  const sinDuplicados = dedupeItems(resultados.flat());
+  const items = conservarOrden ? sinDuplicados : ordenarItems(sinDuplicados);
+  if (items.length === 0) return null;
+  return { claveI18n, items: items.slice(0, tope) };
+}
+
 /** Catálogo por vista: inicio (filas), películas y series (listas paginadas). */
 export async function catalogo(vista: VistaCine, pagina: number): Promise<Omit<RespuestaCatalogo, "ok" | "vista" | "q" | "pagina">> {
   if (vista === "series") {
@@ -191,14 +243,22 @@ export async function catalogo(vista: VistaCine, pagina: number): Promise<Omit<R
     };
   }
 
-  /* ── INICIO: 11 filas en paralelo, contenido infinito ♾️ ── */
-  const [famosos, oro, tvmaze, clasicos, explorar, recomendadas, ...colecciones] = await Promise.all([
+  /* ── INICIO: 19 filas en paralelo, contenido infinito ♾️ ── */
+  const [famosos, oro, tvmaze, clasicos, explorar, recomendadas, netflix, hbo, prime, apple, filmin, animacion, reales, recientes, ...colecciones] = await Promise.all([
     pedirFuente<RespuestaArchive>("archive:famosos", archiveFamososUrl(EXITOSOS_MUNDIALES, 14), TOPE_LISTA_MS),
     pedirFuente<RespuestaCommons>("commons", urlColeccionOro(COLECCION_ORO), TOPE_LISTA_MS),
     pedirFuente<unknown[]>("tvmaze", tvmazeShowsUrl(0), TOPE_LISTA_MS),
     pedirFuente<RespuestaArchive>("archive", archiveBuscarUrl("", 1, 12), TOPE_LISTA_MS),
     pedirFuente<RespuestaCommons>("commons", commonsBuscarUrl("short film OR animated film OR documentary film", 12), TOPE_LISTA_MS),
     filaRecomendadas(),
+    filaTops("Lo mejor de Netflix", RECOMENDADAS_NETFLIX, "netflix", { conservarOrden: true }),
+    filaTops("Lo mejor de HBO Max", TOPS_HBO_MAX, "hbo-max", { conservarOrden: true, tope: 50 }),
+    filaTops("Lo mejor de Prime Video", RECOMENDADAS_PRIME, "prime-video", { conservarOrden: true }),
+    filaTops("Lo mejor de Apple TV+", RECOMENDADAS_APPLE, "apple-tv", { conservarOrden: true }),
+    filaTops("Lo mejor de Filmin", TOPS_FILMIN, "filmin", { conservarOrden: true }),
+    filaTops("Animación para maratón", TOPS_ANIMACION, "animacion", { conservarOrden: true }),
+    filaTops("Basadas en hechos reales", TOPS_HECHOS_REALES, "hechos-reales", { conservarOrden: true }),
+    filaTops("Lo más reciente", TOPS_RECIENTES, "reciente", { conservarOrden: true }),
     ...COLECCIONES_ARCHIVE.map((col) => filaColeccion(col)),
   ]);
 
@@ -209,7 +269,9 @@ export async function catalogo(vista: VistaCine, pagina: number): Promise<Omit<R
   if (oroItems.length > 0) filas.push({ claveI18n: "Colección de oro", items: oroItems });
   const series = seriesPorPeso(tvmaze, 18);
   if (series.length > 0) filas.push({ claveI18n: "Series del momento", items: series });
-  if (recomendadas) filas.push(recomendadas);
+  for (const fila of [recomendadas, netflix, hbo, prime, apple, filmin, animacion, reales, recientes]) {
+    if (fila) filas.push(fila);
+  }
   for (const fila of colecciones) {
     if (fila) filas.push(fila);
   }

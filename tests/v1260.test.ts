@@ -363,15 +363,15 @@ describe("app web nativa — PWA, icono, alojamiento y seguridad", () => {
 
 describe("tríada de versiones v1.26.0", () => {
   it("APP_VERSION coincide con la entrada más reciente del changelog", () => {
-    expect(APP_VERSION).toBe("1.35.0");
-    expect(VERSIONS[10].version).toBe("1.26.0");
+    expect(APP_VERSION).toBe("1.36.0");
+    expect(VERSIONS[11].version).toBe("1.26.0");
   });
 
   it("el orden sigue estrictamente descendente y la 1.26.0 enlaza a 1.25.1", () => {
     for (let i = 1; i < VERSIONS.length; i++) {
       expect(VERSIONS[i - 1].version).not.toBe(VERSIONS[i].version);
     }
-    expect(VERSIONS[10].diffDesde).toBe("1.25.1");
+    expect(VERSIONS[11].diffDesde).toBe("1.25.1");
   });
 
   it("CHANGELOG.md relata la 1.26.0 por encima de la 1.25.1", () => {

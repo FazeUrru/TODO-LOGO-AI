@@ -92,7 +92,9 @@ describe("v1340 · fila «Lo mejor de Disney+»", () => {
     const catalogo = leer("src/lib/streamdog/cine-catalogo.ts");
     expect(catalogo).toContain("filaRecomendadas");
     expect(catalogo).toContain('claveI18n: "Lo mejor de Disney+"');
-    expect(catalogo.indexOf('filas.push(recomendadas)')).toBeGreaterThan(catalogo.indexOf('claveI18n: "Series del momento"'));
+    // Desde v1.36.0 la Disney encabeza el bucle de tops (Netflix, HBO Max…)
+    expect(catalogo).toContain("for (const fila of [recomendadas, netflix, hbo, prime, apple, filmin, animacion, reales, recientes])");
+    expect(catalogo.indexOf("for (const fila of [recomendadas")).toBeGreaterThan(catalogo.indexOf('claveI18n: "Series del momento"'));
   });
 
   it("la clave i18n vive en la lista canónica y en los 3 diccionarios", () => {
@@ -106,18 +108,18 @@ describe("v1340 · fila «Lo mejor de Disney+»", () => {
 /* ══════════════════ tríada 1.34.0 + README ══════════════════ */
 
 describe("v1340 · tríada de versiones y repositorio al día", () => {
-  it("version.ts, changelog-meta.ts y CHANGELOG.md dicen 1.35.0", () => {
-    expect(APP_VERSION).toBe("1.35.0");
-    expect(VERSIONS[0].version).toBe("1.35.0");
-    expect(VERSIONS[0].diffDesde).toBe("1.34.0");
+  it("version.ts, changelog-meta.ts y CHANGELOG.md dicen 1.36.0", () => {
+    expect(APP_VERSION).toBe("1.36.0");
+    expect(VERSIONS[0].version).toBe("1.36.0");
+    expect(VERSIONS[0].diffDesde).toBe("1.35.0");
     const changelog = leer("CHANGELOG.md");
-    expect(changelog).toContain("## [1.35.0]");
-    expect(changelog.indexOf("## [1.35.0]")).toBeLessThan(changelog.indexOf("## [1.34.0]"));
+    expect(changelog).toContain("## [1.36.0]");
+    expect(changelog.indexOf("## [1.36.0]")).toBeLessThan(changelog.indexOf("## [1.35.0]"));
   });
 
-  it("el README lleva el badge 1.35.0 y cuenta StreamDog ∞", () => {
+  it("el README lleva el badge 1.36.0 y cuenta StreamDog ∞", () => {
     const readme = leer("README.md");
-    expect(readme).toContain("versi%C3%B3n-1.35.0-");
+    expect(readme).toContain("versi%C3%B3n-1.36.0-");
     expect(readme).toContain("StreamDog: cine y series gratis");
   });
 

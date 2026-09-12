@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.36.0",
+    fecha: "12 sept 2026",
+    hora: "13:56",
+    titulo: "StreamDog Tops: Netflix famosas, HBO Max top 50, Prime Video, Apple TV+, Filmin y tops temáticos — siempre legales",
+    tldr:
+      "El inicio de StreamDog se convierte en la parrilla de todas las plataformas: «Lo mejor de Netflix» (Stranger Things, La casa de papel, Dark, Wednesday…), el top 50 completo de HBO Max (del Soprano al Somebody Somewhere), Prime Video, Apple TV+, Filmin y tres tops temáticos (animación para maratón, basadas en hechos reales y lo más reciente) — todo como fichas legales de TVMaze con «Ver en el origen», cero vídeo pirata, 19 filas en paralelo con degradación elegante y el orden de cada lista conservado como ranking real.",
+    diffDesde: "1.35.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.35.0",
     fecha: "12 sept 2026",
     hora: "13:45",

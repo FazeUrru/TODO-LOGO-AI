@@ -9,6 +9,22 @@
 >
 > 🧩 **Huecos de numeración**: no existen v1.1.x ni v1.3.x — eran iteraciones internas fusionadas dentro de la v1.2.0 y la v1.4.0 sin llegar a publicarse.
 
+## [1.36.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.35.0...v1.36.0) · 12 sept 2026, 13:56 — *StreamDog Tops: Netflix famosas, HBO Max top 50, Prime Video, Apple TV+, Filmin y tops temáticos — todas las plataformas, siempre legales*
+
+> 💡 **En una frase:** el inicio de StreamDog se convierte en la parrilla de TODAS las plataformas: **«Lo mejor de Netflix»** (Stranger Things, La casa de papel, Dark, Wednesday…), el **top 50 completo de HBO Max** (del Soprano al Somebody Somewhere), **Prime Video**, **Apple TV+**, **Filmin** y tres tops temáticos — **animación para maratón**, **basadas en hechos reales** y **lo más reciente** — todo como fichas legales de TVMaze con «Ver en el origen», cero vídeo pirata, y con el orden de cada lista conservado como RANKING real.
+
+### Añadido
+- **TOPS de plataformas** 🏆 (nuevas 8 listas en `cine.ts` + motor `filaTops()` en `cine-catalogo.ts`): `RECOMENDADAS_NETFLIX` (16 famosas encabezadas por Stranger Things y La casa de papel), `TOPS_HBO_MAX` (las 50 del top, del Soprano al Somebody Somewhere), `RECOMENDADAS_PRIME` (The Boys, Reacher, Fallout…), `RECOMENDADAS_APPLE` (Ted Lasso, Severance, Silo…), `TOPS_FILMIN` (culto y autor: Twin Peaks, My Brilliant Friend, Gomorra…), `TOPS_ANIMACION` (Attack on Titan, One Piece, Frieren…), `TOPS_HECHOS_REALES` (Mindhunter, When They See Us, Chernobyl-hermanas como Dopesick…) y `TOPS_RECIENTES` (Shōgun, Baby Reindeer, 3 Body Problem…). El inicio pasa de 11 a **19 filas en paralelo** con degradación elegante fila a fila.
+- **Motor `filaTops()`** (exportado, con `OpcionesTops`): generaliza la fila Disney para cualquier lista rankeada — búsqueda TVMaze por título en paralelo, primera coincidencia, dedupe con orden estable y opción **`conservarOrden`** que convierte el orden de la lista en el RANKING de la fila (el nº 1 de la lista es el nº 1 de la fila, sin que la valoración lo reordene). Cada plataforma lleva etiqueta de fuente propia (`tvmaze:netflix`, `tvmaze:hbo-max`…) para los informes del cron. Sin red, la fila no sale: sin ruido.
+- **Legalidad intacta** ⚖️: cero vídeo pirata — cada ficha trae sinopsis, temporadas, episodios y valoración de TVMaze, con «Ver en el origen» hacia la ficha oficial y de ahí a su plataforma legítima. Coherente con el «Pacto abierto» de la v1.35.0: tops que RECOMIENDAN el catálogo de las plataformas (nunca lo sustituyen), y el título que TVMaze no encuentre cae de la fila sin ruido.
+
+### Mejorado
+- **i18n del módulo**: 8 claves nuevas de filas en es/en/de/fr («Lo mejor de Netflix/HBO Max/Prime Video/Apple TV+/Filmin», «Animación para maratón», «Basadas en hechos reales», «Lo más reciente»), con test de completitud.
+- **Punteros de versión desplazados**: tests apuntando a la 1.35.0 re-situados en la 1.36.0; índices `VERSIONS[n]` +1; `sw.js` re-versionado (`streamdog-v1.36.0`).
+
+### Regresión
+- `tests/v1360.test.ts`: las 8 listas saneadas (sin vacíos, sin duplicados, sin comillas, recortadas; HBO Max = 50 exactos y cada nº 1 en su puesto), i18n ×4 completo, orden de integración en `catalogo()` (los tops tras la fila Disney y antes de las colecciones Archive), `filaTops` sin red devuelve null (degradación elegante real) y tríada 1.36.0 con README y service worker al día.
+
 ## [1.35.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.34.0...v1.35.0) · 12 sept 2026, 13:45 — *StreamDog Arena: fusión elegible con el Arena (o independencia total) y «Pacto abierto» a las plataformas*
 
 > 💡 **En una frase:** StreamDog decide su convivencia con el Arena que lo vio nacer: un conmutador premium permite estar **fusionado** (insignia violeta, «Ir al Arena» a un toque, identidad compartida) o **independiente** (enlaces cruzados apagados, app autónoma lista para su dominio propio) — y estrena el **«Pacto abierto»**, un aviso de seguridad, privacidad y legibilidad escrito como carta abierta y duradera a Netflix, Prime Video, Disney+, HBO Max, Apple TV, Filmin y todas las plataformas del mundo: colaboración y un acuerdo mayor, no enemistad permanente — nada personal, el problema son los precios desorbitados.

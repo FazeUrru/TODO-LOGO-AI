@@ -190,6 +190,185 @@ export const RECOMENDADAS_DISNEY: string[] = [
   "Ahsoka",
 ];
 
+/* ═════════ TOPS DE PLATAFORMAS (v1.36.0 — fichas TVMaze, legales) ═════════ */
+
+/**
+ * Las series más famosas de cada plataforma, como filas de TOPS —
+ * la misma disciplina que Disney+: CERO vídeo pirata. Cada título se
+ * consulta a TVMaze (API abierta) por nombre y se muestra como FICHA
+ * completa (sinopsis, temporadas, episodios, valoración, «Ver en el
+ * origen» que manda a la ficha oficial y de ahí a su plataforma
+ * legítima). El ORDEN de cada lista ES el ranking: `filaTops` lo
+ * conserva tal cual — el nº 1 de la lista es el nº 1 de la fila.
+ * Un título que TVMaze no encuentre cae de la fila sin ruido.
+ */
+
+/** Las series de Netflix que todo el mundo conoce, rankeadas. */
+export const RECOMENDADAS_NETFLIX: string[] = [
+  "Stranger Things",
+  "Money Heist", // «La casa de papel»
+  "Dark",
+  "The Crown",
+  "Wednesday",
+  "Squid Game",
+  "Narcos",
+  "Ozark",
+  "Bridgerton",
+  "The Witcher",
+  "Black Mirror",
+  "Sex Education",
+  "Arcane",
+  "Cobra Kai",
+  "Élite",
+  "Lupin",
+];
+
+/** HBO Max: el top 50 completo, del Soprano al Penguin. */
+export const TOPS_HBO_MAX: string[] = [
+  "The Sopranos",
+  "The Wire",
+  "Game of Thrones",
+  "The Last of Us",
+  "House of the Dragon",
+  "Chernobyl",
+  "Band of Brothers",
+  "Succession",
+  "The White Lotus",
+  "Euphoria",
+  "Westworld",
+  "True Detective",
+  "Barry",
+  "Peacemaker",
+  "Six Feet Under",
+  "The Leftovers",
+  "Deadwood",
+  "Sex and the City",
+  "Curb Your Enthusiasm",
+  "Silicon Valley",
+  "Veep",
+  "Boardwalk Empire",
+  "Rome",
+  "Oz",
+  "Entourage",
+  "The Night Of",
+  "Watchmen",
+  "Mare of Easttown",
+  "Big Little Lies",
+  "Sharp Objects",
+  "I Know This Much Is True",
+  "The Outsider",
+  "Station Eleven",
+  "Hacks",
+  "Our Flag Means Death",
+  "The Flight Attendant",
+  "Perry Mason",
+  "His Dark Materials",
+  "Industry",
+  "The Gilded Age",
+  "House",
+  "Friends",
+  "The Fresh Prince of Bel-Air",
+  "Rick and Morty",
+  "South Park",
+  "Harley Quinn",
+  "The Pacific",
+  "The Penguin",
+  "The Regime",
+  "Somebody Somewhere",
+];
+
+/** Prime Video: los éxitos que definen la plataforma. */
+export const RECOMENDADAS_PRIME: string[] = [
+  "The Boys",
+  "Reacher",
+  "The Marvelous Mrs. Maisel",
+  "Invincible",
+  "The Rings of Power",
+  "Fallout",
+  "Fleabag",
+  "The Expanse",
+  "Mr. Robot",
+  "Good Omens",
+  "The Terminal List",
+  "The Underground Railroad",
+];
+
+/** Apple TV+: la casa de la calidad silenciosa. */
+export const RECOMENDADAS_APPLE: string[] = [
+  "Ted Lasso",
+  "Severance",
+  "Silo",
+  "The Morning Show",
+  "Slow Horses",
+  "For All Mankind",
+  "Foundation",
+  "Servant",
+  "Pachinko",
+  "Bad Sisters",
+];
+
+/** Filmin: el cine de autor y las series de culto de la plataforma española. */
+export const TOPS_FILMIN: string[] = [
+  "Twin Peaks",
+  "My Brilliant Friend",
+  "Gomorrah",
+  "ZeroZeroZero",
+  "I May Destroy You",
+  "Top of the Lake",
+  "The Young Pope",
+  "Normal People",
+  "Small Axe",
+  "The Third Day",
+];
+
+/** Animación para maratón: anime y animación adulta que rompieron el molde. */
+export const TOPS_ANIMACION: string[] = [
+  "Attack on Titan",
+  "One Piece",
+  "Death Note",
+  "Fullmetal Alchemist: Brotherhood",
+  "Cowboy Bebop",
+  "Avatar: The Last Airbender",
+  "BoJack Horseman",
+  "Cyberpunk: Edgerunners",
+  "Demon Slayer: Kimetsu no Yaiba",
+  "Jujutsu Kaisen",
+  "Frieren: Beyond Journey's End",
+  "Castlevania",
+];
+
+/** Basadas en hechos reales: la historia convertida en serie. */
+export const TOPS_HECHOS_REALES: string[] = [
+  "Mindhunter",
+  "When They See Us",
+  "Unbelievable",
+  "The Act",
+  "American Crime Story",
+  "Show Me a Hero",
+  "The Dropout",
+  "Inventing Anna",
+  "Pam & Tommy",
+  "Dopesick",
+  "Griselda",
+  "Manhunt",
+];
+
+/** Lo más reciente: los estrenos de los que habla todo el mundo. */
+export const TOPS_RECIENTES: string[] = [
+  "Shōgun",
+  "Baby Reindeer",
+  "The Night Agent",
+  "Beef",
+  "3 Body Problem",
+  "The Day of the Jackal",
+  "Landman",
+  "The Pitt",
+  "Adolescence",
+  "The Agency",
+  "Presumed Innocent",
+  "The Perfect Couple",
+];
+
 /* ═════════════════ LIMPIEZA Y UTILIDADES ═════════════════ */
 
 const ENTIDADES: Record<string, string> = {
