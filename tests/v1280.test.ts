@@ -316,7 +316,7 @@ describe("instrumentación — la batalla, la salud y el cliente hablan al vigil
 
 describe("tríada de versiones — 1.28.0 coherente en los tres sitios", () => {
   it("version.ts declara 1.28.1 (la release actual; la entrada 1.28.0 sigue abajo)", () => {
-    expect(APP_VERSION).toBe("1.29.0");
+    expect(APP_VERSION).toBe("1.30.0");
     expect(APP_BUILD_DATE).toBe("2026-09-12");
   });
 

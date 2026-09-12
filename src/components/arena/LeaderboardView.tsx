@@ -34,6 +34,7 @@ import { PROVIDERS, getModel } from "@/lib/models-data";
 import { NEW_CATEGORIES } from "@/lib/elo";
 import { NewBadge, markUsed } from "@/lib/badges";
 import ProviderLogo from "./ProviderLogo";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface LeaderRow {
@@ -146,6 +147,7 @@ type License = "todas" | "abierto" | "propietario";
 type Entities = "models" | "labs";
 
 export default function LeaderboardView() {
+  const { t } = useT();
   const [category, setCategory] = useState("global");
   const [rows, setRows] = useState<LeaderRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -357,13 +359,13 @@ export default function LeaderboardView() {
               })}
             </div>
 
-            <p className="mt-5 text-[13.5px] font-medium">Tipo de licencia</p>
+            <p className="mt-5 text-[13.5px] font-medium">{t("Tipo de licencia")}</p>
             <div className="mt-2 space-y-1">
               {(
                 [
-                  ["todas", "Todas"],
-                  ["abierto", "Pesos abiertos"],
-                  ["propietario", "Propietaria"],
+                  ["todas", t("Todas")],
+                  ["abierto", t("Pesos abiertos")],
+                  ["propietario", t("Propietaria")],
                 ] as const
               ).map(([id, label]) => (
                 <label
@@ -388,14 +390,14 @@ export default function LeaderboardView() {
           <div className="mx-auto max-w-[900px]">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="font-display text-[32px] font-medium tracking-tight">
-                {category === "global" ? "Arena" : `Arena ${TABS.find((t) => t.id === category)?.label}`}
+                {category === "global" ? t("Arena") : `${t("Arena")} ${t(TABS.find((tab) => tab.id === category)?.label ?? "")}`}
               </h1>
               <span className="flex items-center gap-1.5 rounded-lg bg-secondary px-2.5 py-1.5 text-[13px] font-medium">
                 {(() => {
-                  const TIcon = TABS.find((t) => t.id === category)?.icon ?? Trophy;
+                  const TIcon = TABS.find((tab) => tab.id === category)?.icon ?? Trophy;
                   return <TIcon className="h-4 w-4" />;
                 })()}
-                {TABS.find((t) => t.id === category)?.label}
+                {t(TABS.find((tab) => tab.id === category)?.label ?? "")}
               </span>
             </div>
             <p className="mt-2 max-w-[680px] text-[14px] leading-relaxed text-foreground/85">
@@ -406,10 +408,10 @@ export default function LeaderboardView() {
                 <Clock className="h-3.5 w-3.5" /> {dateLabel}
               </span>
               <span className="flex items-center gap-1.5">
-                <FileText className="h-3.5 w-3.5" /> {totalVotes.toLocaleString("es-ES")} votos registrados
+                <FileText className="h-3.5 w-3.5" /> {totalVotes.toLocaleString("es-ES")} {t("votos registrados")}
               </span>
               <span className="flex items-center gap-1.5">
-                <BarChart3 className="h-3.5 w-3.5" /> {rows.length} modelos
+                <BarChart3 className="h-3.5 w-3.5" /> {t("{n} modelos", { n: rows.length })}
               </span>
             </div>
 
@@ -425,13 +427,14 @@ export default function LeaderboardView() {
                     <span className="copa-pulse h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
                     <span className="min-w-0 flex-1 truncate text-muted-foreground">
                       {ev.empate
-                        ? `${ev.nombreA} empató con ${ev.nombreB}`
-                        : `${getModel(ev.ganador ?? "")?.name ?? ev.nombreA} venció a ${
-                            getModel(ev.perdedor ?? "")?.name ?? ev.nombreB
-                          }`}
+                        ? t("{a} empató con {b}", { a: ev.nombreA, b: ev.nombreB })
+                        : t("{a} venció a {b}", {
+                            a: getModel(ev.ganador ?? "")?.name ?? ev.nombreA,
+                            b: getModel(ev.perdedor ?? "")?.name ?? ev.nombreB,
+                          })}
                       {" · "}
                       <span className="font-medium text-foreground/70">
-                        {ETIQUETA_CATEGORIA[ev.categoria] ?? ev.categoria}
+                        {t(ETIQUETA_CATEGORIA[ev.categoria] ?? ev.categoria)}
                       </span>
                     </span>
                     <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
@@ -448,7 +451,7 @@ export default function LeaderboardView() {
                   onClick={() => setShowFilters(true)}
                   className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-[12.5px] hover:bg-accent"
                 >
-                  <SlidersHorizontal className="h-3.5 w-3.5" /> Mostrar filtros
+                  <SlidersHorizontal className="h-3.5 w-3.5" /> {t("Mostrar filtros")}
                 </button>
               )}
               <div className="relative flex-1 sm:max-w-[240px]">
@@ -456,7 +459,7 @@ export default function LeaderboardView() {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Filtrar modelos…"
+                  placeholder={t("Filtrar modelos…")}
                   className="w-full rounded-lg border border-border bg-card py-1.5 pl-8 pr-3 text-[13px] outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-foreground/20"
                 />
               </div>
@@ -556,15 +559,15 @@ export default function LeaderboardView() {
                   <thead>
                     <tr className="border-b border-border text-left text-[12px] text-muted-foreground">
                       <th className="px-4 py-3 font-medium">Rank</th>
-                      <th className="px-4 py-3 font-medium">Modelo</th>
-                      <th className="px-4 py-3 text-right font-medium">Puntuación arena</th>
+                      <th className="px-4 py-3 font-medium">{t("Modelo")}</th>
+                      <th className="px-4 py-3 text-right font-medium">{t("Puntuación arena")}</th>
                       <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">
                         IC 95%
                       </th>
                       <th className="hidden px-4 py-3 text-right font-medium md:table-cell">
-                        Votos
+                        {t("Votos")}
                       </th>
-                      <th className="w-[90px] px-4 py-3 font-medium">Distribución</th>
+                      <th className="w-[90px] px-4 py-3 font-medium">{t("Distribución")}</th>
                     </tr>
                   </thead>
                   <tbody>

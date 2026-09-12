@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import ProviderLogo from "./ProviderLogo";
 import { getModel } from "@/lib/models-data";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /**
@@ -52,6 +53,8 @@ export default function MuroView() {
   const [data, setData] = useState<MuroData | null>(null);
   const [error, setError] = useState("");
 
+  const { t: trad, idioma } = useT();
+
   useEffect(() => {
     fetch("/api/share?limit=24")
       .then(async (r) => {
@@ -66,7 +69,7 @@ export default function MuroView() {
   }, []);
 
   const fechaCorta = (iso: string) =>
-    new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+    new Date(iso).toLocaleDateString(idioma === "en" ? "en-US" : "es-ES", { day: "numeric", month: "short" });
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -75,28 +78,27 @@ export default function MuroView() {
           {/* Cabecera */}
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="flex items-center gap-2.5 font-display text-[32px] font-medium tracking-tight">
-              <BrickWall className="h-7 w-7" /> Muro de replays
+              <BrickWall className="h-7 w-7" /> {trad("Muro de replays")}
             </h1>
           </div>
           <p className="mt-2 max-w-[680px] text-[14px] leading-relaxed text-foreground/85">
-            Los duelos y copas que la comunidad más ha difundido, con identidades
-            reveladas y veredicto incluido. Comparte el tuyo con el botón{" "}
-            <span className="font-medium">«Compartir replay»</span> tras votar: cada
-            difusión suma aquí y alimenta el ranking de los más compartidos.
+            {trad("Los duelos y copas que la comunidad más ha difundido, con identidades reveladas y veredicto incluido. Comparte el tuyo con el botón")}{" "}
+            <span className="font-medium">«{trad("Compartir replay")}»</span>{" "}
+            {trad(" tras votar: cada difusión suma aquí y alimenta el ranking de los más compartidos.")}
           </p>
 
           {data && (
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-muted-foreground">
               <span className="flex items-center gap-1.5">
-                <Swords className="h-3.5 w-3.5" /> {data.stats.total} replays
+                <Swords className="h-3.5 w-3.5" /> {trad("{n} replays", { n: data.stats.total })}
               </span>
               <span className="flex items-center gap-1.5">
                 <Share2 className="h-3.5 w-3.5" />{" "}
-                {data.stats.totalCompartidos.toLocaleString("es-ES")} compartidos
+                {data.stats.totalCompartidos.toLocaleString(idioma === "en" ? "en-US" : "es-ES")} {trad("compartidos")}
               </span>
               <span className="flex items-center gap-1.5">
                 <Eye className="h-3.5 w-3.5" />{" "}
-                {data.stats.totalVistas.toLocaleString("es-ES")} vistas
+                {data.stats.totalVistas.toLocaleString(idioma === "en" ? "en-US" : "es-ES")} {trad("vistas")}
               </span>
             </div>
           )}
@@ -104,7 +106,7 @@ export default function MuroView() {
           {/* Estados */}
           {error && (
             <div className="mt-5 rounded-xl border border-border bg-card p-5 text-center">
-              <p className="text-[14px] font-medium">El muro no cargó esta vez</p>
+              <p className="text-[14px] font-medium">{trad("El muro no cargó esta vez")}</p>
               <p className="mt-1 text-[13px] text-muted-foreground">{error}</p>
             </div>
           )}
@@ -118,9 +120,9 @@ export default function MuroView() {
           {data && data.replays.length === 0 && (
             <div className="mt-5 rounded-xl border border-dashed border-border bg-card p-8 text-center">
               <BrickWall className="mx-auto h-6 w-6 text-muted-foreground" />
-              <p className="mt-2 text-[14px] font-medium">El muro está vacío… por ahora</p>
+              <p className="mt-2 text-[14px] font-medium">{trad("El muro está vacío… por ahora")}</p>
               <p className="mt-1 text-[13px] text-muted-foreground">
-                Gana una batalla o una copa y estrena el primer replay compartido.
+                {trad("Gana una batalla o una copa y estrena el primer replay compartido.")}
               </p>
             </div>
           )}
@@ -149,11 +151,11 @@ export default function MuroView() {
                     >
                       {t.tipo === "copa" ? (
                         <>
-                          <Trophy className="h-3 w-3" /> Copa de {t.copaSize ?? 4}
+                          <Trophy className="h-3 w-3" /> {trad("Copa de {n}", { n: t.copaSize ?? 4 })}
                         </>
                       ) : (
                         <>
-                          <Swords className="h-3 w-3" /> Duelo
+                          <Swords className="h-3 w-3" /> {trad("Duelo")}
                         </>
                       )}
                     </span>
@@ -187,7 +189,7 @@ export default function MuroView() {
                         <span className="truncate font-mono text-[12.5px] font-medium">
                           {getModel(t.championModelId ?? "")?.name ?? "—"}
                         </span>
-                        <span className="ml-auto text-[10.5px] text-muted-foreground">campeón</span>
+                        <span className="ml-auto text-[10.5px] text-muted-foreground">{trad("campeón")}</span>
                       </div>
                     )}
                   </div>
@@ -201,7 +203,7 @@ export default function MuroView() {
                       <Eye className="h-3 w-3" /> {t.views.toLocaleString("es-ES")}
                     </span>
                     <span className="ml-auto flex items-center gap-1 font-medium text-foreground/70 transition-colors group-hover:text-foreground">
-                      Ver replay <ArrowRight className="h-3 w-3" />
+                      {trad("Ver replay")} <ArrowRight className="h-3 w-3" />
                     </span>
                   </div>
                 </Link>
@@ -211,7 +213,7 @@ export default function MuroView() {
 
           <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-[11.5px] text-muted-foreground">
             <Loader2 className="hidden" />
-            Los replays se publican tras votar: identidades reveladas, ELO real y veredicto permanente.
+            {trad("Los replays se publican tras votar: identidades reveladas, ELO real y veredicto permanente.")}
           </p>
         </div>
       </div>

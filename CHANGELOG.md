@@ -9,6 +9,23 @@
 >
 > 🧩 **Huecos de numeración**: no existen v1.1.x ni v1.3.x — eran iteraciones internas fusionadas dentro de la v1.2.0 y la v1.4.0 sin llegar a publicarse.
 
+## [1.30.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.29.0...v1.30.0) · 12 sept 2026, 10:20 — *i18n fase 2: la arena, el leaderboard, el muro y los conectores ya hablan inglés*
+
+> 💡 **En una frase:** la traducción salta del shell a las secciones — la arena completa (tarjetas de arranque, composer con sus 11 placeholders, misión de agentes, voto con confirmación y Modo Oráculo, adjuntos, banner promos, errores), el leaderboard con filtros y ticker en vivo, el muro de replays, el salón de la fama, el catálogo de 75 servidores MCP y la portada de Streamdog se traducen al inglés al vuelo, y las fechas y contadores ya usan el locale del idioma elegido.
+
+### Añadido
+- **Arena bilingüe a fondo** 🥊 (`ChatExperience.tsx`): las 8 tarjetas «Para empezar», los selects de misión de agentes (tipo, autonomía, presupuesto), los 11 placeholders del composer según modo, el selector de voz interna, la barra de voto completa (A/B/Empate/Ambos malos, «¿Confirmar?» con doble pulsación), el Modo Oráculo, la revelación con «Ganador: {n}», «Nueva batalla», «Link de conversación» y «Compartir replay», los toasts de adjuntos y enlaces, el hint de skills, el dockHint por modo con su contador de Stream Forever, el pipeline del escuadrón, el plan de misión y el footer legal de la portada.
+- **Leaderboard en inglés** 🏆 (`LeaderboardView.tsx`): título dinámico por categoría (Arena + etiqueta traducida), contadores («{n} votos registrados», «{n} modelos»), ticker de actividad («{a} venció a {b}» / «{a} empató con {b}»), filtros de licencia, buscador y cabeceras de la tabla (Modelo, Puntuación arena, Votos, Distribución).
+- **Muro de replays y Salón de la Fama** 🧱 (`MuroView.tsx`, `SalonFama.tsx`): cabeceras, introducción, estadísticas («{n} replays», compartidos, vistas), chips «Copa de {n}»/«Duelo»/«campeón», «Ver replay», estados vacío y de error — y las fechas cortas ya se formatean con locale es-ES/en-US según el idioma.
+- **Conectores MCP y Streamdog** 🔌 (`mcps/page.tsx`, `streamdog/page.tsx`): titular «75 servidores MCP», descripción honesta, buscador, chips de categoría, aviso «Configúralo en tu cliente MCP» y subtítulo de Streamdog traducidos.
+
+### Mejorado
+- **Locales conscientes del idioma**: fechas del muro y salón de la fama y números con separador de miles usan `es-ES` o `en-US` según `uiLang` — coherencia total en la interfaz traducida.
+- **Diccionario EN ampliado a ~200 claves**: la adopción «el español es la clave» sigue sin riesgo — cualquier string no envuelto sigue renderizando español perfecto; las claves nuevas cubren solo lo ya envuelto con `t()`.
+
+### Regresión
+- `tests/v1300.test.ts`: motor (interpolación anidada en claves de ticker), diccionario sano sin duplicados, invariantes estáticos (arena, leaderboard, muro, salón y MCPs usan `useT`), y tríada 1.30.0 coherente.
+
 ## [1.29.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.28.1...v1.29.0) · 12 sept 2026, 09:35 — *La arena habla tu idioma: fundación i18n con el shell traducido al inglés*
 
 > 💡 **En una frase:** en **Ajustes → Apariencia → Idioma de la interfaz** ya puedes cambiar a English y ver el menú lateral, la barra superior, el buscador de modelos, los avisos de actualización y el banner de demo traducidos al vuelo — y el sistema elegido, «el español es la clave», permite ir traduciendo el resto de páginas sin que nada pueda quedar colgado.

@@ -9,6 +9,7 @@ import {
 } from "@/lib/clasificador-html";
 import { jsonSeguro } from "@/lib/fetch-seguro";
 import { extraerVistaPrevia, type VistaPrevia } from "@/lib/vista-previa";
+import { useT } from "@/lib/i18n";
 import type { EstadoJurado } from "@/lib/elo-usuario";
 import {
   ArrowUp,
@@ -378,6 +379,7 @@ async function imagenADataUrl(f: File): Promise<string> {
 /* ───────────────────────── Componente ───────────────────────── */
 
 export default function ChatExperience() {
+  const { t } = useT();
   const arena = useArena();
   const router = useRouter();
   const { toast } = useToast();
@@ -502,8 +504,8 @@ export default function ChatExperience() {
     if (phase !== "chat") return;
     if (turnsA.length === 0 && turnsB.length === 0) return;
     if (thinking) return;
-    const firstUser = turnsA.find((t) => t.role === "user")?.content ?? "Nueva conversación";
-    const t = setTimeout(() => {
+    const firstUser = turnsA.find((turn) => turn.role === "user")?.content ?? t("Nueva conversación");
+    const temporizador = setTimeout(() => {
       const id = chatId || `chat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
       if (!chatId) setChatId(id);
       const chat: SavedChat = {
@@ -532,7 +534,7 @@ export default function ChatExperience() {
       };
       saveChat(chat);
     }, 900);
-    return () => clearTimeout(t);
+    return () => clearTimeout(temporizador);
   }, [turnsA, turnsB, thinking, phase, battle, mode, category, agentMission, agentPlan, agentGenerated, settings.autoSaveHistory, chatId]);
 
   // ── Restauración desde "Recientes" (evento directo o pendiente tras navegar) ──
@@ -620,12 +622,12 @@ export default function ChatExperience() {
       setAttachOpen(false);
       const conImagen = next.some((a) => a.dataUrl);
       toast({
-        title: next.length === 1 ? "Adjunto añadido" : `${next.length} adjuntos añadidos`,
+        title: next.length === 1 ? t("Adjunto añadido") : t("{n} adjuntos añadidos", { n: next.length }),
         description: conImagen
-          ? "La IA verá la(s) imagen(es) con el motor de visión (VLM)."
+          ? t("La IA verá la(s) imagen(es) con el motor de visión (VLM).")
           : next.some((a) => a.text)
-            ? "El contenido legible se enviará al modelo junto a tu mensaje."
-            : "Se adjuntará como referencia junto a tu mensaje.",
+            ? t("El contenido legible se enviará al modelo junto a tu mensaje.")
+            : t("Se adjuntará como referencia junto a tu mensaje."),
       });
     });
     if (filesRef.current) filesRef.current.value = "";
@@ -650,13 +652,13 @@ export default function ChatExperience() {
       setAttachInput(null);
       setAttachOpen(false);
       toast({
-        title: kind === "video" ? "Vídeo enlazado" : "Enlace añadido",
-        description: "El modelo recibirá la referencia en tu próximo mensaje.",
+        title: kind === "video" ? t("Vídeo enlazado") : t("Enlace añadido"),
+        description: t("El modelo recibirá la referencia en tu próximo mensaje."),
       });
     } catch {
       toast({
-        title: "Enlace no válido",
-        description: "Revisa la dirección: debe parecerse a ejemplo.com o https://…",
+        title: t("Enlace no válido"),
+        description: t("Revisa la dirección: debe parecerse a ejemplo.com o https://…"),
         variant: "destructive",
       });
     }
@@ -676,7 +678,7 @@ export default function ChatExperience() {
 
   function toggleMode(next: ComposerMode) {
     if (mode === "agent") {
-      toast({ title: "El Modo Agente planifica misiones", description: "Usa imagen, vídeo, 3D, web o código en Batalla, Lado a Lado o Directo." });
+      toast({ title: t("El Modo Agente planifica misiones"), description: t("Usa imagen, vídeo, 3D, web o código en Batalla, Lado a Lado o Directo.") });
       return;
     }
     if (next === "imagen" || next === "video" || next === "voz" || next === "modelos3d") {
@@ -1089,11 +1091,11 @@ export default function ChatExperience() {
       } catch {
         // conexión caída antes de responder: reintento con pausa creciente
         if (intentoRed < MAX_INTENTOS_RED) continue;
-        throw new Error("Sin conexión con la arena tras 50 intentos.");
+        throw new Error(t("Sin conexión con la arena tras 50 intentos."));
       }
       const ctype = res.headers.get("content-type") ?? "";
       if (!res.ok) {
-        let msg = "La arena no pudo generar las respuestas.";
+        let msg = t("La arena no pudo generar las respuestas.");
         try {
           const j = await jsonSeguro<{ ok?: boolean; error?: string }>(res);
           if (j?.error) msg = j.error;
@@ -1122,7 +1124,7 @@ export default function ChatExperience() {
           sources?: WebSource[];
         }>(res);
         if (!data.ok) {
-          throw new Error(data.error ?? "La arena no pudo generar las respuestas.");
+          throw new Error(data.error ?? t("La arena no pudo generar las respuestas."));
         }
         const prev = battle;
         if (mode === "battle") {
@@ -1294,8 +1296,8 @@ export default function ChatExperience() {
       if (settings.soundOnDone) playDoneChime();
     } catch (e) {
       toast({
-        title: "Error en la arena",
-        description: e instanceof Error ? e.message : "Inténtalo de nuevo.",
+        title: t("Error en la arena"),
+        description: e instanceof Error ? e.message : t("Inténtalo de nuevo."),
         variant: "destructive",
       });
       rollback();
@@ -1341,7 +1343,7 @@ export default function ChatExperience() {
         body: JSON.stringify({ prompt: content }),
       });
       const data = await jsonSeguro<{ ok: boolean; error?: string; url: string }>(res);
-      if (!res.ok || !data.ok) throw new Error(data.error ?? "No se pudo generar la imagen.");
+      if (!res.ok || !data.ok) throw new Error(data.error ?? t("No se pudo generar la imagen."));
       setTurnsA((t) => [
         ...t,
         {
@@ -1353,8 +1355,8 @@ export default function ChatExperience() {
       if (settings.soundOnDone) playDoneChime();
     } catch (e) {
       toast({
-        title: "Modo imagen",
-        description: e instanceof Error ? e.message : "Inténtalo de nuevo.",
+        title: t("Modo imagen"),
+        description: e instanceof Error ? e.message : t("Inténtalo de nuevo."),
         variant: "destructive",
       });
       setTurnsA((t) => t.slice(0, -1));
@@ -1394,7 +1396,7 @@ export default function ChatExperience() {
         estilo?: string;
         segundos?: number;
       }>(res);
-      if (!res.ok || !data.ok) throw new Error(data.error ?? "El rodaje no pudo iniciarse.");
+      if (!res.ok || !data.ok) throw new Error(data.error ?? t("El rodaje no pudo iniciarse."));
       let url: string | null = data.pending ? null : (data.url ?? null);
       if (!url && data.taskId) {
         // Sondeo externo (mismo mecanismo del Modo Cine): hasta ~4,5 min
@@ -1405,10 +1407,10 @@ export default function ChatExperience() {
             .then((r) => jsonSeguro<{ ok?: boolean; ready?: boolean; failed?: boolean; url?: string }>(r))
             .catch(() => null)) as { ok?: boolean; ready?: boolean; failed?: boolean; url?: string } | null;
           if (s?.ok && s.ready && s.url) url = s.url;
-          if (s?.ok && s.failed) throw new Error("El motor descartó la toma. Prueba con otra escena.");
+          if (s?.ok && s.failed) throw new Error(t("El motor descartó la toma. Prueba con otra escena."));
         }
       }
-      if (!url) throw new Error("El revelado tardó más de la cuenta. Inténtalo de nuevo en unos minutos.");
+      if (!url) throw new Error(t("El revelado tardó más de la cuenta. Inténtalo de nuevo en unos minutos."));
       reemplazar({
         role: "assistant",
         content: `Aquí tienes tu vídeo para: «${desc.slice(0, 140)}»`,
@@ -1445,7 +1447,7 @@ export default function ChatExperience() {
         body: JSON.stringify({ texto, voz: voz.id }),
       });
       const data = await jsonSeguro<{ ok: boolean; error?: string; url: string }>(res);
-      if (!res.ok || !data.ok) throw new Error(data.error ?? "No se pudo generar la locución.");
+      if (!res.ok || !data.ok) throw new Error(data.error ?? t("No se pudo generar la locución."));
       setTurnsA((t) => [
         ...t,
         {
@@ -1457,8 +1459,8 @@ export default function ChatExperience() {
       if (settings.soundOnDone) playDoneChime();
     } catch (e) {
       toast({
-        title: "Modo voz",
-        description: e instanceof Error ? e.message : "Inténtalo de nuevo.",
+        title: t("Modo voz"),
+        description: e instanceof Error ? e.message : t("Inténtalo de nuevo."),
         variant: "destructive",
       });
       setTurnsA((t) => t.slice(0, -1));
@@ -1808,26 +1810,26 @@ export default function ChatExperience() {
         rows={variant === "hero" ? 3 : 2}
             placeholder={
           mode === "agent"
-            ? "Describe tu misión: un juego AAA, una app, una web completa…"
+            ? t("Describe tu misión: un juego AAA, una app, una web completa…")
             : slashQuery !== null
-              ? "Elige una skill con / (imagen, video, codigo, resume…)"
+              ? t("Elige una skill con / (imagen, video, codigo, resume…)")
               : cMode === "imagen"
-                ? "Describe la imagen que quieres generar…"
+                ? t("Describe la imagen que quieres generar…")
                 : cMode === "video"
-                  ? "Describe la escena: ruedo un clip real (mp4 con audio) en 1-4 min…"
+                  ? t("Describe la escena: ruedo un clip real (mp4 con audio) en 1-4 min…")
                   : cMode === "voz"
-                    ? "Escribe el texto y lo narraré con la voz interna que elijas…"
+                    ? t("Escribe el texto y lo narraré con la voz interna que elijas…")
                     : cMode === "modelos3d"
-                    ? "¿Qué modelo 3D quieres girar? (133 listos o uno a tu medida)"
+                    ? t("¿Qué modelo 3D quieres girar? (133 listos o uno a tu medida)")
                     : cMode === "codigo"
-                      ? "Pide código: funciones, componentes, consultas…"
+                      ? t("Pide código: funciones, componentes, consultas…")
                       : cMode === "juego"
-                        ? "Describe tu juego: lo construyo jugable mientras escribo (canvas, música y evolución)…"
+                        ? t("Describe tu juego: lo construyo jugable mientras escribo (canvas, música y evolución)…")
                         : cMode === "web"
-                        ? "Pregunta algo actual: buscaré en internet y citaré fuentes…"
+                        ? t("Pregunta algo actual: buscaré en internet y citaré fuentes…")
                         : cMode === "profundo"
-                          ? "Hazme una pregunta difícil: razonaré a fondo…"
-                          : "Pregunta lo que quieras… usa / para skills"
+                          ? t("Hazme una pregunta difícil: razonaré a fondo…")
+                          : t("Pregunta lo que quieras… usa / para skills")
         }
         className="w-full resize-none bg-transparent px-4 pt-3.5 text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground/80 scrollbar-thin"
       />
@@ -1836,10 +1838,10 @@ export default function ChatExperience() {
         <div
           className="flex items-center gap-1.5 overflow-x-auto px-3 pb-1 pt-0.5 scrollbar-thin"
           role="radiogroup"
-          aria-label="Voz interna del chat"
+          aria-label={t("Voz interna del chat")}
         >
           <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            Voz interna
+            {t("Voz interna")}
           </span>
           {VOCES_CHAT.map((v) => (
             <button
@@ -2082,12 +2084,12 @@ export default function ChatExperience() {
                 ))}
                 {filteredSkills.length === 0 && (
                   <p className="px-3 py-4 text-center text-[12.5px] text-muted-foreground">
-                    Ninguna skill coincide con «/{slashQuery}»
+                    {t("Ninguna skill coincide con «/{q}»", { q: slashQuery ?? "" })}
                   </p>
                 )}
               </div>
               <p className="border-t border-border px-2.5 pb-1 pt-1.5 text-[11px] text-muted-foreground">
-                Escribe «/» + nombre o elige de la lista · Esc para cerrar
+                {t("Escribe «/» + nombre o elige de la lista · Esc para cerrar")}
               </p>
             </div>
           </FloatingPanel>
@@ -2102,8 +2104,8 @@ export default function ChatExperience() {
             >
               {CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.label}
-                  {NEW_CATEGORIES.includes(c.id) ? " · ¡nuevo!" : ""}
+                  {t(c.label)}
+                  {NEW_CATEGORIES.includes(c.id) ? t(" · ¡nuevo!") : ""}
                 </option>
               ))}
             </select>
@@ -2118,7 +2120,7 @@ export default function ChatExperience() {
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "bg-secondary text-muted-foreground"
           )}
-          aria-label="Enviar mensaje"
+          aria-label={t("Enviar mensaje")}
         >
           {thinking ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -2132,28 +2134,28 @@ export default function ChatExperience() {
 
   const dockHint =
     cMode === "juego"
-      ? "El Modo Juego AAA construye un juego jugable y autoevolutivo mientras escribe: lo ves nacer en el panel y se ejecuta solo al terminar."
+      ? t("El Modo Juego AAA construye un juego jugable y autoevolutivo mientras escribe: lo ves nacer en el panel y se ejecuta solo al terminar.")
       : cMode === "imagen"
-      ? "El modo imagen crea una ilustración con IA a partir de tu descripción."
+      ? t("El modo imagen crea una ilustración con IA a partir de tu descripción.")
       : cMode === "video"
-        ? "El modo vídeo rueda un clip REAL (mp4 con audio) con el motor interno de Todólogo: 1-4 min de revelado, directo en la conversación."
+        ? t("El modo vídeo rueda un clip REAL (mp4 con audio) con el motor interno de Todólogo: 1-4 min de revelado, directo en la conversación.")
         : cMode === "voz"
-          ? "El modo voz narra tu texto con las voces internas del chat: elige voz bajo el cuadro de texto y envía."
+          ? t("El modo voz narra tu texto con las voces internas del chat: elige voz bajo el cuadro de texto y envía.")
           : cMode === "modelos3d"
-          ? "El modo 3D construye un modelo interactivo: 133 ya hechos, personalizados con IA o tu propio .glb."
+          ? t("El modo 3D construye un modelo interactivo: 133 ya hechos, personalizados con IA o tu propio .glb.")
           : cMode === "web"
-            ? "El modo web busca en internet en tiempo real y responde citando sus fuentes."
+            ? t("El modo web busca en internet en tiempo real y responde citando sus fuentes.")
             : cMode === "profundo"
-              ? "El pensamiento profundo razona paso a paso antes de responder: tarda un poco más y gana precisión."
+              ? t("El pensamiento profundo razona paso a paso antes de responder: tarda un poco más y gana precisión.")
               : cMode === "codigo"
-                ? "El modo código responde con bloques completos, con cabecera y botón de copiar. El código se entrega tal cual: su uso es tu responsabilidad."
+                ? t("El modo código responde con bloques completos, con cabecera y botón de copiar. El código se entrega tal cual: su uso es tu responsabilidad.")
                 : mode === "battle"
-                  ? "Los modelos compiten de forma anónima. Tu voto revela sus identidades y ajusta el ELO."
+                  ? t("Los modelos compiten de forma anónima. Tu voto revela sus identidades y ajusta el ELO.")
                   : mode === "agent"
-                    ? "El escuadrón de agentes planifica y ejecuta sin excusas: juegos AAA, apps, webs y más."
-                    : "Las respuestas son generadas por IA y pueden contener errores; el código generado se usa bajo tu responsabilidad." +
+                    ? t("El escuadrón de agentes planifica y ejecuta sin excusas: juegos AAA, apps, webs y más.")
+                    : t("Las respuestas son generadas por IA y pueden contener errores; el código generado se usa bajo tu responsabilidad.") +
                       (curadosAqui > 0
-                        ? ` · Stream Forever: ${curadosAqui} ${curadosAqui === 1 ? "corte curado" : "cortes curados"} en este dispositivo.`
+                        ? ` · ${curadosAqui === 1 ? t("Stream Forever: {n} corte curado en este dispositivo.", { n: curadosAqui }) : t("Stream Forever: {n} cortes curados en este dispositivo.", { n: curadosAqui })}`
                         : "");
 
   /* ── v1.27.0 · Vista previa automática (Z.AI × Arena, fusionadas) ──
@@ -2217,21 +2219,21 @@ export default function ChatExperience() {
               >
                 <Sparkles className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">
-                  Síguenos para las últimas novedades de IA y del arena
+                  {t("Síguenos para las últimas novedades de IA y del arena")}
                 </span>
               </button>
               <div className="flex items-center">
                 <button
                   onClick={() => router.push("/novedades")}
                   className="rounded-lg p-1.5 hover:bg-accent"
-                  title="Novedades arena.ai"
+                  title={t("Novedades arena.ai")}
                 >
                   <Twitter className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={() => router.push("/empresas")}
                   className="rounded-lg p-1.5 hover:bg-accent"
-                  title="Soluciones empresariales"
+                  title={t("Soluciones empresariales")}
                 >
                   <Linkedin className="h-3.5 w-3.5" />
                 </button>
@@ -2259,9 +2261,9 @@ export default function ChatExperience() {
             <span className="font-display text-[30px] font-semibold">Todólogo</span>
           </div>
           <h1 className="mt-3 text-center font-display text-[44px] font-light leading-[1.08] tracking-tight sm:text-[52px]">
-            Experimenta la{" "}
+            {t("Experimenta la")}{" "}
             <span className="bg-highlight inline-block px-2 font-medium italic leading-[1.05]">
-              frontera
+              {t("frontera")}
             </span>
           </h1>
 
@@ -2269,14 +2271,14 @@ export default function ChatExperience() {
           <div className="mt-9 w-full">
             {mode === "agent" && (
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="text-[12.5px] text-muted-foreground">Misión:</span>
+                <span className="text-[12.5px] text-muted-foreground">{t("Misión:")}</span>
                 <select
                   value={agentType}
                   onChange={(e) => setAgentType(e.target.value)}
                   className="rounded-full border border-border bg-card px-3 py-1.5 text-[12.5px] outline-none"
                 >
-                  {AGENT_TYPES.map((t) => (
-                    <option key={t.id} value={t.id}>{t.label}</option>
+                  {AGENT_TYPES.map((tipo) => (
+                    <option key={tipo.id} value={tipo.id}>{t(tipo.label)}</option>
                   ))}
                 </select>
                 <select
@@ -2284,8 +2286,8 @@ export default function ChatExperience() {
                   onChange={(e) => setAgentAutonomy(e.target.value)}
                   className="rounded-full border border-border bg-card px-3 py-1.5 text-[12.5px] outline-none"
                 >
-                  {AGENT_AUTONOMY.map((t) => (
-                    <option key={t.id} value={t.id}>{t.label}</option>
+                  {AGENT_AUTONOMY.map((auto) => (
+                    <option key={auto.id} value={auto.id}>{t(auto.label)}</option>
                   ))}
                 </select>
                 <select
@@ -2293,8 +2295,8 @@ export default function ChatExperience() {
                   onChange={(e) => setAgentBudget(e.target.value)}
                   className="rounded-full border border-border bg-card px-3 py-1.5 text-[12.5px] outline-none"
                 >
-                  {AGENT_BUDGETS.map((t) => (
-                    <option key={t.id} value={t.id}>{t.label}</option>
+                  {AGENT_BUDGETS.map((b) => (
+                    <option key={b.id} value={b.id}>{t(b.label)}</option>
                   ))}
                 </select>
               </div>
@@ -2307,7 +2309,7 @@ export default function ChatExperience() {
                 <span className="flex min-w-0 items-center gap-2">
                   <Sparkles className="h-4 w-4 shrink-0" />
                   <span className="truncate">
-                    ¡NUEVO v1.4.0: archivos, imagen, vídeo, 3D y skills (/) en el chat!
+                    {t("¡NUEVO v1.4.0: archivos, imagen, vídeo, 3D y skills (/) en el chat!")}
                   </span>
                 </span>
                 <span className="flex shrink-0 items-center gap-1">
@@ -2315,12 +2317,12 @@ export default function ChatExperience() {
                     onClick={() => router.push("/novedades")}
                     className="rounded-lg bg-primary px-3 py-1.5 text-[12.5px] font-medium text-primary-foreground hover:bg-primary/90"
                   >
-                    Ver novedades
+                    {t("Ver novedades")}
                   </button>
                   <button
                     onClick={() => setPromoDismissed(true)}
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent"
-                    aria-label="Descartar"
+                    aria-label={t("Descartar")}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -2329,7 +2331,7 @@ export default function ChatExperience() {
             )}
 
             {/* Para empezar */}
-            <p className="mb-2.5 mt-6 text-[13.5px] text-muted-foreground">Para empezar</p>
+            <p className="mb-2.5 mt-6 text-[13.5px] text-muted-foreground">{t("Para empezar")}</p>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {STARTERS.map((s) => (
                 <button
@@ -2367,10 +2369,10 @@ export default function ChatExperience() {
                   <s.icon className="mt-0.5 h-[18px] w-[18px] shrink-0" />
                   <span>
                     <span className="block text-[13.5px] font-medium leading-tight">
-                      {s.title}
+                      {t(s.title)}
                     </span>
                     <span className="mt-0.5 block text-[12px] leading-snug text-muted-foreground">
-                      {s.sub}
+                      {t(s.sub)}
                     </span>
                   </span>
                 </button>
@@ -2546,14 +2548,14 @@ export default function ChatExperience() {
               {/* v1.19.0 — Modo Oráculo: predicción opcional antes del voto */}
               <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2">
                 <span className="text-[12px] font-medium text-foreground/80">
-                  🔮 Modo Oráculo — ¿quién ganará?
+                  {t("🔮 Modo Oráculo — ¿quién ganará?")}
                 </span>
                 <div className="flex items-center gap-1">
                   {(
                     [
                       ["A", "A"],
                       ["B", "B"],
-                      ["tie", "Empate"],
+                      ["tie", t("Empate")],
                     ] as const
                   ).map(([v, label]) => (
                     <button
@@ -2571,22 +2573,22 @@ export default function ChatExperience() {
                   ))}
                 </div>
                 {rachaOraculo > 0 && (
-                  <span className="ml-auto font-mono text-[11.5px] text-emerald-700" title="Aciertos consecutivos del Oráculo">
+                  <span className="ml-auto font-mono text-[11.5px] text-emerald-700" title={t("Aciertos consecutivos del Oráculo")}>
                     racha {rachaOraculo}🔥
                   </span>
                 )}
               </div>
               <div className="rounded-xl border border-border bg-card p-3">
                 <p className="mb-2.5 text-center text-[13px] text-muted-foreground">
-                  ¿Cuál responde mejor? Tu voto actualiza el ELO en vivo.
+                  {t("¿Cuál responde mejor? Tu voto actualiza el ELO en vivo.")}
                 </p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {(
                     [
-                      ["A", "A es mejor", CircleArrowLeft],
-                      ["B", "B es mejor", CircleArrowRight],
-                      ["tie", "Empate", Handshake],
-                      ["bad", "Ambos malos", ThumbsDown],
+                      ["A", t("A es mejor"), CircleArrowLeft],
+                      ["B", t("B es mejor"), CircleArrowRight],
+                      ["tie", t("Empate"), Handshake],
+                      ["bad", t("Ambos malos"), ThumbsDown],
                     ] as const
                   ).map(([w, label, Icon]) => (
                     <button
@@ -2600,13 +2602,13 @@ export default function ChatExperience() {
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
-                      {pendingVote === w ? "¿Confirmar?" : label}
+                      {pendingVote === w ? t("¿Confirmar?") : label}
                     </button>
                   ))}
                 </div>
                 {settings.confirmVote && pendingVote && (
                   <p className="mt-2 text-center text-[11.5px] text-muted-foreground">
-                    Pulsa de nuevo para confirmar tu voto (ajustable en Ajustes → Arena)
+                    {t("Pulsa de nuevo para confirmar tu voto (ajustable en Ajustes → Arena)")}
                   </p>
                 )}
               </div>
@@ -2621,10 +2623,10 @@ export default function ChatExperience() {
               )}
               <span className="font-medium">
                 {battle.winner === "tie"
-                  ? "Empate registrado"
+                  ? t("Empate registrado")
                   : battle.winner === "bad"
-                    ? "Gracias por el feedback"
-                    : `Ganador: ${(battle.winner === "A" ? mA : mB)?.name ?? "—"}`}
+                    ? t("Gracias por el feedback")
+                    : t("Ganador: {n}", { n: (battle.winner === "A" ? mA : mB)?.name ?? "—" })}
               </span>
               {typeof battle.swing === "number" && battle.swing !== 0 && (
                 <span className="ml-2 font-mono text-[12.5px] text-emerald-700">
@@ -2637,7 +2639,7 @@ export default function ChatExperience() {
                 className="ml-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[12.5px] font-medium hover:bg-accent"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                Nueva batalla
+                {t("Nueva batalla")}
               </button>
               {!isStaticDemo() && (
                 <>
@@ -2646,14 +2648,14 @@ export default function ChatExperience() {
                     className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[12.5px] font-medium hover:bg-accent"
                   >
                     <Link2 className="h-3.5 w-3.5" />
-                    Link de conversación
+                    {t("Link de conversación")}
                   </button>
                   <button
                     onClick={compartirDuelo}
                     className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[12.5px] font-medium hover:bg-accent"
                   >
                     <Share2 className="h-3.5 w-3.5" />
-                    Compartir replay
+                    {t("Compartir replay")}
                   </button>
                 </>
               )}
@@ -2838,6 +2840,7 @@ function ChatPanel({
   thinking: boolean;
   streaming?: boolean;
 }) {
+  const { t: trad } = useT();
   const [copied, setCopied] = useState(false);
   const { settings } = useSettings();
   const empty = turns.length === 0;
@@ -2887,7 +2890,7 @@ function ChatPanel({
                     <img
                       key={k}
                       src={u}
-                      alt={`Imagen adjunta ${k + 1}`}
+                      alt={trad("Imagen adjunta {n}", { n: k + 1 })}
                       className="h-14 w-14 rounded-lg border border-border object-cover"
                     />
                   ))}
@@ -2951,7 +2954,7 @@ function ChatPanel({
                     className="inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground"
                   >
                     {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    {copied ? "Copiado" : "Copiar"}
+                    {copied ? trad("Copiado") : trad("Copiar")}
                   </button>
                 )}
                 {settings.showTokens && (
@@ -2996,11 +2999,12 @@ const PIPELINE_STEPS = [
 ];
 
 function AgentPipeline({ step }: { step: number }) {
+  const { t } = useT();
   return (
     <div className="fade-up rounded-xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center gap-2 text-[13.5px] font-medium">
         <Waypoints className="h-4 w-4" />
-        El escuadrón está trabajando…
+        {t("El escuadrón está trabajando…")}
       </div>
       <div className="space-y-2">
         {PIPELINE_STEPS.map((s, i) => (
@@ -3018,7 +3022,7 @@ function AgentPipeline({ step }: { step: number }) {
             ) : (
               <span className="h-3.5 w-3.5 rounded-full border border-border" />
             )}
-            {s}
+            {s ? t(s) : s}
           </div>
         ))}
       </div>
@@ -3027,13 +3031,14 @@ function AgentPipeline({ step }: { step: number }) {
 }
 
 function AgentPlanView({ plan, generated }: { plan: AgentPlan; generated: boolean }) {
+  const { t } = useT();
   return (
     <div className="fade-up space-y-3">
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-[22px] font-semibold">{plan.mission}</h2>
           <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium">
-            {generated ? "Plan generado por IA" : "Plantilla de respaldo"} · {plan.totalEstimate}
+            {generated ? t("Plan generado por IA") : t("Plantilla de respaldo")} · {plan.totalEstimate}
           </span>
         </div>
         <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">
@@ -3042,7 +3047,7 @@ function AgentPlanView({ plan, generated }: { plan: AgentPlan; generated: boolea
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <PlanCard title="Equipo de agentes" icon={Bot}>
+        <PlanCard title={t("Equipo de agentes")} icon={Bot}>
           <div className="space-y-2">
             {plan.team.map((t) => (
               <div key={t.role} className="rounded-lg border border-border px-3 py-2">
@@ -3053,7 +3058,7 @@ function AgentPlanView({ plan, generated }: { plan: AgentPlan; generated: boolea
             ))}
           </div>
         </PlanCard>
-        <PlanCard title="Fases de ejecución" icon={Swords}>
+        <PlanCard title={t("Fases de ejecución")} icon={Swords}>
           <div className="space-y-2.5">
             {plan.phases.map((p, i) => (
               <div key={p.name} className="flex gap-2.5">
@@ -3144,10 +3149,10 @@ function PlanCard({
 }
 
 function HomeFooter() {
+  const { t } = useT();
   return (
     <p className="pb-4 text-center text-[11.5px] text-muted-foreground">
-      Entradas procesadas por IA de terceros; las respuestas pueden ser inexactas. Tus
-      conversaciones y votos entrenan el arena de todólogo.ai.
+      {t("Entradas procesadas por IA de terceros; las respuestas pueden ser inexactas. Tus conversaciones y votos entrenan el arena de todólogo.ai.")}
     </p>
   );
 }

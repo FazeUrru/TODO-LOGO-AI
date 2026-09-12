@@ -157,6 +157,242 @@ export const EN: Record<string, string> = {
   "Idioma de la interfaz": "Interface language",
   "Traduce el menú, la barra superior y los avisos del sistema. Las páginas se irán sumando.":
     "Translates the menu, top bar and system notices. More pages coming along.",
+
+  /* ── v1.30.0 Arena: tarjetas de arranque ── */
+  "Crea un juego": "Create a game",
+  "Arcade AAA jugable y autoevolutivo": "Playable, self-evolving AAA arcade",
+  "Genera una imagen": "Generate an image",
+  "Ilustración con IA en segundos": "AI illustration in seconds",
+  "Modelo 3D real": "Real 3D model",
+  "Gira y acerca un modelo interactivo": "Spin and zoom an interactive model",
+  "Construye un dashboard": "Build a dashboard",
+  "Datos en gráficos interactivos": "Data in interactive charts",
+  "Programa conmigo": "Code with me",
+  "Código listo para copiar": "Copy-ready code",
+  "Escribe un informe": "Write a report",
+  "Informe ejecutivo impecable": "Flawless executive report",
+  "App fullstack": "Fullstack app",
+  "Front + back + base de datos": "Frontend + backend + database",
+  "Misión de agentes": "Agent mission",
+  "Un proyecto complejo, sin excusas": "A complex project, no excuses",
+  "Para empezar": "To get started",
+
+  /* ── v1.30.0 Arena: misión de agentes ── */
+  "Misión:": "Mission:",
+  "Juego AAA": "AAA game",
+  "App web": "Web app",
+  "App móvil": "Mobile app",
+  "Plataforma SaaS": "SaaS platform",
+  "Motor 3D": "3D engine",
+  "Red social": "Social network",
+  "E-commerce": "E-commerce",
+  "IA empresarial": "Enterprise AI",
+  "L1 · Asistida": "L1 · Assisted",
+  "L2 · Supervisada": "L2 · Supervised",
+  "L3 · Total": "L3 · Full",
+  Ajustado: "Lean",
+  "Estándar": "Standard",
+  "Sin límite": "Unlimited",
+
+  /* ── v1.30.0 Arena: placeholders del composer ── */
+  "Describe tu misión: un juego AAA, una app, una web completa…":
+    "Describe your mission: a AAA game, an app, a complete website…",
+  "Elige una skill con / (imagen, video, codigo, resume…)":
+    "Pick a skill with / (image, video, code, resume…)",
+  "Describe la imagen que quieres generar…": "Describe the image you want to generate…",
+  "Describe la escena: ruedo un clip real (mp4 con audio) en 1-4 min…":
+    "Describe the scene: I'll shoot a real clip (mp4 with audio) in 1-4 min…",
+  "Escribe el texto y lo narraré con la voz interna que elijas…":
+    "Write the text and I'll narrate it with the inner voice you pick…",
+  "¿Qué modelo 3D quieres girar? (133 listos o uno a tu medida)":
+    "Which 3D model do you want to spin? (133 ready-made or one made to measure)",
+  "Pide código: funciones, componentes, consultas…": "Ask for code: functions, components, queries…",
+  "Describe tu juego: lo construyo jugable mientras escribo (canvas, música y evolución)…":
+    "Describe your game: I build it playable while I write (canvas, music and evolution)…",
+  "Pregunta algo actual: buscaré en internet y citaré fuentes…":
+    "Ask something current: I'll search the web and cite sources…",
+  "Hazme una pregunta difícil: razonaré a fondo…": "Ask me something hard: I'll reason it through…",
+  "Pregunta lo que quieras… usa / para skills": "Ask anything… use / for skills",
+  "Voz interna": "Inner voice",
+  "Voz interna del chat": "Chat inner voice",
+  "Escribe «/» + nombre o elige de la lista · Esc para cerrar":
+    "Type “/” + name or pick from the list · Esc to close",
+  "Enviar mensaje": "Send message",
+
+  /* ── v1.30.0 Arena: adjuntos y enlaces ── */
+  "Adjunto añadido": "Attachment added",
+  "{n} adjuntos añadidos": "{n} attachments added",
+  "La IA verá la(s) imagen(es) con el motor de visión (VLM).":
+    "The AI will see the image(s) through the vision engine (VLM).",
+  "El contenido legible se enviará al modelo junto a tu mensaje.":
+    "Readable content will be sent to the model with your message.",
+  "Se adjuntará como referencia junto a tu mensaje.":
+    "It will be attached as a reference with your message.",
+  "Vídeo enlazado": "Video linked",
+  "Enlace añadido": "Link added",
+  "El modelo recibirá la referencia en tu próximo mensaje.":
+    "The model will get the reference with your next message.",
+  "Enlace no válido": "Invalid link",
+  "Revisa la dirección: debe parecerse a ejemplo.com o https://…":
+    "Check the address: it should look like example.com or https://…",
+
+  /* ── v1.30.0 Arena: toasts y errores ── */
+  "El Modo Agente planifica misiones": "Agent Mode plans missions",
+  "Usa imagen, vídeo, 3D, web o código en Batalla, Lado a Lado o Directo.":
+    "Use image, video, 3D, web or code in Battle, Side by Side or Direct.",
+  "Cambia de modo": "Switch modes",
+  "Las skills con modo se usan en Batalla, Lado a Lado o Directo.":
+    "Skills with a mode run in Battle, Side by Side or Direct.",
+  "Sin conexión con la arena tras 50 intentos.": "No connection to the arena after 50 attempts.",
+  "La arena no pudo generar las respuestas.": "The arena couldn't generate the responses.",
+  "Error en la arena": "Arena error",
+  "Inténtalo de nuevo.": "Try again.",
+  "No se pudo generar la imagen.": "The image couldn't be generated.",
+  "Modo imagen": "Image mode",
+  "El rodaje no pudo iniciarse.": "The shoot couldn't start.",
+  "El motor descartó la toma. Prueba con otra escena.":
+    "The engine discarded the take. Try another scene.",
+  "No se pudo generar la locución.": "The voice-over couldn't be generated.",
+  "Modo voz": "Voice mode",
+  "Nueva conversación": "New conversation",
+
+  /* ── v1.30.0 Arena: banner promo ── */
+  "¡NUEVO v1.4.0: archivos, imagen, vídeo, 3D y skills (/) en el chat!":
+    "NEW v1.4.0: files, image, video, 3D and skills (/) in the chat!",
+  "Ver novedades": "See what's new",
+  Descartar: "Dismiss",
+  "Descartar banner": "Dismiss banner",
+
+  /* ── v1.30.0 Arena: batalla y voto ── */
+  "Los modelos compiten de forma anónima. Tu voto revela sus identidades y ajusta el ELO.":
+    "Models compete anonymously. Your vote reveals their identities and adjusts ELO.",
+  Empate: "Tie",
+  "A es mejor": "A is better",
+  "B es mejor": "B is better",
+  "Ambos malos": "Both are bad",
+  "¿Confirmar?": "Confirm?",
+  "¿Cuál responde mejor? Tu voto actualiza el ELO en vivo.":
+    "Which one answers better? Your vote updates ELO live.",
+  "Pulsa de nuevo para confirmar tu voto (ajustable en Ajustes → Arena)":
+    "Tap again to confirm your vote (adjustable in Settings → Arena)",
+  "Empate registrado": "Tie recorded",
+  "Gracias por el feedback": "Thanks for the feedback",
+  "Nueva batalla": "New battle",
+  "Link de conversación": "Conversation link",
+  "Compartir replay": "Share replay",
+  "Aciertos consecutivos del Oráculo": "Oracle's consecutive hits",
+
+  /* ── v1.30.0 Arena: skills, categorías y hints del dock ── */
+  "Ninguna skill coincide con «/{q}»": "No skill matches “/{q}”",
+  " · ¡nuevo!": " · new!",
+  General: "Overall",
+  Código: "Code",
+  Razonamiento: "Reasoning",
+  Escritura: "Writing",
+  Agente: "Agent",
+  Matemáticas: "Math",
+  "Datos y SQL": "Data & SQL",
+  Traducción: "Translation",
+  Educación: "Education",
+  Negocios: "Business",
+  "El Modo Juego AAA construye un juego jugable y autoevolutivo mientras escribe: lo ves nacer en el panel y se ejecuta solo al terminar.":
+    "AAA Game Mode builds a playable, self-evolving game while it writes: watch it be born in the panel and it runs by itself when done.",
+  "El modo imagen crea una ilustración con IA a partir de tu descripción.":
+    "Image mode creates an AI illustration from your description.",
+  "El modo vídeo rueda un clip REAL (mp4 con audio) con el motor interno de Todólogo: 1-4 min de revelado, directo en la conversación.":
+    "Video mode shoots a REAL clip (mp4 with audio) with Todólogo's internal engine: 1-4 min of developing, straight into the conversation.",
+  "El modo voz narra tu texto con las voces internas del chat: elige voz bajo el cuadro de texto y envía.":
+    "Voice mode narrates your text with the chat's inner voices: pick a voice below the text box and send.",
+  "El modo 3D construye un modelo interactivo: 133 ya hechos, personalizados con IA o tu propio .glb.":
+    "3D mode builds an interactive model: 133 ready-made, AI-customised or your own .glb.",
+  "El modo web busca en internet en tiempo real y responde citando sus fuentes.":
+    "Web mode searches the internet in real time and answers citing its sources.",
+  "El pensamiento profundo razona paso a paso antes de responder: tarda un poco más y gana precisión.":
+    "Deep thinking reasons step by step before answering: it takes a bit longer and gains precision.",
+  "El modo código responde con bloques completos, con cabecera y botón de copiar. El código se entrega tal cual: su uso es tu responsabilidad.":
+    "Code mode answers with complete blocks, with a header and copy button. Code is delivered as is: using it is your responsibility.",
+  "El escuadrón de agentes planifica y ejecuta sin excusas: juegos AAA, apps, webs y más.":
+    "The agent squad plans and executes without excuses: AAA games, apps, websites and more.",
+  "Las respuestas son generadas por IA y pueden contener errores; el código generado se usa bajo tu responsabilidad.":
+    "Responses are AI-generated and may contain errors; generated code is used at your own responsibility.",
+  "Stream Forever: {n} corte curado en este dispositivo.": "Stream Forever: {n} cured cut on this device.",
+  "Stream Forever: {n} cortes curados en este dispositivo.": "Stream Forever: {n} cured cuts on this device.",
+
+  /* ── v1.30.0 Arena: portada y paneles ── */
+  "Síguenos para las últimas novedades de IA y del arena":
+    "Follow us for the latest AI and arena news",
+  "Novedades arena.ai": "arena.ai news",
+  "Soluciones empresariales": "Business solutions",
+  "Experimenta la": "Experience the",
+  frontera: "frontier",
+  Copiar: "Copy",
+  Copiado: "Copied",
+  "El escuadrón está trabajando…": "The agent squad is working…",
+  "Analizando la misión": "Analysing the mission",
+  "Seleccionando el escuadrón": "Selecting the squad",
+  "Diseñando la arquitectura": "Designing the architecture",
+  "Asignando fases y sprints": "Assigning phases and sprints",
+  "Evaluando riesgos": "Assessing risks",
+  "Sellando criterios de éxito": "Sealing success criteria",
+  "Plan generado por IA": "AI-generated plan",
+  "Plantilla de respaldo": "Fallback template",
+  "Equipo de agentes": "Agent team",
+  "Fases de ejecución": "Execution phases",
+  "Imagen adjunta {n}": "Attached image {n}",
+  "Entradas procesadas por IA de terceros; las respuestas pueden ser inexactas. Tus conversaciones y votos entrenan el arena de todólogo.ai.":
+    "Inputs processed by third-party AI; responses may be inaccurate. Your conversations and votes train the todólogo.ai arena.",
+
+  /* ── v1.30.0 Salón de la Fama y Muro de replays ── */
+  "Aún no hay campeones: la primera copa escribirá la historia.":
+    "No champions yet: the first cup will write history.",
+  "Los últimos campeones de la Copa Todólogo ({n} en el registro)":
+    "The latest Todólogo Cup champions ({n} on record)",
+  "Ver completo": "See all",
+  "Los duelos y copas que la comunidad más ha difundido, con identidades reveladas y veredicto incluido. Comparte el tuyo con el botón":
+    "The duels and cups the community has shared the most, with revealed identities and verdict included. Share yours with the button",
+  " tras votar: cada difusión suma aquí y alimenta el ranking de los más compartidos.":
+    " after voting: every share adds up here and feeds the most-shared ranking.",
+  "{n} replays": "{n} replays",
+  compartidos: "shared",
+  vistas: "views",
+  "El muro no cargó esta vez": "The wall didn't load this time",
+  "El muro está vacío… por ahora": "The wall is empty… for now",
+  "Gana una batalla o una copa y estrena el primer replay compartido.":
+    "Win a battle or a cup and premiere the first shared replay.",
+  "Copa de {n}": "Cup · {n}",
+  Duelo: "Duel",
+  "campeón": "champion",
+  "Ver replay": "Watch replay",
+  "Los replays se publican tras votar: identidades reveladas, ELO real y veredicto permanente.":
+    "Replays are published after voting: revealed identities, real ELO and a permanent verdict.",
+
+  /* ── v1.30.0 Leaderboard ── */
+  Arena: "Arena",
+  "votos registrados": "votes recorded",
+  "{n} modelos": "{n} models",
+  "{a} empató con {b}": "{a} tied with {b}",
+  "{a} venció a {b}": "{a} beat {b}",
+  "Mostrar filtros": "Show filters",
+  "Filtrar modelos…": "Filter models…",
+  Modelo: "Model",
+  "Puntuación arena": "Arena score",
+  "Distribución": "Distribution",
+  Votos: "Votes",
+  Todas: "All",
+  Propietaria: "Proprietary",
+
+  /* ── v1.30.0 Conectores (MCP) y Streamdog ── */
+  "75 servidores": "75 servers",
+  "Conecta todólogo con tus herramientas: archivos, repos, bases de datos, calendarios, diseño, música… Copia el comando en tu cliente MCP (Claude Desktop, Cursor, VS Code…) y el modelo podrá usarlos, siempre con tu permiso. Lista honesta: solo servidores reales del ecosistema.":
+    "Connect todólogo to your tools: files, repos, databases, calendars, design, music… Copy the command into your MCP client (Claude Desktop, Cursor, VS Code…) and the model will be able to use them, always with your permission. Honest list: only real ecosystem servers.",
+  "Buscar MCP: github, postgres, figma…": "Search MCP: github, postgres, figma…",
+  "Copiar comando de instalación": "Copy install command",
+  "Configúralo en tu cliente MCP (Claude Desktop, Cursor, VS Code…)":
+    "Set it up in your MCP client (Claude Desktop, Cursor, VS Code…)",
+  "Ningún MCP coincide con «{q}». Prueba con otra búsqueda.":
+    "No MCP matches “{q}”. Try another search.",
+  "Tu parrilla deportiva con IA — se instala como app nativa y todo lo que scrapea, lo traga sin explotar.":
+    "Your AI sports grid — installs as a native app and everything it scrapes, it swallows without crashing.",
 };
 
 /** Variables de interpolación: {clave} dentro del texto. */

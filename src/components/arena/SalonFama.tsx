@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Crown, Medal, Trophy } from "lucide-react";
 import ProviderLogo from "./ProviderLogo";
 import { getModel } from "@/lib/models-data";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,15 +22,16 @@ interface CampeonRow {
   at: string;
 }
 
-function fechaCorta(iso: string): string {
+function fechaCorta(iso: string, idioma: string): string {
   try {
-    return new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+    return new Date(iso).toLocaleDateString(idioma === "en" ? "en-US" : "es-ES", { day: "numeric", month: "short" });
   } catch {
     return "";
   }
 }
 
 export default function SalonFama({ destacadoId }: { destacadoId?: string | null }) {
+  const { t, idioma } = useT();
   const [filas, setFilas] = useState<CampeonRow[] | null>(null);
 
   useEffect(() => {
@@ -57,18 +59,18 @@ export default function SalonFama({ destacadoId }: { destacadoId?: string | null
           <Trophy className="h-4 w-4" />
         </span>
         <div className="min-w-0">
-          <p className="text-[13.5px] font-medium">Salón de la Fama</p>
+          <p className="text-[13.5px] font-medium">{t("Salón de la Fama")}</p>
           <p className="text-[11.5px] text-muted-foreground">
             {vacio
-              ? "Aún no hay campeones: la primera copa escribirá la historia."
-              : `Los últimos campeones de la Copa Todólogo (${total} en el registro)`}
+              ? t("Aún no hay campeones: la primera copa escribirá la historia.")
+              : t("Los últimos campeones de la Copa Todólogo ({n} en el registro)", { n: total })}
           </p>
         </div>
         <a
           href="/salon-de-la-fama"
           className="ml-auto shrink-0 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
-          Ver completo
+          {t("Ver completo")}
         </a>
       </div>
 
@@ -99,7 +101,7 @@ export default function SalonFama({ destacadoId }: { destacadoId?: string | null
                   {f.size}
                 </span>
                 <span className="shrink-0 text-[11px] text-muted-foreground">
-                  {fechaCorta(f.at)}
+                  {fechaCorta(f.at, idioma)}
                 </span>
               </li>
             );

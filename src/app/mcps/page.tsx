@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Plug, Search, Copy, Check, Server } from "lucide-react";
 import { MCPS, MCP_CATS } from "@/lib/mcps-data";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /**
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
  * no es estable se muestra «configúralo en tu cliente MCP» (Carta de Verdad).
  */
 export default function McpsPage() {
+  const { t } = useT();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("Todas");
   const [copied, setCopied] = useState<string | null>(null);
@@ -35,11 +37,11 @@ export default function McpsPage() {
       <div className="mx-auto max-w-[900px] pb-12">
         <div className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
           <Plug className="h-4 w-4" />
-          Conectores
+          {t("Conectores")}
         </div>
         <h1 className="mt-3 flex flex-wrap items-center gap-3 font-display text-[34px] font-light tracking-tight">
           <span>
-            75 servidores{" "}
+            {t("75 servidores")}{" "}
             <span className="bg-highlight inline-block px-1.5 font-medium italic">MCP</span>
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-0.5 text-[12px] font-sans font-medium text-foreground/70">
@@ -47,10 +49,7 @@ export default function McpsPage() {
           </span>
         </h1>
         <p className="mt-2 max-w-[640px] text-[14px] leading-relaxed text-foreground/85">
-          Conecta todólogo con tus herramientas: archivos, repos, bases de datos,
-          calendarios, diseño, música… Copia el comando en tu cliente MCP (Claude
-          Desktop, Cursor, VS Code…) y el modelo podrá usarlos, siempre con tu
-          permiso. Lista honesta: solo servidores reales del ecosistema.
+          {t("Conecta todólogo con tus herramientas: archivos, repos, bases de datos, calendarios, diseño, música… Copia el comando en tu cliente MCP (Claude Desktop, Cursor, VS Code…) y el modelo podrá usarlos, siempre con tu permiso. Lista honesta: solo servidores reales del ecosistema.")}
         </p>
 
         {/* Búsqueda + categorías */}
@@ -59,7 +58,7 @@ export default function McpsPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar MCP: github, postgres, figma…"
+            placeholder={t("Buscar MCP: github, postgres, figma…")}
             className="w-full bg-transparent text-[13.5px] outline-none"
           />
           <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-foreground/70">
@@ -76,7 +75,7 @@ export default function McpsPage() {
                 cat === c ? "border-foreground bg-foreground text-background font-medium" : "border-border bg-card hover:bg-accent"
               )}
             >
-              {c}
+              {t(c)}
             </button>
           ))}
         </div>
@@ -95,7 +94,7 @@ export default function McpsPage() {
               {m.cmd ? (
                 <button
                   onClick={() => copiar(m.id, m.cmd!)}
-                  title="Copiar comando de instalación"
+                  title={t("Copiar comando de instalación")}
                   className="mt-2 flex w-full items-center gap-2 rounded-lg border border-border bg-background px-2 py-1.5 text-left hover:bg-accent"
                 >
                   <code className="flex-1 truncate font-mono text-[11px] text-foreground/80">{m.cmd}</code>
@@ -107,7 +106,7 @@ export default function McpsPage() {
                 </button>
               ) : (
                 <p className="mt-2 rounded-lg border border-dashed border-border px-2 py-1.5 text-[11px] text-muted-foreground">
-                  Configúralo en tu cliente MCP (Claude Desktop, Cursor, VS Code…)
+                  {t("Configúralo en tu cliente MCP (Claude Desktop, Cursor, VS Code…)")}
                 </p>
               )}
             </div>
@@ -116,7 +115,7 @@ export default function McpsPage() {
 
         {list.length === 0 && (
           <p className="mt-8 text-center text-[13px] text-muted-foreground">
-            Ningún MCP coincide con «{q}». Prueba con otra búsqueda.
+            {t("Ningún MCP coincide con «{q}». Prueba con otra búsqueda.", { q })}
           </p>
         )}
       </div>

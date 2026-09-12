@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.30.0",
+    fecha: "12 sept 2026",
+    hora: "10:20",
+    titulo: "i18n fase 2: la arena, el leaderboard, el muro y los conectores ya hablan inglés",
+    tldr:
+      "La traducción salta del shell a las secciones: la arena completa (tarjetas, composer, voto con confirmación, barra de Oráculo, adjuntos y errores), el leaderboard con sus filtros, el muro de replays, el salón de la fama, el catálogo de 75 MCPs y Streamdog se traducen al inglés al vuelo — y las fechas y números ya se formatean al idioma elegido.",
+    diffDesde: "1.29.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.29.0",
     fecha: "12 sept 2026",
     hora: "09:35",

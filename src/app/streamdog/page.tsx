@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bone, CalendarRange, FlaskConical, LockKeyhole, Sparkles } from "lucide-react";
 import { asset } from "@/lib/asset-path";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import Parrilla from "@/components/streamdog/Parrilla";
 import PanelSportia from "@/components/streamdog/PanelSportia";
@@ -19,6 +20,7 @@ const PESTAÑAS: { id: Pestaña; nombre: string; icono: typeof Bone; pista: stri
 ];
 
 export default function StreamDogPage() {
+  const { t } = useT();
   const [pestaña, setPestaña] = useState<Pestaña>("parrilla");
 
   return (
@@ -36,7 +38,7 @@ export default function StreamDogPage() {
               Stream<span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text font-medium text-transparent">Dog</span>
             </h1>
             <p className="mt-0.5 text-[13.5px] leading-relaxed text-slate-400">
-              Tu parrilla deportiva con IA — se instala como app nativa y todo lo que scrapea, lo traga sin explotar.
+              {t("Tu parrilla deportiva con IA — se instala como app nativa y todo lo que scrapea, lo traga sin explotar.")}
             </p>
           </div>
           <span className="ml-auto hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[11.5px] font-medium text-emerald-300 sm:flex">
