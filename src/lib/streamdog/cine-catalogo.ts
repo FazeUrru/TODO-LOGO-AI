@@ -21,6 +21,11 @@
  *  18. Cine clásico libre        → Archive feature_films
  *  19. Explorar el archivo libre → Commons búsqueda abierta
  *
+ * Y desde v1.37.0, el TOP 100: la clasificación definitiva con 6
+ * filtros (general, famosos, animación, recientes, populares y
+ * ambigüedad) — el pool se resuelve UNA VEZ y `cine-top100.ts` manda
+ * en el orden. El cron lo calienta entero cada hora.
+ *
  * La fila que falle no tira el resto: degradación elegante de la casa.
  */
 
@@ -65,6 +70,14 @@ import {
   type RespuestaArchive,
   type RespuestaCommons,
 } from "./cine-servidor";
+import {
+  clasificarTop100,
+  claveTitulo,
+  filtroTop100Valido,
+  titulosTop100Tvmaze,
+  type FiltroTop100,
+  type PuestoTop100,
+} from "./cine-top100";
 
 /* ══════════════════ TIPOS Y TTL ══════════════════ */
 
@@ -85,6 +98,8 @@ export interface RespuestaCatalogo {
 export const TTL_INICIO_MS = 10 * 60_000;
 export const TTL_LISTA_MS = 20 * 60_000;
 export const TTL_BUSQUEDA_MS = 5 * 60_000;
+export const TTL_TOP100_MS = 30 * 60_000;
+export const TTL_POOL_TOP100_MS = 60 * 60_000;
 
 /** Clave canónica de caché para una petición del catálogo. */
 export function claveCine(vista: string, q: string, pagina: number): string {
@@ -213,6 +228,75 @@ export async function filaTops(
   const items = conservarOrden ? sinDuplicados : ordenarItems(sinDuplicados);
   if (items.length === 0) return null;
   return { claveI18n, items: items.slice(0, tope) };
+}
+
+/* ══════════════════ TOP 100 (v1.37.0) ══════════════════ */
+
+export interface RespuestaTop100 {
+  filtro: FiltroTop100;
+  puestos: PuestoTop100[];
+  degradada: boolean;
+  fuentes: Record<string, InfoFuente>;
+}
+
+/**
+ * Resuelve el pool del Top 100 UNA VEZ y lo comparte entre los 6
+ * filtros: las series de las listas de plataformas contra TVMaze (una
+ * búsqueda por título, la primera coincidencia — la correcta: TVMaze
+ * ordena por peso) y los éxitos eternos contra Archive en UNA consulta
+ * (misma disciplina legal que la fila de famosos). Cacheado 60 min:
+ * el cron lo cocina caliente y los 6 filtros van en golpe seco.
+ */
+async function resolverPoolTop100(): Promise<{ fichas: Map<string, ItemCine>; degradada: boolean }> {
+  const golpe = cacheObtener<{ fichas: [string, ItemCine][]; degradada: boolean }>("top100:pool");
+  if (golpe) return { fichas: new Map(golpe.fichas), degradada: golpe.degradada };
+
+  const [seriesTvmaze, archivo] = await Promise.all([
+    Promise.all(
+      titulosTop100Tvmaze().map((q) =>
+        pedirFuente<unknown[]>("tvmaze:top100", tvmazeBuscarUrl(q), TOPE_LISTA_MS).then((r) =>
+          Array.isArray(r) && r.length > 0 ? normalizarTvmazeSearch(r).slice(0, 1) : []
+        )
+      )
+    ),
+    pedirFuente<RespuestaArchive>("archive:famosos", archiveFamososUrl(EXITOSOS_MUNDIALES, EXITOSOS_MUNDIALES.length), TOPE_LISTA_MS),
+  ]);
+
+  const fichas = new Map<string, ItemCine>();
+  for (const item of seriesTvmaze.flat()) {
+    const clave = claveTitulo(item.titulo);
+    if (clave && !fichas.has(clave)) fichas.set(clave, item);
+  }
+  for (const item of archiveDe(archivo)) {
+    const clave = claveTitulo(item.titulo);
+    if (clave && !fichas.has(clave)) fichas.set(clave, item);
+  }
+
+  const degradada = fichas.size === 0 || archivo === null;
+  cacheGuardar("top100:pool", { fichas: [...fichas.entries()], degradada }, TTL_POOL_TOP100_MS);
+  return { fichas, degradada };
+}
+
+/**
+ * El TOP 100 de un filtro (v1.37.0): pool resuelto + ranking puro de
+ * cine-top100.ts (el orden lo manda la lista, no la red). Resultado
+ * cacheado 30 min por filtro; filtro inválido cae a «general».
+ */
+export async function top100(filtroCrudo: string | null): Promise<RespuestaTop100> {
+  const filtro = filtroTop100Valido(filtroCrudo);
+  const clave = `top100:${filtro}`;
+  const golpe = cacheObtener<RespuestaTop100>(clave);
+  if (golpe) return golpe;
+
+  const { fichas, degradada } = await resolverPoolTop100();
+  const respuesta: RespuestaTop100 = {
+    filtro,
+    puestos: clasificarTop100(fichas, filtro),
+    degradada,
+    fuentes: estadosFuentes(),
+  };
+  cacheGuardar(clave, respuesta, TTL_TOP100_MS);
+  return respuesta;
 }
 
 /** Catálogo por vista: inicio (filas), películas y series (listas paginadas). */

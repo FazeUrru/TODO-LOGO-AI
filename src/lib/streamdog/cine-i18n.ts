@@ -146,6 +146,24 @@ export const CLAVES_CINE_UI = [
   "Legibilidad y retirada",
   "Todo es legible a la primera: cada ficha nombra su fuente, cada error se dice a la cara y el estado del catálogo se publica, no se esconde. Si eres titular de derechos y crees que algo no debería estar aquí, escríbenos: lo retiramos de inmediato. Verificado y limpio es como queremos seguir siendo la casa del contenido libre.",
   "Un pacto duradero: este texto vive en cada versión de StreamDog y evoluciona con ella.",
+  /* Top 100 (v1.37.0): la clasificación con 6 filtros */
+  "Top 100",
+  "La clasificación definitiva: series, películas y documentales del 1 al 100, con ranking real de las fuentes.",
+  "Filtros del Top 100",
+  "General",
+  "Famosos",
+  "Animación (Disney)",
+  "Recientes",
+  "Populares",
+  "Ambigüedad",
+  "El ranking global: lo mejor de cada plataforma y del archivo público, del 1 al 100.",
+  "Los que todo el mundo conoce: éxitos eternos del dominio público y las series que marcaron época en Netflix.",
+  "Dibujos y anime para maratón: de los clásicos de Disney a Attack on Titan, sin parar.",
+  "Los estrenos de los que habla todo el mundo ahora mismo, del más nuevo al imprescindible.",
+  "El consenso de las listas: los títulos que suman más puestos altos en todas las plataformas.",
+  "Mezcla sorpresa sin reglas: series, películas y documentales barajados — siempre igual en tu dispositivo, distinto en cada versión.",
+  "Puesto",
+  "La clasificación está vacía: las fuentes no respondieron. Prueba otro filtro o reintenta.",
   "Español",
   "English",
   "Deutsch",
@@ -256,6 +274,32 @@ export const DICCIONARIOS_CINE: Record<IdiomaCine, Record<string, string>> = {
     "Animación para maratón": "Animation for a binge",
     "Basadas en hechos reales": "Based on true events",
     "Lo más reciente": "The latest hits",
+    /* Top 100 (v1.37.0) */
+    "Top 100": "Top 100",
+    "La clasificación definitiva: series, películas y documentales del 1 al 100, con ranking real de las fuentes.":
+      "The definitive ranking: series, movies and documentaries from 1 to 100, with real rankings from the sources.",
+    "Filtros del Top 100": "Top 100 filters",
+    General: "General",
+    Famosos: "Famous",
+    "Animación (Disney)": "Animation (Disney)",
+    Recientes: "Recent",
+    Populares: "Popular",
+    "Ambigüedad": "Ambiguity",
+    "El ranking global: lo mejor de cada plataforma y del archivo público, del 1 al 100.":
+      "The global ranking: the best of every platform and the public archive, from 1 to 100.",
+    "Los que todo el mundo conoce: éxitos eternos del dominio público y las series que marcaron época en Netflix.":
+      "The ones everyone knows: eternal public-domain hits and the series that defined an era on Netflix.",
+    "Dibujos y anime para maratón: de los clásicos de Disney a Attack on Titan, sin parar.":
+      "Cartoons and anime for a marathon: from the Disney classics to Attack on Titan, non-stop.",
+    "Los estrenos de los que habla todo el mundo ahora mismo, del más nuevo al imprescindible.":
+      "The releases everyone is talking about right now, from the newest to the essential.",
+    "El consenso de las listas: los títulos que suman más puestos altos en todas las plataformas.":
+      "The consensus of the lists: the titles that add up the most top spots across every platform.",
+    "Mezcla sorpresa sin reglas: series, películas y documentales barajados — siempre igual en tu dispositivo, distinto en cada versión.":
+      "Surprise mix with no rules: series, movies and documentaries shuffled — always the same on your device, different with every version.",
+    Puesto: "Rank",
+    "La clasificación está vacía: las fuentes no respondieron. Prueba otro filtro o reintenta.":
+      "The ranking is empty: the sources didn't respond. Try another filter or retry.",
     "Fusionado con el Arena": "Fused with the Arena",
     Independiente: "Independent",
     "Ir al Arena": "Go to the Arena",
@@ -396,6 +440,32 @@ export const DICCIONARIOS_CINE: Record<IdiomaCine, Record<string, string>> = {
     "Animación para maratón": "Animation für den Marathon",
     "Basadas en hechos reales": "Nach wahren Ereignissen",
     "Lo más reciente": "Das Neueste",
+    /* Top 100 (v1.37.0) */
+    "Top 100": "Top 100",
+    "La clasificación definitiva: series, películas y documentales del 1 al 100, con ranking real de las fuentes.":
+      "Die endgültige Rangliste: Serien, Filme und Dokumentationen von 1 bis 100, mit echten Rankings der Quellen.",
+    "Filtros del Top 100": "Top-100-Filter",
+    General: "Allgemein",
+    Famosos: "Berühmte",
+    "Animación (Disney)": "Animation (Disney)",
+    Recientes: "Neu",
+    Populares: "Beliebt",
+    "Ambigüedad": "Überraschung",
+    "El ranking global: lo mejor de cada plataforma y del archivo público, del 1 al 100.":
+      "Die globale Rangliste: das Beste jeder Plattform und des öffentlichen Archivs, von 1 bis 100.",
+    "Los que todo el mundo conoce: éxitos eternos del dominio público y las series que marcaron época en Netflix.":
+      "Die alle kennen: ewige Public-Domain-Hits und die Serien, die bei Netflix eine Ära prägten.",
+    "Dibujos y anime para maratón: de los clásicos de Disney a Attack on Titan, sin parar.":
+      "Zeichentrick und Anime für den Marathon: von den Disney-Klassikern bis Attack on Titan, ohne Pause.",
+    "Los estrenos de los que habla todo el mundo ahora mismo, del más nuevo al imprescindible.":
+      "Die Starts, über die gerade alle reden — vom neuesten bis zum Muss.",
+    "El consenso de las listas: los títulos que suman más puestos altos en todas las plataformas.":
+      "Der Konsens der Listen: die Titel mit den meisten Spitzenplätzen auf allen Plattformen.",
+    "Mezcla sorpresa sin reglas: series, películas y documentales barajados — siempre igual en tu dispositivo, distinto en cada versión.":
+      "Überraschungsmix ohne Regeln: Serien, Filme und Dokumentationen gemischt — auf deinem Gerät immer gleich, mit jeder Version anders.",
+    Puesto: "Platz",
+    "La clasificación está vacía: las fuentes no respondieron. Prueba otro filtro o reintenta.":
+      "Die Rangliste ist leer: die Quellen haben nicht geantwortert. Probiere einen anderen Filter oder versuch es erneut.",
     "Fusionado con el Arena": "Mit dem Arena verschmolzen",
     Independiente: "Unabhängig",
     "Ir al Arena": "Zum Arena",
@@ -536,6 +606,32 @@ export const DICCIONARIOS_CINE: Record<IdiomaCine, Record<string, string>> = {
     "Animación para maratón": "Animation à dévorer",
     "Basadas en hechos reales": "Inspirées de faits réels",
     "Lo más reciente": "Les plus récentes",
+    /* Top 100 (v1.37.0) */
+    "Top 100": "Top 100",
+    "La clasificación definitiva: series, películas y documentales del 1 al 100, con ranking real de las fuentes.":
+      "Le classement définitif : séries, films et documentaires de 1 à 100, avec les vrais classements des sources.",
+    "Filtros del Top 100": "Filtres du Top 100",
+    General: "Général",
+    Famosos: "Célèbres",
+    "Animación (Disney)": "Animation (Disney)",
+    Recientes: "Récents",
+    Populares: "Populaires",
+    "Ambigüedad": "Ambiguïté",
+    "El ranking global: lo mejor de cada plataforma y del archivo público, del 1 al 100.":
+      "Le classement mondial : le meilleur de chaque plateforme et des archives publiques, de 1 à 100.",
+    "Los que todo el mundo conoce: éxitos eternos del dominio público y las series que marcaron época en Netflix.":
+      "Ceux que tout le monde connaît : succès éternels du domaine public et séries qui ont marqué une époque sur Netflix.",
+    "Dibujos y anime para maratón: de los clásicos de Disney a Attack on Titan, sin parar.":
+      "Dessins animés et animes pour le marathon : des classiques Disney à Attack on Titan, sans s'arrêter.",
+    "Los estrenos de los que habla todo el mundo ahora mismo, del más nuevo al imprescindible.":
+      "Les sorties dont tout le monde parle en ce moment, de la plus récente à l'indispensable.",
+    "El consenso de las listas: los títulos que suman más puestos altos en todas las plataformas.":
+      "Le consensus des listes : les titres qui cumulent le plus de premières places sur toutes les plateformes.",
+    "Mezcla sorpresa sin reglas: series, películas y documentales barajados — siempre igual en tu dispositivo, distinto en cada versión.":
+      "Mélange surprise sans règles : séries, films et documentaires brassés — toujours pareil sur ton appareil, différent à chaque version.",
+    Puesto: "Place",
+    "La clasificación está vacía: las fuentes no respondieron. Prueba otro filtro o reintenta.":
+      "Le classement est vide : les sources n'ont pas répondu. Essaie un autre filtre ou réessaie.",
     "Fusionado con el Arena": "Fusionné avec l'Arena",
     Independiente: "Indépendant",
     "Ir al Arena": "Aller à l'Arena",

@@ -37,6 +37,17 @@ export interface VersionMeta {
 /** Orden estrictamente descendente: la más nueva primero. */
 export const VERSIONS: VersionMeta[] = [
   {
+    version: "1.37.0",
+    fecha: "12 sept 2026",
+    hora: "14:40",
+    titulo: "StreamDog Top 100: la clasificación definitiva con 6 filtros (general, famosos, animación Disney, recientes, populares y ambigüedad)",
+    tldr:
+      "StreamDog Cine estrena su propio TOP 100: series, películas y documentales rankeados del 1 al 100 con medallas de oro, plata y bronce, y SEIS filtros con chips premium — general (el ranking global), famosos (éxitos eternos + Netflix + presencia multi-plataforma), animación (Disney) (anime y clásicos Disney), recientes, populares (el consenso real entre listas) y ambigüedad (mezcla sorpresa determinista). El pool se resuelve una vez contra TVMaze y Archive, el cron lo calienta entero cada hora y el ranking lo manda la pura lógica de cine-top100.ts — siempre legal, siempre con «Ver en el origen».",
+    diffDesde: "1.36.0",
+    hash: null,
+    kinds: ["nuevo", "mejora"],
+  },
+  {
     version: "1.36.0",
     fecha: "12 sept 2026",
     hora: "13:56",

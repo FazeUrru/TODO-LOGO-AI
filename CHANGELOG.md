@@ -9,6 +9,23 @@
 >
 > 🧩 **Huecos de numeración**: no existen v1.1.x ni v1.3.x — eran iteraciones internas fusionadas dentro de la v1.2.0 y la v1.4.0 sin llegar a publicarse.
 
+## [1.37.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.36.0...v1.37.0) · 12 sept 2026, 14:40 — *StreamDog Top 100: la clasificación definitiva con 6 filtros — general, famosos, animación (Disney), recientes, populares y ambigüedad*
+
+> 💡 **En una frase:** StreamDog Cine estrena su **TOP 100** propio: series, películas y documentales rankeados **del 1 al 100** con **medallas de oro, plata y bronce** y **seis filtros premium** — «General» (el ranking global, los nº 1 de cada lista delante), «Famosos» (éxitos eternos del dominio público + Netflix + presencia multi-plataforma), «Animación (Disney)» (anime para maratón + las míticas de Disney), «Recientes», «Populares» (el consenso real: más puestos altos en más listas) y «Ambigüedad» (mezcla sorpresa determinista que alterna series, películas, documentales y anime sin reglas aparentes).
+
+### Añadido
+- **Motor puro `cine-top100.ts`** 🏆: las 10 listas rankeadas (Netflix, HBO Max top 50, Prime Video, Apple TV+, Filmin, Disney+, animación, hechos reales, recientes y los éxitos eternos «Mundiales») alimentan un mapa de apariciones con **mejor puesto y puntuación de consenso** (Σ (N − puesto)/N). `ordenFiltro()` calcula los 6 rankings SIN red y `clasificarTop100()` los convierte en puestos 1..100 sobre las fichas resueltas — el título que la fuente no encuentre cae sin ruido. `claveTitulo()` deduplica entre listas (Élite = elite, D.O.A. = doa) y `ANIMADAS_DISNEY` rescata las animadas míticas de la fila Disney+ (The Simpsons, Gravity Falls, Phineas and Ferb, Bluey, X-Men '97).
+- **Filtro «Ambigüedad»** 🎲: `mezclarAmbigua()` baraja el pool entero en **round-robin determinista por cubos** (animación → hechos reales → recientes → películas → series): nunca sabes qué viene después — una serie, luego un clásico, luego anime — pero el orden es EL MISMO en todos los dispositivos y solo cambia con cada versión de las listas. Cero aleatoriedad, cero sorpresas rotas.
+- **Endpoint `?vista=top100&filtro=X`** en `/api/streamdog/cine`: el pool (~146 series por TVMaze + 30 éxitos por Archive en una consulta) se resuelve **UNA VEZ** y se comparte entre los 6 filtros; resultado cacheado 30 min por filtro (pool: 60 min) y filtro inválido cae a «general». El **cron empresarial** lo calienta entero cada hora (los 6 filtros salen del mismo pool en golpe seco).
+- **Vista «Top 100» en la UI** (quinta pestaña del módulo Cine): cabecera con trofeo, chips de filtro con gradiente e icono propios (Trophy/Flame/Sparkles/Clock/TrendingUp/Shuffle), descripción honesta de cada filtro bajo los chips, y **TarjetaContenido con insignia de puesto** — medalla dorada, plateada y bronce para el top 3, chip numerado para el resto — y las listas donde aparece cada título («Netflix · HBO Max · Mundiales») bajo la ficha.
+
+### Mejorado
+- **i18n ×4**: 18 claves nuevas en es/en/de/fr («Top 100», subtítulo, los 6 filtros, las 6 descripciones, «Puesto», estado vacío y «Filtros del Top 100»), con test de completitud.
+- **Cron**: informe de ejecución con las 6 entradas `top100:*` en `vistas`, items contados y degradación agregada.
+
+### Regresión
+- `tests/v1370.test.ts`: los 6 rankings puros sin red (puestos consecutivos, El Soprano nº 1 del general, famosos solo con Mundiales/Netflix/multi-lista, animación abre con Attack on Titan y no contiene The Wire, recientes conserva su orden de 12 y enlaza con The Sopranos, populares con puntuación monótona, ambigüedad determinista con sus 5 primeros puestos en 5 cubos distintos), degradación (fichas vacías → sin puestos), i18n ×4, integración (ruta, cron, Cine.tsx, TarjetaContenido y Top100.tsx) y tríada 1.37.0 con README y service worker al día.
+
 ## [1.36.0](https://github.com/FazeUrru/TODO-LOGO-AI/compare/v1.35.0...v1.36.0) · 12 sept 2026, 13:56 — *StreamDog Tops: Netflix famosas, HBO Max top 50, Prime Video, Apple TV+, Filmin y tops temáticos — todas las plataformas, siempre legales*
 
 > 💡 **En una frase:** el inicio de StreamDog se convierte en la parrilla de TODAS las plataformas: **«Lo mejor de Netflix»** (Stranger Things, La casa de papel, Dark, Wednesday…), el **top 50 completo de HBO Max** (del Soprano al Somebody Somewhere), **Prime Video**, **Apple TV+**, **Filmin** y tres tops temáticos — **animación para maratón**, **basadas en hechos reales** y **lo más reciente** — todo como fichas legales de TVMaze con «Ver en el origen», cero vídeo pirata, y con el orden de cada lista conservado como RANKING real.

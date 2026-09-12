@@ -19,6 +19,8 @@ interface Props {
   enMiLista: boolean;
   /** 0..100 o null — dibuja la barra roja de «lo dejaste por aquí». */
   progresoPct?: number | null;
+  /** Puesto en el Top 100 (v1.37.0): medalla 1-3, chip numerado el resto. */
+  puesto?: number;
   onAbrir: (item: ItemCine) => void;
   onMiLista: (item: ItemCine) => void;
 }
@@ -29,13 +31,33 @@ const ETIQUETA_FUENTE: Record<ItemCine["fuente"], string> = {
   tvmaze: "TVMaze",
 };
 
-export default function TarjetaContenido({ item, idioma, enMiLista, progresoPct, onAbrir, onMiLista }: Props) {
+/** Estilo de la insignia de puesto: oro, plata y bronce; chip oscuro el resto. */
+function claseMedalla(puesto: number): string {
+  if (puesto === 1) return "border-amber-200/70 bg-gradient-to-br from-amber-300 to-yellow-500 text-amber-950 shadow-amber-500/30";
+  if (puesto === 2) return "border-slate-100/70 bg-gradient-to-br from-slate-200 to-slate-400 text-slate-900 shadow-slate-400/30";
+  if (puesto === 3) return "border-orange-200/70 bg-gradient-to-br from-orange-300 to-amber-700 text-amber-950 shadow-orange-500/30";
+  return "border-white/25 bg-slate-950/85 text-white backdrop-blur-sm";
+}
+
+export default function TarjetaContenido({ item, idioma, enMiLista, progresoPct, puesto, onAbrir, onMiLista }: Props) {
   const [imagenRota, setImagenRota] = useState(false);
   const vertical = item.fuente === "tvmaze";
   const dominioPublico = item.fuente !== "tvmaze";
 
   return (
     <div className="group relative w-[168px] shrink-0 sm:w-[188px]">
+      {/* Puesto del Top 100 (v1.37.0): medalla flotante sobre la esquina */}
+      {puesto != null && (
+        <span
+          aria-label={`${traducirCine("Puesto", idioma)} ${puesto}`}
+          className={cn(
+            "absolute -left-2 -top-2 z-10 flex h-9 min-w-9 items-center justify-center rounded-full border px-1 text-[13px] font-black shadow-lg",
+            claseMedalla(puesto)
+          )}
+        >
+          {puesto}
+        </span>
+      )}
       <button
         type="button"
         onClick={() => onAbrir(item)}

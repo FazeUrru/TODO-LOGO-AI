@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { catalogo, type VistaCine } from "@/lib/streamdog/cine-catalogo";
+import { catalogo, top100, type VistaCine } from "@/lib/streamdog/cine-catalogo";
 import { CRON_SCHEDULE, autorizarCron, registrarEjecucion, type EjecucionCron } from "@/lib/streamdog/cine-cron";
 import { estadosFuentes } from "@/lib/streamdog/cine-servidor";
+import { FILTROS_TOP100 } from "@/lib/streamdog/cine-top100";
 
 /**
  * CRON EMPRESARIAL · /api/streamdog/cron/actualizar (v1.33.0).
@@ -85,6 +86,29 @@ export async function GET(req: Request) {
       }
     })
   );
+
+  // 3) TOP 100 (v1.37.0): el pool se resuelve con el primer filtro y los
+  //    otros 5 salen del mismo pool — consenso real a golpe de caché.
+  try {
+    const primero = await top100("general");
+    items += primero.puestos.length;
+    degradada = degradada || primero.degradada;
+    vistas.push("top100:general");
+    await Promise.all(
+      FILTROS_TOP100.filter((f) => f.id !== "general").map(async ({ id }) => {
+        try {
+          const r = await top100(id);
+          items += r.puestos.length;
+          degradada = degradada || r.degradada;
+          vistas.push(`top100:${id}`);
+        } catch (e) {
+          errores.push(`top100:${id} — ${e instanceof Error ? e.message : "error desconocido"}`);
+        }
+      })
+    );
+  } catch (e) {
+    errores.push(`top100: ${e instanceof Error ? e.message : "error desconocido"}`);
+  }
 
   const completado = Date.now();
   const ejecucion: EjecucionCron = {

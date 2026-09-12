@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { acumular, ipDeHeader, segundosRestantes, type LimiteCfg } from "@/lib/rate-limit";
-import { buscar, catalogoOCache, type RespuestaCatalogo, type VistaCine } from "@/lib/streamdog/cine-catalogo";
+import { buscar, catalogoOCache, top100, type RespuestaCatalogo, type VistaCine } from "@/lib/streamdog/cine-catalogo";
 
 /**
  * CINE&SERIES · /api/streamdog/cine (v1.33.0) — el catálogo agregado.
@@ -15,6 +15,10 @@ import { buscar, catalogoOCache, type RespuestaCatalogo, type VistaCine } from "
  *                                    series, 5 colecciones Archive…)
  *  · GET ?vista=peliculas&pagina=N → listado paginado de películas
  *  · GET ?vista=series&pagina=N    → listado paginado de series
+ *  · GET ?vista=top100&filtro=X    → la clasificación definitiva (v1.37.0):
+ *                                    filtro = general | famosos | animacion
+ *                                    | recientes | populares | ambiguedad
+ *                                    (inválido → general)
  *  · GET ?q=texto                  → búsqueda global en las 3 fuentes
  *
  * La agregación vive en cine-catalogo.ts para que el CRON EMPRESARIAL
@@ -47,6 +51,12 @@ export async function GET(req: Request) {
   const pagina = Math.min(50, Math.max(1, Number.parseInt(searchParams.get("pagina") ?? "1", 10) || 1));
 
   try {
+    /* TOP 100 (v1.37.0): tiene su propia caché y su propia forma de respuesta. */
+    if (vistaCruda === "top100") {
+      const clasificacion = await top100(searchParams.get("filtro"));
+      return NextResponse.json({ ...clasificacion, ok: true, vista: "top100" as const, q, pagina });
+    }
+
     const resultado = await catalogoOCache(vista, q, pagina);
     const respuesta: RespuestaCatalogo = { ...resultado, ok: true, vista, q, pagina };
     return NextResponse.json(respuesta);

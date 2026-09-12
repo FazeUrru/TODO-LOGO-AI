@@ -34,6 +34,7 @@ import FilaProximamente, { type SeccionPronto } from "./FilaProximamente";
 import HeroeDestacado from "./HeroeDestacado";
 import Reproductor from "./Reproductor";
 import TarjetaContenido from "./TarjetaContenido";
+import Top100 from "./Top100";
 import EnlaceArena from "@/components/streamdog/EnlaceArena";
 import AvisoLegal from "./AvisoLegal";
 
@@ -48,7 +49,7 @@ import AvisoLegal from "./AvisoLegal";
  *  · PWA: instalación y service worker con informe de salud real.
  */
 
-type Vista = "inicio" | "peliculas" | "series" | "milista";
+type Vista = "inicio" | "top100" | "peliculas" | "series" | "milista";
 
 /** Degradados de los chips de salto rápido (uno por fila, ciclando). */
 const GRADIENTES_FILA = [
@@ -64,6 +65,7 @@ const GRADIENTES_FILA = [
 
 const VISTAS: { id: Vista; clave: string }[] = [
   { id: "inicio", clave: "Inicio" },
+  { id: "top100", clave: "Top 100" },
   { id: "peliculas", clave: "Películas" },
   { id: "series", clave: "Series" },
   { id: "milista", clave: "Mi lista" },
@@ -305,7 +307,7 @@ export default function Cine() {
   );
 
   useEffect(() => {
-    if (vista === "milista") return; // no pega a la red: lo local manda
+    if (vista === "milista" || vista === "top100") return; // locales o con su propia carga: no pegan aquí
     void cargar("reset");
   }, [vista, qDebounce, cargar]);
 
@@ -629,6 +631,16 @@ export default function Cine() {
         ) : (
           !cargando && <p className="py-10 text-center text-[13.5px] text-slate-400">{t("Sin resultados para «{q}»", { q: qDebounce })}</p>
         )
+      ) : vista === "top100" ? (
+        /* TOP 100 (v1.37.0): la clasificación con sus 6 filtros */
+        <Top100
+          t={t}
+          idioma={idioma}
+          idsEnLista={idsEnLista}
+          pctProgresos={pctProgresos}
+          onAbrir={setDetalle}
+          onMiLista={alternarMiLista}
+        />
       ) : vista === "milista" ? (
         /* Mi lista (local, instantáneo) */
         miLista.length > 0 ? (
